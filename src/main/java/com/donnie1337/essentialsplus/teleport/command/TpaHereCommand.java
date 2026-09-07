@@ -11,13 +11,14 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class TpaHereCommand implements CommandExecutor, TabCompleter {
+    private static final String PERMISSION = "essentialsplus.tpahere";
     private final TeleportService service;
     public TpaHereCommand(TeleportService service) { this.service = service; }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Este comando só pode ser usado por jogadores."); return true; }
         if (args.length != 1) { player.sendMessage("§cUso: /tpahere <jogador>"); return true; }
-        if (!player.hasPermission("essentialsplus.tpahere")) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
+        if (!player.hasPermission(PERMISSION)) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
         final Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) { player.sendMessage("§cJogador não encontrado."); return true; }
         service.request(player, target, true);
@@ -25,8 +26,13 @@ public final class TpaHereCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length != 1) return List.of();
-        final String prefix = args[0].toLowerCase();
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(n -> n.toLowerCase().startsWith(prefix)).sorted().toList();
+        if (!(sender instanceof Player player) || !player.isOnline() || !player.hasPermission(PERMISSION) || args.length != 1) return List.of();
+        final String prefix = args[0].toLowerCase(java.util.Locale.ROOT);
+        return Bukkit.getOnlinePlayers().stream()
+                .map(Player::getName)
+                .filter(n -> n.toLowerCase(java.util.Locale.ROOT).startsWith(prefix))
+                .sorted()
+                .limit(20)
+                .toList();
     }
 }
