@@ -42,7 +42,7 @@ permissions:
     description: Permite recusar solicitações de teleporte.
     default: true
   essentialsplus.tpacancel:
-    description: Permite cancelar solicitações de teleporte.
+    description: Permite cancelar solicitações de teleporte enviadas.
     default: true
   essentialsplus.tpa.bypass.delay:
     description: Ignora o atraso de teleporte.
