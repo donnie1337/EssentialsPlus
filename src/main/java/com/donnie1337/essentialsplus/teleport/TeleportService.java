@@ -32,7 +32,6 @@ public final class TeleportService implements Listener {
 
     private final JavaPlugin plugin;
     private final ConcurrentMap<UUID, LinkedHashMap<UUID, TpaRequest>> incoming = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, Long> cooldowns = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, BukkitTask> pendingTeleports = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Location> pendingLocations = new ConcurrentHashMap<>();
     private BukkitTask expirationTask;
@@ -55,7 +54,6 @@ public final class TeleportService implements Listener {
         pendingTeleports.clear();
         pendingLocations.clear();
         incoming.clear();
-        cooldowns.clear();
     }
 
     public boolean enabled() {
@@ -78,15 +76,6 @@ public final class TeleportService implements Listener {
             return false;
         }
 
-        final long cooldown = TimeUnit.SECONDS.toMillis(plugin.getConfig().getLong("tpa.cooldown-seconds", 30));
-        if (!requester.hasPermission("essentialsplus.tpa.bypass.cooldown")) {
-            final long last = cooldowns.getOrDefault(requester.getUniqueId(), 0L);
-            if (cooldown > 0 && now - last < cooldown) {
-                message(requester, "cooldown", "seconds", String.valueOf(Math.max(1, (cooldown - (now - last) + 999) / 1000)));
-                return false;
-            }
-        }
-
         final int max = Math.max(1, plugin.getConfig().getInt("tpa.max-pending-requests", 5));
         final LinkedHashMap<UUID, TpaRequest> requests = incoming.computeIfAbsent(recipient.getUniqueId(), ignored -> new LinkedHashMap<>());
         synchronized (requests) {
@@ -106,7 +95,6 @@ public final class TeleportService implements Listener {
                     requester.getUniqueId(), requester.getName(), recipient.getUniqueId(), recipient.getName(), here, destination, now));
         }
 
-        cooldowns.put(requester.getUniqueId(), now);
         message(requester, "request-sent", "player", recipient.getName());
         sendRequestMessage(recipient, requester.getName(), here);
         return true;
@@ -184,7 +172,6 @@ public final class TeleportService implements Listener {
     }
 
     private boolean hasPendingOutgoingRequest(UUID requesterId, long now) {
-        boolean pending = false;
         for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
             final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
             synchronized (requests) {
@@ -193,14 +180,12 @@ public final class TeleportService implements Listener {
                 if (request.isExpired(now, timeoutMillis())) {
                     requests.remove(requesterId);
                     if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
-                    cooldowns.remove(requesterId);
                     continue;
                 }
-                pending = true;
-                break;
+                return true;
             }
         }
-        return pending;
+        return false;
     }
 
     private TpaRequest findRequest(UUID recipientId, String requesterName) {
@@ -238,7 +223,6 @@ public final class TeleportService implements Listener {
                         .toList();
                 expired.forEach(request -> {
                     requests.remove(request.requesterId());
-                    cooldowns.remove(request.requesterId());
                     final Player requester = Bukkit.getPlayer(request.requesterId());
                     if (requester != null) message(requester, "request-expired", "player", request.recipientName());
                     final Player recipient = Bukkit.getPlayer(request.recipientId());
@@ -250,11 +234,7 @@ public final class TeleportService implements Listener {
     }
 
     private void removeExpired(LinkedHashMap<UUID, TpaRequest> requests, long now) {
-        requests.values().removeIf(request -> {
-            final boolean expired = request.isExpired(now, timeoutMillis());
-            if (expired) cooldowns.remove(request.requesterId());
-            return expired;
-        });
+        requests.values().removeIf(request -> request.isExpired(now, timeoutMillis()));
     }
 
     private long timeoutMillis() {
@@ -409,6 +389,5 @@ public final class TeleportService implements Listener {
                 requests.remove(playerId);
             }
         }
-        cooldowns.remove(playerId);
     }
 }
