@@ -1,0 +1,40 @@
+tpa:
+  enabled: true
+  request-timeout-seconds: 120
+  max-pending-requests: 5
+  cooldown-seconds: 30
+  teleport-delay-seconds: 5
+  cancel-on-move: true
+  cancel-on-damage: false
+  cancel-on-death: true
+  cancel-on-disconnect: true
+
+messages:
+  prefix: "&8[&6EssentialsPlus&8] &r"
+  player-not-found: "&cJogador não encontrado."
+  cannot-self: "&cVocê não pode enviar uma solicitação para si mesmo."
+  disabled: "&cO sistema de TPA está desativado."
+  no-permission: "&cVocê não tem permissão para isso."
+  request-sent: "&aSolicitação de TPA enviada para &f{player}&a."
+  request-received: "&e{player} &fquer se teleportar até você."
+  request-here-received: "&e{player} &fquer que você se teleporte até ele."
+  request-accepted: "&aSolicitação de TPA de &f{player} &aaceita."
+  request-accepted-sender: "&a{player} &faceitou sua solicitação de TPA."
+  request-denied: "&cSolicitação de TPA de &f{player} &crecusada."
+  request-denied-sender: "&c{player} &frecusou sua solicitação de TPA."
+  request-expired: "&cA solicitação de TPA de &f{player} &cexpiraou."
+  no-request: "&cVocê não possui solicitações de TPA pendentes."
+  request-cancelled: "&eSolicitação de TPA cancelada."
+  cooldown: "&cAguarde &f{seconds}s &cantes de enviar outra solicitação."
+  teleporting: "&aTeleportando em &f{seconds}s&a. Não se mova."
+  teleport-cancelled: "&cTeleporte cancelado porque você se moveu."
+  target-offline: "&cO jogador não está mais online."
+  too-many-requests: "&cEste jogador já possui muitas solicitações pendentes."
+
+buttons:
+  accept:
+    text: "&a&l[ ACEITAR ]"
+    hover: "&7Clique para aceitar a solicitação."
+  deny:
+    text: "&c&l[ RECUSAR ]"
+    hover: "&7Clique para recusar a solicitação."
