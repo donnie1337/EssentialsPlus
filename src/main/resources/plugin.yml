@@ -39,6 +39,3 @@ permissions:
   essentialsplus.tpacancel:
     description: Permite cancelar solicitações de teleporte enviadas.
     default: true
-  essentialsplus.tpa.bypass.delay:
-    description: Ignora o atraso de teleporte.
-    default: op
