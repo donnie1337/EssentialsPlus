@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.teleport;
 
+import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -36,14 +37,16 @@ public final class TeleportService implements Listener {
 
     private final JavaPlugin plugin;
     private final ChatPlusBridge chatPlusBridge;
+    private final AuthSystemBridge authSystemBridge;
     private final ConcurrentMap<UUID, LinkedHashMap<UUID, TpaRequest>> incoming = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, BukkitTask> pendingTeleports = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Location> pendingLocations = new ConcurrentHashMap<>();
     private BukkitTask expirationTask;
 
-    public TeleportService(JavaPlugin plugin, ChatPlusBridge chatPlusBridge) {
+    public TeleportService(JavaPlugin plugin, ChatPlusBridge chatPlusBridge, AuthSystemBridge authSystemBridge) {
         this.plugin = plugin;
         this.chatPlusBridge = chatPlusBridge;
+        this.authSystemBridge = authSystemBridge;
     }
 
     public void start() {
@@ -67,6 +70,7 @@ public final class TeleportService implements Listener {
     }
 
     public boolean request(Player requester, Player recipient, boolean here) {
+        if (!authenticated(requester)) return false;
         if (!enabled()) {
             message(requester, "disabled");
             return false;
@@ -88,21 +92,12 @@ public final class TeleportService implements Listener {
         synchronized (requests) {
             removeExpired(requests, now);
             if (requests.size() >= max) {
-                if (requests.isEmpty()) {
-                    incoming.remove(recipientId, requests);
-                }
+                if (requests.isEmpty()) incoming.remove(recipientId, requests);
                 message(requester, "too-many-requests");
                 return false;
             }
-
             requests.put(requester.getUniqueId(), new TpaRequest(
-                    requester.getUniqueId(),
-                    requester.getName(),
-                    recipientId,
-                    recipient.getName(),
-                    here,
-                    now
-            ));
+                    requester.getUniqueId(), requester.getName(), recipientId, recipient.getName(), here, now));
         }
 
         message(requester, "request-sent", "player", recipient.getName());
@@ -112,6 +107,7 @@ public final class TeleportService implements Listener {
     }
 
     public boolean accept(Player recipient, String requesterName) {
+        if (!authenticated(recipient)) return false;
         final TpaRequest request = findRequest(recipient.getUniqueId(), requesterName);
         if (request == null) {
             message(recipient, "no-request");
@@ -121,6 +117,7 @@ public final class TeleportService implements Listener {
     }
 
     private boolean accept(Player recipient, UUID requesterId) {
+        if (!authenticated(recipient)) return false;
         final TpaRequest request = findRequest(recipient.getUniqueId(), requesterId);
         if (request == null) {
             message(recipient, "no-request");
@@ -131,6 +128,10 @@ public final class TeleportService implements Listener {
         final Player requester = Bukkit.getPlayer(request.requesterId());
         if (requester == null || !requester.isOnline()) {
             message(recipient, "target-offline");
+            return false;
+        }
+        if (!authenticated(requester)) {
+            message(recipient, "target-not-authenticated");
             return false;
         }
 
@@ -151,6 +152,7 @@ public final class TeleportService implements Listener {
     }
 
     public boolean deny(Player recipient, String requesterName) {
+        if (!authenticated(recipient)) return false;
         final TpaRequest request = findRequest(recipient.getUniqueId(), requesterName);
         if (request == null) {
             message(recipient, "no-request");
@@ -160,6 +162,7 @@ public final class TeleportService implements Listener {
     }
 
     private boolean deny(Player recipient, UUID requesterId) {
+        if (!authenticated(recipient)) return false;
         final TpaRequest request = findRequest(recipient.getUniqueId(), requesterId);
         if (request == null) {
             message(recipient, "no-request");
@@ -168,13 +171,12 @@ public final class TeleportService implements Listener {
         removeRequest(request);
         message(recipient, "request-denied", "player", request.requesterName());
         final Player requester = Bukkit.getPlayer(request.requesterId());
-        if (requester != null) {
-            message(requester, "request-denied-sender", "player", recipient.getName());
-        }
+        if (requester != null) message(requester, "request-denied-sender", "player", recipient.getName());
         return true;
     }
 
     public boolean cancel(Player requester, String recipientName) {
+        if (!authenticated(requester)) return false;
         boolean removed = false;
         for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
             final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
@@ -184,23 +186,18 @@ public final class TeleportService implements Listener {
                     requests.remove(requester.getUniqueId());
                     removed = true;
                     final Player recipient = Bukkit.getPlayer(entry.getKey());
-                    if (recipient != null) {
-                        message(recipient, "request-cancelled");
-                    }
+                    if (recipient != null) message(recipient, "request-cancelled");
                     if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
-                    if (recipientName != null) {
-                        break;
-                    }
+                    if (recipientName != null) break;
                 }
             }
         }
-        if (removed) {
-            message(requester, "request-cancelled");
-        }
+        if (removed) message(requester, "request-cancelled");
         return removed;
     }
 
     public List<String> pendingRequesterNames(Player recipient) {
+        if (!authenticated(recipient)) return List.of();
         final LinkedHashMap<UUID, TpaRequest> requests = incoming.get(recipient.getUniqueId());
         if (requests == null) return List.of();
         synchronized (requests) {
@@ -214,6 +211,7 @@ public final class TeleportService implements Listener {
     }
 
     public List<String> pendingRecipientNames(Player requester) {
+        if (!authenticated(requester)) return List.of();
         final List<String> names = new ArrayList<>();
         final long now = System.currentTimeMillis();
         for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
@@ -231,6 +229,12 @@ public final class TeleportService implements Listener {
             }
         }
         return Collections.unmodifiableList(names);
+    }
+
+    private boolean authenticated(Player player) {
+        if (authSystemBridge.isAuthenticated(player)) return true;
+        message(player, "auth-required");
+        return false;
     }
 
     private boolean hasPendingOutgoingRequest(UUID requesterId, long now) {
@@ -290,8 +294,7 @@ public final class TeleportService implements Listener {
             final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
             synchronized (requests) {
                 final List<TpaRequest> expired = requests.values().stream()
-                        .filter(request -> request.isExpired(now, timeoutMillis()))
-                        .toList();
+                        .filter(request -> request.isExpired(now, timeoutMillis())).toList();
                 expired.forEach(request -> {
                     requests.remove(request.requesterId());
                     final Player requester = Bukkit.getPlayer(request.requesterId());
@@ -326,7 +329,7 @@ public final class TeleportService implements Listener {
         final BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             pendingTeleports.remove(player.getUniqueId());
             pendingLocations.remove(player.getUniqueId());
-            if (!player.isOnline() || !sameBlock(start, player.getLocation())) {
+            if (!player.isOnline() || !sameBlock(start, player.getLocation()) || !authenticated(player)) {
                 message(player, "teleport-cancelled");
                 return;
             }
@@ -336,13 +339,9 @@ public final class TeleportService implements Listener {
     }
 
     private void performTeleport(Player player, Location destination) {
-        if (!player.isOnline() || destination.getWorld() == null) {
-            return;
-        }
+        if (!player.isOnline() || destination.getWorld() == null || !authenticated(player)) return;
         player.teleportAsync(destination).thenAccept(success -> {
-            if (!success) {
-                Bukkit.getScheduler().runTask(plugin, () -> message(player, "teleport-failed"));
-            }
+            if (!success) Bukkit.getScheduler().runTask(plugin, () -> message(player, "teleport-failed"));
         });
     }
 
@@ -353,26 +352,19 @@ public final class TeleportService implements Listener {
     }
 
     private boolean sameBlock(Location a, Location b) {
-        return b != null
-                && a.getWorld() == b.getWorld()
-                && a.getBlockX() == b.getBlockX()
-                && a.getBlockY() == b.getBlockY()
-                && a.getBlockZ() == b.getBlockZ();
+        return b != null && a.getWorld() == b.getWorld()
+                && a.getBlockX() == b.getBlockX() && a.getBlockY() == b.getBlockY() && a.getBlockZ() == b.getBlockZ();
     }
 
     private void sendRequestMessage(Player recipient, String requesterName, UUID requesterId, boolean here) {
         final String key = here ? "request-here-received" : "request-received";
         message(recipient, key, "player", requesterName);
-
         final List<Component> buttons = new ArrayList<>();
-        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) {
+        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true))
             buttons.add(button("buttons.accept.text", "buttons.accept.hover", recipient.getUniqueId(), requesterId, true));
-        }
-        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) {
+        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true))
             buttons.add(button("buttons.deny.text", "buttons.deny.hover", recipient.getUniqueId(), requesterId, false));
-        }
         if (buttons.isEmpty()) return;
-
         final String spacing = plugin.getConfig().getString("buttons.spacing", "  ");
         Component row = Component.empty();
         for (int i = 0; i < buttons.size(); i++) {
@@ -384,9 +376,7 @@ public final class TeleportService implements Listener {
 
     private void sendCancelButton(Player requester, String recipientName) {
         if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
-
-        final Component cancel = cancelButton(requester.getUniqueId(), recipientName);
-        requester.sendMessage(cancel);
+        requester.sendMessage(cancelButton(requester.getUniqueId(), recipientName));
     }
 
     private Component button(String textPath, String hoverPath, UUID recipientId, UUID requesterId, boolean accept) {
@@ -394,21 +384,12 @@ public final class TeleportService implements Listener {
         final String hover = plugin.getConfig().getString(hoverPath, "");
         final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
         final ClickCallback<Audience> callback = audience -> {
-            if (!(audience instanceof Player player) || !player.getUniqueId().equals(recipientId)) {
-                return;
-            }
-            if (accept) {
-                accept(player, requesterId);
-            } else {
-                deny(player, requesterId);
-            }
+            if (!(audience instanceof Player player) || !player.getUniqueId().equals(recipientId) || !authenticated(player)) return;
+            if (accept) accept(player, requesterId); else deny(player, requesterId);
         };
         final ClickCallback.Options options = ClickCallback.Options.builder()
-                .lifetime(Duration.ofSeconds(lifetimeSeconds))
-                .uses(1)
-                .build();
-        return legacy(text)
-                .clickEvent(ClickEvent.callback(callback, options))
+                .lifetime(Duration.ofSeconds(lifetimeSeconds)).uses(1).build();
+        return legacy(text).clickEvent(ClickEvent.callback(callback, options))
                 .hoverEvent(HoverEvent.showText(legacy(hover)));
     }
 
@@ -417,26 +398,20 @@ public final class TeleportService implements Listener {
         final String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
         final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
         final ClickCallback<Audience> callback = audience -> {
-            if (!(audience instanceof Player player) || !player.getUniqueId().equals(requesterId)) {
-                return;
-            }
+            if (!(audience instanceof Player player) || !player.getUniqueId().equals(requesterId) || !authenticated(player)) return;
             cancel(player, recipientName);
         };
         final ClickCallback.Options options = ClickCallback.Options.builder()
-                .lifetime(Duration.ofSeconds(lifetimeSeconds))
-                .uses(1)
-                .build();
-        return legacy(text)
-                .clickEvent(ClickEvent.callback(callback, options))
+                .lifetime(Duration.ofSeconds(lifetimeSeconds)).uses(1).build();
+        return legacy(text).clickEvent(ClickEvent.callback(callback, options))
                 .hoverEvent(HoverEvent.showText(legacy(hover)));
     }
 
     private void message(Player player, String path, String... replacements) {
+        if (player == null || !player.isOnline()) return;
         String raw = plugin.getConfig().getString("messages." + path, "");
-        for (int i = 0; i + 1 < replacements.length; i += 2) {
+        for (int i = 0; i + 1 < replacements.length; i += 2)
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
-        }
-
         final Component component = legacy(raw);
         if (!chatPlusBridge.sendSystemMessage(player, component)) {
             final String prefix = plugin.getConfig().getString("messages.prefix", "");
@@ -444,13 +419,8 @@ public final class TeleportService implements Listener {
         }
     }
 
-    private Component legacy(String value) {
-        return LEGACY.deserialize(value == null ? "" : color(value));
-    }
-
-    private String color(String value) {
-        return value == null ? "" : value.replace('&', '§');
-    }
+    private Component legacy(String value) { return LEGACY.deserialize(color(value)); }
+    private String color(String value) { return value == null ? "" : value.replace('&', '§'); }
 
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
@@ -474,9 +444,7 @@ public final class TeleportService implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        if (plugin.getConfig().getBoolean("tpa.cancel-on-death", true)) {
-            cancelPendingTeleport(event.getPlayer().getUniqueId());
-        }
+        if (plugin.getConfig().getBoolean("tpa.cancel-on-death", true)) cancelPendingTeleport(event.getPlayer().getUniqueId());
         removeAllRequestsFor(event.getPlayer().getUniqueId());
     }
 
