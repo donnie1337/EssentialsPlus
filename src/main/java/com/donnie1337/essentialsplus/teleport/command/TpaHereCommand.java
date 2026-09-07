@@ -1,0 +1,32 @@
+package com.donnie1337.essentialsplus.teleport.command;
+
+import com.donnie1337.essentialsplus.teleport.TeleportService;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
+
+import java.util.List;
+
+public final class TpaHereCommand implements CommandExecutor, TabCompleter {
+    private final TeleportService service;
+    public TpaHereCommand(TeleportService service) { this.service = service; }
+
+    @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player player)) { sender.sendMessage("Este comando só pode ser usado por jogadores."); return true; }
+        if (args.length != 1) { player.sendMessage("§cUso: /tpahere <jogador>"); return true; }
+        if (!player.hasPermission("essentialsplus.tpahere")) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
+        final Player target = Bukkit.getPlayerExact(args[0]);
+        if (target == null) { player.sendMessage("§cJogador não encontrado."); return true; }
+        service.request(player, target, true);
+        return true;
+    }
+
+    @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length != 1) return List.of();
+        final String prefix = args[0].toLowerCase();
+        return Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(n -> n.toLowerCase().startsWith(prefix)).sorted().toList();
+    }
+}
