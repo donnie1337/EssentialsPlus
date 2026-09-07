@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus;
 
+import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
@@ -17,7 +18,7 @@ public final class EssentialsPlus extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
-        teleportService = new TeleportService(this);
+        teleportService = new TeleportService(this, new ChatPlusBridge());
         teleportService.start();
 
         register("tpa", new TpaCommand(teleportService));
