@@ -14,6 +14,8 @@ messages:
   cannot-self: "&cVocê não pode enviar uma solicitação para si mesmo."
   disabled: "&cO sistema de TPA está desativado."
   no-permission: "&cVocê não tem permissão para isso."
+  auth-required: "&cFaça login ou se registre antes de usar o sistema de TPA."
+  target-not-authenticated: "&cO jogador ainda não está autenticado."
   request-sent: "&aSolicitação de TPA enviada para &f{player}&a."
   request-received: "&e{player} &fquer se teleportar até você."
   request-here-received: "&e{player} &fquer que você se teleporte até ele."
