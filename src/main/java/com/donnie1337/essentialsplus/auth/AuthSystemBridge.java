@@ -25,9 +25,14 @@ public final class AuthSystemBridge {
 
         final Plugin plugin = resolvePlugin();
         final Method method = isAuthenticated;
-        if (plugin == null || method == null) {
+        if (plugin == null) {
             // O EssentialsPlus continua independente quando o AuthSystem não está instalado.
             return true;
+        }
+        if (method == null) {
+            // Se o AuthSystem está instalado, mas sua API de autenticação não está disponível,
+            // nunca permita que a integração falhe-aberta.
+            return false;
         }
 
         try {

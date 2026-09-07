@@ -25,8 +25,9 @@ public final class TpaCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!(sender instanceof Player player) || !player.isOnline()) return List.of();
         if (args.length != 1) return List.of();
-        final String prefix = args[0].toLowerCase();
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(n -> n.toLowerCase().startsWith(prefix)).sorted().toList();
+        if (!player.hasPermission("essentialsplus.tpa")) return List.of();
+        return Bukkit.getOnlinePlayers().stream().map(Player::getName).filter(n -> n.toLowerCase().startsWith(args[0].toLowerCase())).sorted().toList();
     }
 }
