@@ -2,12 +2,9 @@ package com.donnie1337.essentialsplus.teleport;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickCallback;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -20,7 +17,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -32,8 +28,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 public final class TeleportService implements Listener {
-
-    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
     private final JavaPlugin plugin;
     private final ChatPlusBridge chatPlusBridge;
@@ -359,52 +353,45 @@ public final class TeleportService implements Listener {
     private void sendRequestMessage(Player recipient, String requesterName, UUID requesterId, boolean here) {
         final String key = here ? "request-here-received" : "request-received";
         message(recipient, key, "player", requesterName);
-        final List<Component> buttons = new ArrayList<>();
-        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true))
-            buttons.add(button("buttons.accept.text", "buttons.accept.hover", recipient.getUniqueId(), requesterId, true));
-        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true))
-            buttons.add(button("buttons.deny.text", "buttons.deny.hover", recipient.getUniqueId(), requesterId, false));
-        if (buttons.isEmpty()) return;
-        final String spacing = plugin.getConfig().getString("buttons.spacing", "  ");
-        Component row = Component.empty();
-        for (int i = 0; i < buttons.size(); i++) {
-            if (i > 0) row = row.append(legacy(spacing));
-            row = row.append(buttons.get(i));
+
+        final List<BaseComponent> row = new ArrayList<>();
+        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) {
+            appendButton(row, "buttons.accept.text", requesterId, true);
         }
-        recipient.sendMessage(row);
+        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) {
+            if (!row.isEmpty()) appendLegacy(row, plugin.getConfig().getString("buttons.spacing", "  "));
+            appendButton(row, "buttons.deny.text", requesterId, false);
+        }
+        if (!row.isEmpty()) recipient.spigot().sendMessage(row.toArray(new BaseComponent[0]));
     }
 
     private void sendCancelButton(Player requester, String recipientName) {
         if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
-        requester.sendMessage(cancelButton(requester.getUniqueId(), recipientName));
+        final List<BaseComponent> row = new ArrayList<>();
+        appendButton(row, "buttons.cancel.text", recipientName, "buttons.cancel.hover", "/tpacancel " + recipientName);
+        requester.spigot().sendMessage(row.toArray(new BaseComponent[0]));
     }
 
-    private Component button(String textPath, String hoverPath, UUID recipientId, UUID requesterId, boolean accept) {
-        final String text = plugin.getConfig().getString(textPath, "");
-        final String hover = plugin.getConfig().getString(hoverPath, "");
-        final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
-        final ClickCallback<Audience> callback = audience -> {
-            if (!(audience instanceof Player player) || !player.getUniqueId().equals(recipientId) || !authenticated(player)) return;
-            if (accept) accept(player, requesterId); else deny(player, requesterId);
-        };
-        final ClickCallback.Options options = ClickCallback.Options.builder()
-                .lifetime(Duration.ofSeconds(lifetimeSeconds)).uses(1).build();
-        return legacy(text).clickEvent(ClickEvent.callback(callback, options))
-                .hoverEvent(HoverEvent.showText(legacy(hover)));
+    private void appendButton(List<BaseComponent> row, String textPath, UUID requesterId, boolean accept) {
+        final String command = accept ? "/tpaccept " + requesterName(requesterId) : "/tpdeny " + requesterName(requesterId);
+        appendButton(row, textPath, command, null, command);
     }
 
-    private Component cancelButton(UUID requesterId, String recipientName) {
-        final String text = plugin.getConfig().getString("buttons.cancel.text", "&e&l[ CANCELAR ]");
-        final String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
-        final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
-        final ClickCallback<Audience> callback = audience -> {
-            if (!(audience instanceof Player player) || !player.getUniqueId().equals(requesterId) || !authenticated(player)) return;
-            cancel(player, recipientName);
-        };
-        final ClickCallback.Options options = ClickCallback.Options.builder()
-                .lifetime(Duration.ofSeconds(lifetimeSeconds)).uses(1).build();
-        return legacy(text).clickEvent(ClickEvent.callback(callback, options))
-                .hoverEvent(HoverEvent.showText(legacy(hover)));
+    private void appendButton(List<BaseComponent> row, String textPath, String command, String hoverPath, String fallback) {
+        final String text = plugin.getConfig().getString(textPath, fallback);
+        final BaseComponent[] components = TextComponent.fromLegacyText(color(text));
+        final ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, command);
+        for (BaseComponent component : components) component.setClickEvent(click);
+        Collections.addAll(row, components);
+    }
+
+    private void appendLegacy(List<BaseComponent> row, String text) {
+        Collections.addAll(row, TextComponent.fromLegacyText(color(text)));
+    }
+
+    private String requesterName(UUID requesterId) {
+        final Player requester = Bukkit.getPlayer(requesterId);
+        return requester == null ? requesterId.toString() : requester.getName();
     }
 
     private void message(Player player, String path, String... replacements) {
@@ -412,14 +399,13 @@ public final class TeleportService implements Listener {
         String raw = plugin.getConfig().getString("messages." + path, "");
         for (int i = 0; i + 1 < replacements.length; i += 2)
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
-        final Component component = legacy(raw);
-        if (!chatPlusBridge.sendSystemMessage(player, component)) {
+        final String colored = color(raw);
+        if (!chatPlusBridge.sendSystemMessage(player, colored)) {
             final String prefix = plugin.getConfig().getString("messages.prefix", "");
-            player.sendMessage(legacy(prefix).append(component));
+            player.sendMessage(color(prefix) + colored);
         }
     }
 
-    private Component legacy(String value) { return LEGACY.deserialize(color(value)); }
     private String color(String value) { return value == null ? "" : value.replace('&', '§'); }
 
     @EventHandler
