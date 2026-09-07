@@ -5,6 +5,8 @@ api-version: '26.2'
 author: donnie1337
 description: Essentials customizado para Paper 26.2.
 website: https://github.com/donnie1337/EssentialsPlus
+softdepend:
+  - ChatPlus
 commands:
   tpa:
     description: Solicita teleporte até outro jogador.
