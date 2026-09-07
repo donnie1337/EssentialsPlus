@@ -1,10 +1,12 @@
 package com.donnie1337.essentialsplus.teleport;
 
+import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -30,14 +32,18 @@ import java.util.concurrent.TimeUnit;
 
 public final class TeleportService implements Listener {
 
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
+
     private final JavaPlugin plugin;
+    private final ChatPlusBridge chatPlusBridge;
     private final ConcurrentMap<UUID, LinkedHashMap<UUID, TpaRequest>> incoming = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, BukkitTask> pendingTeleports = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Location> pendingLocations = new ConcurrentHashMap<>();
     private BukkitTask expirationTask;
 
-    public TeleportService(JavaPlugin plugin) {
+    public TeleportService(JavaPlugin plugin, ChatPlusBridge chatPlusBridge) {
         this.plugin = plugin;
+        this.chatPlusBridge = chatPlusBridge;
     }
 
     public void start() {
@@ -96,6 +102,7 @@ public final class TeleportService implements Listener {
         }
 
         message(requester, "request-sent", "player", recipient.getName());
+        sendCancelButton(requester, recipient.getName());
         sendRequestMessage(recipient, requester.getName(), here);
         return true;
     }
@@ -293,26 +300,34 @@ public final class TeleportService implements Listener {
         final String key = here ? "request-here-received" : "request-received";
         message(recipient, key, "player", requesterName);
 
-        final Component accept = button(
-                "buttons.accept.text",
-                "buttons.accept.hover",
-                recipient.getUniqueId(),
-                requesterName,
-                true
-        );
-        final Component deny = button(
-                "buttons.deny.text",
-                "buttons.deny.hover",
-                recipient.getUniqueId(),
-                requesterName,
-                false
-        );
-        recipient.sendMessage(Component.text("  ").append(accept).append(Component.text("  ")).append(deny));
+        final List<Component> buttons = new ArrayList<>();
+        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) {
+            buttons.add(button("buttons.accept.text", "buttons.accept.hover", recipient.getUniqueId(), requesterName, true));
+        }
+        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) {
+            buttons.add(button("buttons.deny.text", "buttons.deny.hover", recipient.getUniqueId(), requesterName, false));
+        }
+        if (buttons.isEmpty()) return;
+
+        final String spacing = plugin.getConfig().getString("buttons.spacing", "  ");
+        Component row = Component.empty();
+        for (int i = 0; i < buttons.size(); i++) {
+            if (i > 0) row = row.append(legacy(spacing));
+            row = row.append(buttons.get(i));
+        }
+        recipient.sendMessage(row);
+    }
+
+    private void sendCancelButton(Player requester, String recipientName) {
+        if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
+
+        final Component cancel = cancelButton(requester.getUniqueId(), recipientName);
+        requester.sendMessage(cancel);
     }
 
     private Component button(String textPath, String hoverPath, UUID recipientId, String requesterName, boolean accept) {
-        final String text = color(plugin.getConfig().getString(textPath, ""));
-        final String hover = color(plugin.getConfig().getString(hoverPath, ""));
+        final String text = plugin.getConfig().getString(textPath, "");
+        final String hover = plugin.getConfig().getString(hoverPath, "");
         final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
         final ClickCallback<Audience> callback = audience -> {
             if (!(audience instanceof Player player) || !player.getUniqueId().equals(recipientId)) {
@@ -328,9 +343,28 @@ public final class TeleportService implements Listener {
                 .lifetime(Duration.ofSeconds(lifetimeSeconds))
                 .uses(1)
                 .build();
-        return Component.text(text)
+        return legacy(text)
                 .clickEvent(ClickEvent.callback(callback, options))
-                .hoverEvent(HoverEvent.showText(Component.text(hover)));
+                .hoverEvent(HoverEvent.showText(legacy(hover)));
+    }
+
+    private Component cancelButton(UUID requesterId, String recipientName) {
+        final String text = plugin.getConfig().getString("buttons.cancel.text", "&e&l[ CANCELAR ]");
+        final String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
+        final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
+        final ClickCallback<Audience> callback = audience -> {
+            if (!(audience instanceof Player player) || !player.getUniqueId().equals(requesterId)) {
+                return;
+            }
+            cancel(player, recipientName);
+        };
+        final ClickCallback.Options options = ClickCallback.Options.builder()
+                .lifetime(Duration.ofSeconds(lifetimeSeconds))
+                .uses(1)
+                .build();
+        return legacy(text)
+                .clickEvent(ClickEvent.callback(callback, options))
+                .hoverEvent(HoverEvent.showText(legacy(hover)));
     }
 
     private void message(Player player, String path, String... replacements) {
@@ -338,8 +372,16 @@ public final class TeleportService implements Listener {
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
         }
-        final String prefix = plugin.getConfig().getString("messages.prefix", "");
-        player.sendMessage(Component.text(color(prefix + raw)));
+
+        final Component component = legacy(raw);
+        if (!chatPlusBridge.sendSystemMessage(player, component)) {
+            final String prefix = plugin.getConfig().getString("messages.prefix", "");
+            player.sendMessage(legacy(prefix).append(component));
+        }
+    }
+
+    private Component legacy(String value) {
+        return LEGACY.deserialize(value == null ? "" : color(value));
     }
 
     private String color(String value) {
