@@ -1,6 +1,6 @@
 tpa:
   enabled: true
-  request-timeout-seconds: 120
+  request-timeout-seconds: 20
   max-pending-requests: 5
   cooldown-seconds: 30
   teleport-delay-seconds: 5
@@ -22,13 +22,15 @@ messages:
   request-accepted-sender: "&a{player} &faceitou sua solicitação de TPA."
   request-denied: "&cSolicitação de TPA de &f{player} &crecusada."
   request-denied-sender: "&c{player} &frecusou sua solicitação de TPA."
-  request-expired: "&cA solicitação de TPA de &f{player} &cexpiraou."
+  request-expired: "&cA solicitação de TPA de &f{player} &cexpirou."
   no-request: "&cVocê não possui solicitações de TPA pendentes."
   request-cancelled: "&eSolicitação de TPA cancelada."
   cooldown: "&cAguarde &f{seconds}s &cantes de enviar outra solicitação."
+  pending-request: "&cVocê já possui uma solicitação de TPA pendente. Aguarde ela expirar ou ser respondida."
   teleporting: "&aTeleportando em &f{seconds}s&a. Não se mova."
   teleport-cancelled: "&cTeleporte cancelado porque você se moveu."
   target-offline: "&cO jogador não está mais online."
+  teleport-failed: "&cNão foi possível realizar o teleporte."
   too-many-requests: "&cEste jogador já possui muitas solicitações pendentes."
 
 buttons:
