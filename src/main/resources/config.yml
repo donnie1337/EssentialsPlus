@@ -4,7 +4,7 @@ tpa:
   max-pending-requests: 5
   cooldown-seconds: 30
   teleport-delay-seconds: 5
-  cancel-on-move: true
+  cancel-on-move: false
   cancel-on-damage: false
   cancel-on-death: true
   cancel-on-disconnect: true
