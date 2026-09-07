@@ -38,3 +38,6 @@ buttons:
   deny:
     text: "&c&l[ RECUSAR ]"
     hover: "&7Clique para recusar a solicitação."
+  cancel:
+    text: "&e&l[ CANCELAR ]"
+    hover: "&7Clique para cancelar sua solicitação de TPA."
