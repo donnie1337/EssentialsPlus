@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus;
 
+import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
@@ -18,7 +19,7 @@ public final class EssentialsPlus extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
-        teleportService = new TeleportService(this, new ChatPlusBridge());
+        teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
 
         register("tpa", new TpaCommand(teleportService));
@@ -32,19 +33,13 @@ public final class EssentialsPlus extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (teleportService != null) {
-            teleportService.shutdown();
-        }
+        if (teleportService != null) teleportService.shutdown();
     }
 
     private void register(String name, org.bukkit.command.CommandExecutor executor) {
         final PluginCommand command = getCommand(name);
-        if (command == null) {
-            throw new IllegalStateException("Comando não encontrado no plugin.yml: " + name);
-        }
+        if (command == null) throw new IllegalStateException("Comando não encontrado no plugin.yml: " + name);
         command.setExecutor(executor);
-        if (executor instanceof org.bukkit.command.TabCompleter completer) {
-            command.setTabCompleter(completer);
-        }
+        if (executor instanceof org.bukkit.command.TabCompleter completer) command.setTabCompleter(completer);
     }
 }
