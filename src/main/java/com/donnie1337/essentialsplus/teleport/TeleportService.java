@@ -1,6 +1,8 @@
 package com.donnie1337.essentialsplus.teleport;
 
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
@@ -15,6 +17,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -100,7 +103,7 @@ public final class TeleportService implements Listener {
 
         cooldowns.put(requester.getUniqueId(), now);
         message(requester, "request-sent", "player", recipient.getName());
-        sendRequestMessage(recipient, requester.getName(), here, requester.getName());
+        sendRequestMessage(recipient, requester.getName(), here);
         return true;
     }
 
@@ -269,26 +272,54 @@ public final class TeleportService implements Listener {
     }
 
     private boolean sameBlock(Location a, Location b) {
-        return a.getWorld() == b.getWorld()
+        return b != null
+                && a.getWorld() == b.getWorld()
                 && a.getBlockX() == b.getBlockX()
                 && a.getBlockY() == b.getBlockY()
                 && a.getBlockZ() == b.getBlockZ();
     }
 
-    private void sendRequestMessage(Player recipient, String requesterName, boolean here, String requesterCommandName) {
+    private void sendRequestMessage(Player recipient, String requesterName, boolean here) {
         final String key = here ? "request-here-received" : "request-received";
         message(recipient, key, "player", requesterName);
 
-        final Component accept = button("buttons.accept.text", "buttons.accept.hover", "essentialsplus.tpaccept " + requesterCommandName);
-        final Component deny = button("buttons.deny.text", "buttons.deny.hover", "essentialsplus.tpdeny " + requesterCommandName);
+        final Component accept = button(
+                "buttons.accept.text",
+                "buttons.accept.hover",
+                recipient.getUniqueId(),
+                requesterName,
+                true
+        );
+        final Component deny = button(
+                "buttons.deny.text",
+                "buttons.deny.hover",
+                recipient.getUniqueId(),
+                requesterName,
+                false
+        );
         recipient.sendMessage(Component.text("  ").append(accept).append(Component.text("  ")).append(deny));
     }
 
-    private Component button(String textPath, String hoverPath, String command) {
+    private Component button(String textPath, String hoverPath, UUID recipientId, String requesterName, boolean accept) {
         final String text = color(plugin.getConfig().getString(textPath, ""));
         final String hover = color(plugin.getConfig().getString(hoverPath, ""));
+        final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 120));
+        final ClickCallback<Audience> callback = audience -> {
+            if (!(audience instanceof Player player) || !player.getUniqueId().equals(recipientId)) {
+                return;
+            }
+            if (accept) {
+                accept(player, requesterName);
+            } else {
+                deny(player, requesterName);
+            }
+        };
+        final ClickCallback.Options options = ClickCallback.Options.builder()
+                .lifetime(Duration.ofSeconds(lifetimeSeconds))
+                .uses(1)
+                .build();
         return Component.text(text)
-                .clickEvent(ClickEvent.runCommand("/" + command))
+                .clickEvent(ClickEvent.callback(callback, options))
                 .hoverEvent(HoverEvent.showText(Component.text(hover)));
     }
 
