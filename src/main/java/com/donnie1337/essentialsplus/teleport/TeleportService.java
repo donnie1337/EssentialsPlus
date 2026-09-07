@@ -73,6 +73,11 @@ public final class TeleportService implements Listener {
         }
 
         final long now = System.currentTimeMillis();
+        if (hasPendingOutgoingRequest(requester.getUniqueId(), now)) {
+            message(requester, "pending-request");
+            return false;
+        }
+
         final long cooldown = TimeUnit.SECONDS.toMillis(plugin.getConfig().getLong("tpa.cooldown-seconds", 30));
         if (!requester.hasPermission("essentialsplus.tpa.bypass.cooldown")) {
             final long last = cooldowns.getOrDefault(requester.getUniqueId(), 0L);
@@ -178,6 +183,26 @@ public final class TeleportService implements Listener {
         }
     }
 
+    private boolean hasPendingOutgoingRequest(UUID requesterId, long now) {
+        boolean pending = false;
+        for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
+            final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
+            synchronized (requests) {
+                final TpaRequest request = requests.get(requesterId);
+                if (request == null) continue;
+                if (request.isExpired(now, timeoutMillis())) {
+                    requests.remove(requesterId);
+                    if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
+                    cooldowns.remove(requesterId);
+                    continue;
+                }
+                pending = true;
+                break;
+            }
+        }
+        return pending;
+    }
+
     private TpaRequest findRequest(UUID recipientId, String requesterName) {
         final LinkedHashMap<UUID, TpaRequest> requests = incoming.get(recipientId);
         if (requests == null) return null;
@@ -213,6 +238,7 @@ public final class TeleportService implements Listener {
                         .toList();
                 expired.forEach(request -> {
                     requests.remove(request.requesterId());
+                    cooldowns.remove(request.requesterId());
                     final Player requester = Bukkit.getPlayer(request.requesterId());
                     if (requester != null) message(requester, "request-expired", "player", request.recipientName());
                     final Player recipient = Bukkit.getPlayer(request.recipientId());
@@ -224,11 +250,15 @@ public final class TeleportService implements Listener {
     }
 
     private void removeExpired(LinkedHashMap<UUID, TpaRequest> requests, long now) {
-        requests.values().removeIf(request -> request.isExpired(now, timeoutMillis()));
+        requests.values().removeIf(request -> {
+            final boolean expired = request.isExpired(now, timeoutMillis());
+            if (expired) cooldowns.remove(request.requesterId());
+            return expired;
+        });
     }
 
     private long timeoutMillis() {
-        return TimeUnit.SECONDS.toMillis(Math.max(0, plugin.getConfig().getLong("tpa.request-timeout-seconds", 120)));
+        return TimeUnit.SECONDS.toMillis(Math.max(0, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20)));
     }
 
     private void scheduleTeleport(Player player, Location destination) {
@@ -260,7 +290,7 @@ public final class TeleportService implements Listener {
         }
         player.teleportAsync(destination).thenAccept(success -> {
             if (!success) {
-                Bukkit.getScheduler().runTask(plugin, () -> message(player, "target-offline"));
+                Bukkit.getScheduler().runTask(plugin, () -> message(player, "teleport-failed"));
             }
         });
     }
@@ -303,7 +333,7 @@ public final class TeleportService implements Listener {
     private Component button(String textPath, String hoverPath, UUID recipientId, String requesterName, boolean accept) {
         final String text = color(plugin.getConfig().getString(textPath, ""));
         final String hover = color(plugin.getConfig().getString(hoverPath, ""));
-        final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 120));
+        final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
         final ClickCallback<Audience> callback = audience -> {
             if (!(audience instanceof Player player) || !player.getUniqueId().equals(recipientId)) {
                 return;
@@ -379,5 +409,6 @@ public final class TeleportService implements Listener {
                 requests.remove(playerId);
             }
         }
+        cooldowns.remove(playerId);
     }
 }
