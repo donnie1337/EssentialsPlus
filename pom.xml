@@ -71,7 +71,7 @@
                         <configuration>
                             <artifactSet>
                                 <includes>
-                                    <include>net.kyori:*</include>
+                                    <include>net.kyori:adventure-text-serializer-legacy</include>
                                 </includes>
                             </artifactSet>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
