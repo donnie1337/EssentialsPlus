@@ -8,11 +8,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Integração opcional com o AuthSystem sem dependência de compilação.
- * Quando o AuthSystem está presente, ações do EssentialsPlus exigem autenticação.
+ * Integração opcional com o LoginPlus sem dependência de compilação.
+ * Quando o LoginPlus está presente, ações do EssentialsPlus exigem autenticação.
  */
 public final class AuthSystemBridge {
-    private static final String PLUGIN_NAME = "AuthSystem";
+    private static final String PLUGIN_NAME = "LoginPlus";
 
     private volatile Plugin authSystem;
     private volatile Method isAuthenticated;
@@ -26,11 +26,11 @@ public final class AuthSystemBridge {
         final Plugin plugin = resolvePlugin();
         final Method method = isAuthenticated;
         if (plugin == null) {
-            // O EssentialsPlus continua independente quando o AuthSystem não está instalado.
+            // O EssentialsPlus continua independente quando o LoginPlus não está instalado.
             return true;
         }
         if (method == null) {
-            // Se o AuthSystem está instalado, mas sua API de autenticação não está disponível,
+            // Se o LoginPlus está instalado, mas sua API de autenticação não está disponível,
             // nunca permita que a integração falhe-aberta.
             return false;
         }
@@ -39,7 +39,7 @@ public final class AuthSystemBridge {
             final Object result = method.invoke(plugin, player);
             return result instanceof Boolean authenticated && authenticated;
         } catch (IllegalAccessException | InvocationTargetException | LinkageError ignored) {
-            // Falha na integração deve ser fail-closed quando o AuthSystem está presente.
+            // Falha na integração deve ser fail-closed quando o LoginPlus está presente.
             return false;
         }
     }
