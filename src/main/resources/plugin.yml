@@ -11,23 +11,18 @@ commands:
   tpa:
     description: Solicita teleporte até outro jogador.
     usage: /tpa <jogador>
-    permission: essentialsplus.tpa
   tpahere:
     description: Solicita que outro jogador se teleporte até você.
     usage: /tpahere <jogador>
-    permission: essentialsplus.tpahere
   tpaccept:
     description: Aceita uma solicitação de teleporte.
     usage: /tpaccept [jogador]
-    permission: essentialsplus.tpaccept
   tpdeny:
     description: Recusa uma solicitação de teleporte.
     usage: /tpdeny [jogador]
-    permission: essentialsplus.tpdeny
   tpacancel:
     description: Cancela uma solicitação de teleporte enviada.
     usage: /tpacancel [jogador]
-    permission: essentialsplus.tpacancel
 permissions:
   essentialsplus.tpa:
     description: Permite usar /tpa.
