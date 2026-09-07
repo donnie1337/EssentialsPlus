@@ -1,0 +1,50 @@
+name: EssentialsPlus
+version: 1.0.0-SNAPSHOT
+main: com.donnie1337.essentialsplus.EssentialsPlus
+api-version: '26.2'
+author: donnie1337
+description: Essentials customizado para Paper 26.2.
+website: https://github.com/donnie1337/EssentialsPlus
+commands:
+  tpa:
+    description: Solicita teleporte até outro jogador.
+    usage: /tpa <jogador>
+    permission: essentialsplus.tpa
+  tpahere:
+    description: Solicita que outro jogador se teleporte até você.
+    usage: /tpahere <jogador>
+    permission: essentialsplus.tpahere
+  tpaccept:
+    description: Aceita uma solicitação de teleporte.
+    usage: /tpaccept [jogador]
+    permission: essentialsplus.tpaccept
+  tpdeny:
+    description: Recusa uma solicitação de teleporte.
+    usage: /tpdeny [jogador]
+    permission: essentialsplus.tpdeny
+  tpacancel:
+    description: Cancela uma solicitação de teleporte enviada.
+    usage: /tpacancel [jogador]
+    permission: essentialsplus.tpacancel
+permissions:
+  essentialsplus.tpa:
+    description: Permite usar /tpa.
+    default: true
+  essentialsplus.tpahere:
+    description: Permite usar /tpahere.
+    default: true
+  essentialsplus.tpaccept:
+    description: Permite aceitar solicitações de teleporte.
+    default: true
+  essentialsplus.tpdeny:
+    description: Permite recusar solicitações de teleporte.
+    default: true
+  essentialsplus.tpacancel:
+    description: Permite cancelar solicitações de teleporte.
+    default: true
+  essentialsplus.tpa.bypass.cooldown:
+    description: Ignora o cooldown do TPA.
+    default: op
+  essentialsplus.tpa.bypass.delay:
+    description: Ignora o atraso de teleporte.
+    default: op
