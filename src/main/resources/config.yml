@@ -32,12 +32,16 @@ messages:
   too-many-requests: "&cEste jogador já possui muitas solicitações pendentes."
 
 buttons:
+  spacing: "  "
   accept:
+    enabled: true
     text: "&a&l[ ACEITAR ]"
     hover: "&7Clique para aceitar a solicitação."
   deny:
+    enabled: true
     text: "&c&l[ RECUSAR ]"
     hover: "&7Clique para recusar a solicitação."
   cancel:
+    enabled: true
     text: "&e&l[ CANCELAR ]"
     hover: "&7Clique para cancelar sua solicitação de TPA."
