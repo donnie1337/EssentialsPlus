@@ -2,7 +2,7 @@ tpa:
   enabled: true
   request-timeout-seconds: 20
   max-pending-requests: 5
-  teleport-delay-seconds: 5
+  teleport-delay-seconds: 0
   cancel-on-move: false
   cancel-on-damage: false
   cancel-on-death: true
