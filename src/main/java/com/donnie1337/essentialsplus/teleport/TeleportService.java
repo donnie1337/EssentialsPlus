@@ -10,12 +10,9 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,8 +29,6 @@ public final class TeleportService implements Listener {
     private final ChatPlusBridge chatPlusBridge;
     private final AuthSystemBridge authSystemBridge;
     private final ConcurrentMap<UUID, LinkedHashMap<UUID, TpaRequest>> incoming = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, BukkitTask> pendingTeleports = new ConcurrentHashMap<>();
-    private final ConcurrentMap<UUID, Location> pendingLocations = new ConcurrentHashMap<>();
     private BukkitTask expirationTask;
 
     public TeleportService(JavaPlugin plugin, ChatPlusBridge chatPlusBridge, AuthSystemBridge authSystemBridge) {
@@ -42,7 +37,7 @@ public final class TeleportService implements Listener {
     public void start() { Bukkit.getPluginManager().registerEvents(this, plugin); expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, this::expireRequests, 20L, 20L); }
     public void shutdown() {
         if (expirationTask != null) { expirationTask.cancel(); expirationTask = null; }
-        pendingTeleports.values().forEach(BukkitTask::cancel); pendingTeleports.clear(); pendingLocations.clear(); incoming.clear();
+        incoming.clear();
     }
     public boolean enabled() { return plugin.getConfig().getBoolean("tpa.enabled", true); }
 
@@ -60,7 +55,7 @@ public final class TeleportService implements Listener {
             if (requests.size() >= max) { if (requests.isEmpty()) incoming.remove(recipientId, requests); message(requester, "too-many-requests"); return false; }
             requests.put(requester.getUniqueId(), new TpaRequest(requester.getUniqueId(), requester.getName(), recipientId, recipient.getName(), here, now));
         }
-        message(requester, "request-sent", "player", recipient.getName()); sendCancelButton(requester, recipient.getName()); sendRequestMessage(recipient, requester.getName(), requester.getUniqueId(), here); return true;
+        message(requester, "request-sent", "player", recipient.getName()); sendCancelButton(requester, recipient.getName()); sendRequestMessage(recipient, requester.getName(), here); return true;
     }
 
     public boolean accept(Player recipient, String requesterName) {
@@ -80,7 +75,7 @@ public final class TeleportService implements Listener {
         final Player teleported; final Location destination;
         if (request.here()) { teleported = recipient; destination = requester.getLocation().clone(); }
         else { teleported = requester; destination = recipient.getLocation().clone(); }
-        scheduleTeleport(teleported, destination);
+        performTeleport(teleported, destination);
         message(recipient, "request-accepted", "player", request.requesterName()); message(requester, "request-accepted-sender", "player", recipient.getName()); return true;
     }
 
@@ -145,19 +140,9 @@ public final class TeleportService implements Listener {
     }
     private void removeExpired(LinkedHashMap<UUID, TpaRequest> requests, long now) { requests.values().removeIf(request -> request.isExpired(now, timeoutMillis())); }
     private long timeoutMillis() { return TimeUnit.SECONDS.toMillis(Math.max(0, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20))); }
-
-    private void scheduleTeleport(Player player, Location destination) {
-        cancelPendingTeleport(player.getUniqueId()); final long delaySeconds = Math.max(0, plugin.getConfig().getLong("tpa.teleport-delay-seconds", 5));
-        if (delaySeconds == 0 || player.hasPermission("essentialsplus.tpa.bypass.delay")) { performTeleport(player, destination); return; }
-        final Location start = player.getLocation().clone(); pendingLocations.put(player.getUniqueId(), start); message(player, "teleporting", "seconds", String.valueOf(delaySeconds));
-        final BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> { pendingTeleports.remove(player.getUniqueId()); pendingLocations.remove(player.getUniqueId()); if (!player.isOnline() || !sameBlock(start, player.getLocation()) || !authenticated(player)) { message(player, "teleport-cancelled"); return; } performTeleport(player, destination); }, delaySeconds * 20L);
-        pendingTeleports.put(player.getUniqueId(), task);
-    }
     private void performTeleport(Player player, Location destination) { if (!player.isOnline() || destination.getWorld() == null || !authenticated(player)) return; player.teleport(destination); }
-    private void cancelPendingTeleport(UUID playerId) { final BukkitTask task = pendingTeleports.remove(playerId); if (task != null) task.cancel(); pendingLocations.remove(playerId); }
-    private boolean sameBlock(Location a, Location b) { return b != null && a.getWorld() == b.getWorld() && a.getBlockX() == b.getBlockX() && a.getBlockY() == b.getBlockY() && a.getBlockZ() == b.getBlockZ(); }
 
-    private void sendRequestMessage(Player recipient, String requesterName, UUID requesterId, boolean here) {
+    private void sendRequestMessage(Player recipient, String requesterName, boolean here) {
         message(recipient, here ? "request-here-received" : "request-received", "player", requesterName); final List<BaseComponent> row = new ArrayList<>();
         if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) appendButton(row, "buttons.accept.text", "/tpaccept " + requesterName);
         if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) { if (!row.isEmpty()) appendLegacy(row, plugin.getConfig().getString("buttons.spacing", "  ")); appendButton(row, "buttons.deny.text", "/tpdeny " + requesterName); }
@@ -166,13 +151,10 @@ public final class TeleportService implements Listener {
     private void sendCancelButton(Player requester, String recipientName) { if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return; final List<BaseComponent> row = new ArrayList<>(); appendButton(row, "buttons.cancel.text", "/tpacancel " + recipientName); requester.spigot().sendMessage(row.toArray(new BaseComponent[0])); }
     private void appendButton(List<BaseComponent> row, String textPath, String command) { final BaseComponent[] components = TextComponent.fromLegacyText(color(plugin.getConfig().getString(textPath, command))); final ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, command); for (BaseComponent component : components) component.setClickEvent(click); Collections.addAll(row, components); }
     private void appendLegacy(List<BaseComponent> row, String text) { Collections.addAll(row, TextComponent.fromLegacyText(color(text))); }
-    private String requesterName(UUID requesterId) { final Player requester = Bukkit.getPlayer(requesterId); return requester == null ? requesterId.toString() : requester.getName(); }
     private void message(Player player, String path, String... replacements) { if (player == null || !player.isOnline()) return; String raw = plugin.getConfig().getString("messages." + path, ""); for (int i = 0; i + 1 < replacements.length; i += 2) raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]); final String colored = color(raw); if (!chatPlusBridge.sendSystemMessage(player, colored)) { final String prefix = plugin.getConfig().getString("messages.prefix", ""); player.sendMessage(color(prefix) + colored); } }
     private String color(String value) { return value == null ? "" : value.replace('&', '§'); }
 
-    @EventHandler public void onMove(PlayerMoveEvent event) { if (!plugin.getConfig().getBoolean("tpa.cancel-on-move", true)) return; final Location start = pendingLocations.get(event.getPlayer().getUniqueId()); if (start == null) return; if (!sameBlock(start, event.getTo())) { cancelPendingTeleport(event.getPlayer().getUniqueId()); message(event.getPlayer(), "teleport-cancelled"); } }
-    @EventHandler public void onDamage(EntityDamageEvent event) { if (!plugin.getConfig().getBoolean("tpa.cancel-on-damage", false)) return; if (event.getEntity() instanceof Player player && pendingTeleports.containsKey(player.getUniqueId())) { cancelPendingTeleport(player.getUniqueId()); message(player, "teleport-cancelled"); } }
-    @EventHandler public void onDeath(PlayerDeathEvent event) { if (plugin.getConfig().getBoolean("tpa.cancel-on-death", true)) cancelPendingTeleport(event.getPlayer().getUniqueId()); removeAllRequestsFor(event.getPlayer().getUniqueId()); }
-    @EventHandler public void onQuit(PlayerQuitEvent event) { if (plugin.getConfig().getBoolean("tpa.cancel-on-disconnect", true)) { cancelPendingTeleport(event.getPlayer().getUniqueId()); removeAllRequestsFor(event.getPlayer().getUniqueId()); } }
+    @EventHandler public void onDeath(PlayerDeathEvent event) { removeAllRequestsFor(event.getPlayer().getUniqueId()); }
+    @EventHandler public void onQuit(PlayerQuitEvent event) { removeAllRequestsFor(event.getPlayer().getUniqueId()); }
     private void removeAllRequestsFor(UUID playerId) { incoming.remove(playerId); for (LinkedHashMap<UUID, TpaRequest> requests : incoming.values()) synchronized (requests) { requests.remove(playerId); } }
 }
