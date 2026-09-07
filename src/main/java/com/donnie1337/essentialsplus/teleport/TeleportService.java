@@ -83,32 +83,45 @@ public final class TeleportService implements Listener {
         }
 
         final int max = Math.max(1, plugin.getConfig().getInt("tpa.max-pending-requests", 5));
-        final LinkedHashMap<UUID, TpaRequest> requests = incoming.computeIfAbsent(recipient.getUniqueId(), ignored -> new LinkedHashMap<>());
+        final UUID recipientId = recipient.getUniqueId();
+        final LinkedHashMap<UUID, TpaRequest> requests = incoming.computeIfAbsent(recipientId, ignored -> new LinkedHashMap<>());
         synchronized (requests) {
             removeExpired(requests, now);
-            requests.remove(requester.getUniqueId());
-            while (requests.size() >= max) {
-                final UUID oldest = requests.keySet().iterator().next();
-                requests.remove(oldest);
-            }
             if (requests.size() >= max) {
+                if (requests.isEmpty()) {
+                    incoming.remove(recipientId, requests);
+                }
                 message(requester, "too-many-requests");
                 return false;
             }
 
-            final Location destination = (here ? requester.getLocation() : recipient.getLocation()).clone();
             requests.put(requester.getUniqueId(), new TpaRequest(
-                    requester.getUniqueId(), requester.getName(), recipient.getUniqueId(), recipient.getName(), here, destination, now));
+                    requester.getUniqueId(),
+                    requester.getName(),
+                    recipientId,
+                    recipient.getName(),
+                    here,
+                    now
+            ));
         }
 
         message(requester, "request-sent", "player", recipient.getName());
         sendCancelButton(requester, recipient.getName());
-        sendRequestMessage(recipient, requester.getName(), here);
+        sendRequestMessage(recipient, requester.getName(), requester.getUniqueId(), here);
         return true;
     }
 
     public boolean accept(Player recipient, String requesterName) {
         final TpaRequest request = findRequest(recipient.getUniqueId(), requesterName);
+        if (request == null) {
+            message(recipient, "no-request");
+            return false;
+        }
+        return accept(recipient, request.requesterId());
+    }
+
+    private boolean accept(Player recipient, UUID requesterId) {
+        final TpaRequest request = findRequest(recipient.getUniqueId(), requesterId);
         if (request == null) {
             message(recipient, "no-request");
             return false;
@@ -121,8 +134,16 @@ public final class TeleportService implements Listener {
             return false;
         }
 
-        final Player teleported = request.here() ? recipient : requester;
-        final Location destination = request.destination().clone();
+        final Player teleported;
+        final Location destination;
+        if (request.here()) {
+            teleported = recipient;
+            destination = requester.getLocation().clone();
+        } else {
+            teleported = requester;
+            destination = recipient.getLocation().clone();
+        }
+
         scheduleTeleport(teleported, destination);
         message(recipient, "request-accepted", "player", request.requesterName());
         message(requester, "request-accepted-sender", "player", recipient.getName());
@@ -131,6 +152,15 @@ public final class TeleportService implements Listener {
 
     public boolean deny(Player recipient, String requesterName) {
         final TpaRequest request = findRequest(recipient.getUniqueId(), requesterName);
+        if (request == null) {
+            message(recipient, "no-request");
+            return false;
+        }
+        return deny(recipient, request.requesterId());
+    }
+
+    private boolean deny(Player recipient, UUID requesterId) {
+        final TpaRequest request = findRequest(recipient.getUniqueId(), requesterId);
         if (request == null) {
             message(recipient, "no-request");
             return false;
@@ -157,6 +187,7 @@ public final class TeleportService implements Listener {
                     if (recipient != null) {
                         message(recipient, "request-cancelled");
                     }
+                    if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
                     if (recipientName != null) {
                         break;
                     }
@@ -174,8 +205,32 @@ public final class TeleportService implements Listener {
         if (requests == null) return List.of();
         synchronized (requests) {
             removeExpired(requests, System.currentTimeMillis());
+            if (requests.isEmpty()) {
+                incoming.remove(recipient.getUniqueId(), requests);
+                return List.of();
+            }
             return Collections.unmodifiableList(requests.values().stream().map(TpaRequest::requesterName).toList());
         }
+    }
+
+    public List<String> pendingRecipientNames(Player requester) {
+        final List<String> names = new ArrayList<>();
+        final long now = System.currentTimeMillis();
+        for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
+            final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
+            synchronized (requests) {
+                final TpaRequest request = requests.get(requester.getUniqueId());
+                if (request == null) continue;
+                if (request.isExpired(now, timeoutMillis())) {
+                    requests.remove(requester.getUniqueId());
+                    if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
+                    continue;
+                }
+                names.add(request.recipientName());
+                break;
+            }
+        }
+        return Collections.unmodifiableList(names);
     }
 
     private boolean hasPendingOutgoingRequest(UUID requesterId, long now) {
@@ -209,6 +264,15 @@ public final class TeleportService implements Listener {
             }
         }
         return null;
+    }
+
+    private TpaRequest findRequest(UUID recipientId, UUID requesterId) {
+        final LinkedHashMap<UUID, TpaRequest> requests = incoming.get(recipientId);
+        if (requests == null) return null;
+        synchronized (requests) {
+            removeExpired(requests, System.currentTimeMillis());
+            return requests.get(requesterId);
+        }
     }
 
     private void removeRequest(TpaRequest request) {
@@ -296,16 +360,16 @@ public final class TeleportService implements Listener {
                 && a.getBlockZ() == b.getBlockZ();
     }
 
-    private void sendRequestMessage(Player recipient, String requesterName, boolean here) {
+    private void sendRequestMessage(Player recipient, String requesterName, UUID requesterId, boolean here) {
         final String key = here ? "request-here-received" : "request-received";
         message(recipient, key, "player", requesterName);
 
         final List<Component> buttons = new ArrayList<>();
         if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) {
-            buttons.add(button("buttons.accept.text", "buttons.accept.hover", recipient.getUniqueId(), requesterName, true));
+            buttons.add(button("buttons.accept.text", "buttons.accept.hover", recipient.getUniqueId(), requesterId, true));
         }
         if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) {
-            buttons.add(button("buttons.deny.text", "buttons.deny.hover", recipient.getUniqueId(), requesterName, false));
+            buttons.add(button("buttons.deny.text", "buttons.deny.hover", recipient.getUniqueId(), requesterId, false));
         }
         if (buttons.isEmpty()) return;
 
@@ -325,7 +389,7 @@ public final class TeleportService implements Listener {
         requester.sendMessage(cancel);
     }
 
-    private Component button(String textPath, String hoverPath, UUID recipientId, String requesterName, boolean accept) {
+    private Component button(String textPath, String hoverPath, UUID recipientId, UUID requesterId, boolean accept) {
         final String text = plugin.getConfig().getString(textPath, "");
         final String hover = plugin.getConfig().getString(hoverPath, "");
         final long lifetimeSeconds = Math.max(1, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20));
@@ -334,9 +398,9 @@ public final class TeleportService implements Listener {
                 return;
             }
             if (accept) {
-                accept(player, requesterName);
+                accept(player, requesterId);
             } else {
-                deny(player, requesterName);
+                deny(player, requesterId);
             }
         };
         final ClickCallback.Options options = ClickCallback.Options.builder()
