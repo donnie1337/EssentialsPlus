@@ -1,7 +1,5 @@
 package com.donnie1337.essentialsplus.chat;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -16,13 +14,12 @@ import java.lang.reflect.Method;
  */
 public final class ChatPlusBridge {
     private static final String PLUGIN_NAME = "ChatPlus";
-    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 
     private volatile Plugin chatPlus;
     private volatile Method sendSystemMessage;
     private volatile boolean lookupComplete;
 
-    public boolean sendSystemMessage(Player player, Component message) {
+    public boolean sendSystemMessage(Player player, String message) {
         if (player == null || !player.isOnline() || message == null) return false;
 
         final Plugin plugin = resolvePlugin();
@@ -30,7 +27,7 @@ public final class ChatPlusBridge {
         if (plugin == null || method == null) return false;
 
         try {
-            method.invoke(plugin, player, LEGACY.serialize(message));
+            method.invoke(plugin, player, message);
             return true;
         } catch (IllegalAccessException | InvocationTargetException | LinkageError ignored) {
             return false;
