@@ -1,7 +1,6 @@
 package com.donnie1337.essentialsplus.teleport.command;
 
 import com.donnie1337.essentialsplus.teleport.TeleportService;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -25,7 +24,9 @@ public final class TpaCancelCommand implements CommandExecutor, TabCompleter {
     @Override public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (!(sender instanceof Player player) || args.length != 1) return List.of();
         final String prefix = args[0].toLowerCase();
-        return Bukkit.getOnlinePlayers().stream().map(Player::getName)
-                .filter(n -> !n.equalsIgnoreCase(player.getName()) && n.toLowerCase().startsWith(prefix)).sorted().toList();
+        return service.pendingRecipientNames(player).stream()
+                .filter(n -> n.toLowerCase().startsWith(prefix))
+                .sorted()
+                .toList();
     }
 }
