@@ -16,9 +16,11 @@ import java.util.ArrayList;
 import java.util.Map;
 
 public final class HomeGui implements Listener {
-    private static final int SIZE = 27;
+    private static final int INTRO_SIZE = 27;
+    private static final int HOMES_SIZE = 54;
     private static final int INTRO_SLOT = 13;
-    private static final int BACK_SLOT = 22;
+    private static final int FIRST_HOME_SLOT = 11;
+    private static final int BACK_SLOT = 49;
 
     private final HomeService service;
 
@@ -27,7 +29,7 @@ public final class HomeGui implements Listener {
     }
 
     public void openIntro(Player player) {
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO), SIZE, "Suas homes");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO), INTRO_SIZE, "Suas homes");
 
         ItemStack item = new ItemStack(Material.DIRT);
         ItemMeta meta = item.getItemMeta();
@@ -45,10 +47,10 @@ public final class HomeGui implements Listener {
     }
 
     public void openHomes(Player player) {
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES), SIZE, "Suas homes");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES), HOMES_SIZE, "Suas homes");
         Map<String, Home> homes = service.homes(player);
 
-        int slot = 0;
+        int slot = FIRST_HOME_SLOT;
         for (Home home : homes.values()) {
             if (slot >= BACK_SLOT) break;
 
@@ -71,7 +73,7 @@ public final class HomeGui implements Listener {
             meta.setDisplayName("§cNenhuma home encontrada");
             meta.setLore(java.util.List.of("§7Use §f/sethome <nome> §7para criar uma."));
             item.setItemMeta(meta);
-            inventory.setItem(13, item);
+            inventory.setItem(FIRST_HOME_SLOT, item);
         }
 
         ItemStack back = new ItemStack(Material.ARROW);
