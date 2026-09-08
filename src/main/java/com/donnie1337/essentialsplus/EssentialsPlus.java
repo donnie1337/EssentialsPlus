@@ -34,7 +34,7 @@ public final class EssentialsPlus extends JavaPlugin {
         getServer().getPluginManager().registerEvents(homeGui, this);
 
         register("tpa", new TpaCommand(teleportService));
-        register("tpahere", new TpaHereCommand(teleportService));
+        register("tpaqui", new TpaHereCommand(teleportService));
         register("tpaccept", new TpaAcceptCommand(teleportService));
         register("tpdeny", new TpaDenyCommand(teleportService));
         register("tpacancel", new TpaCancelCommand(teleportService));
