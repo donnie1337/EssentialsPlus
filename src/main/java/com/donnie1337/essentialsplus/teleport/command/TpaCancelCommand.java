@@ -10,14 +10,14 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class TpaCancelCommand implements CommandExecutor, TabCompleter {
-    private static final String PERMISSION = "essentialsplus.tpacancel";
+    private static final String PERMISSION = "essentialsplus.tpacancelar";
     private final TeleportService service;
     public TpaCancelCommand(TeleportService service) { this.service = service; }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Este comando só pode ser usado por jogadores."); return true; }
         if (!player.hasPermission(PERMISSION)) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
-        if (args.length > 1) { player.sendMessage("§cUso: /tpacancel [jogador]"); return true; }
+        if (args.length > 1) { player.sendMessage("§cUso: /tpacancelar [jogador]"); return true; }
         service.cancel(player, args.length == 1 ? args[0] : null);
         return true;
     }
