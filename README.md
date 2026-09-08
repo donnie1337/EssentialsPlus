@@ -6,10 +6,10 @@ Essentials customizado para **Paper 26.2**, desenvolvido do zero com foco em uti
 
 ### 🧭 Sistema de TPA
 - `/tpa <jogador>` solicita teleporte até outro jogador.
-- `/tpahere <jogador>` solicita que outro jogador se teleporte até você.
-- `/tpaccept [jogador]` aceita uma solicitação.
-- `/tpdeny [jogador]` recusa uma solicitação.
-- `/tpacancel [jogador]` cancela uma solicitação enviada.
+- `/tpapara <jogador>` solicita que outro jogador se teleporte até você.
+- `/tpaceitar [jogador]` aceita uma solicitação.
+- `/tpnegar [jogador]` recusa uma solicitação.
+- `/tpacancelar [jogador]` cancela uma solicitação enviada.
 - Solicitações pendentes por jogador.
 - Limite de solicitações simultâneas.
 - Expiração automática das solicitações.
@@ -45,10 +45,10 @@ A interface `/homes` permite:
 | Comando | Função |
 |---|---|
 | `/tpa <jogador>` | Solicita teleporte até um jogador. |
-| `/tpahere <jogador>` | Solicita que um jogador venha até você. |
-| `/tpaccept [jogador]` | Aceita uma solicitação. |
-| `/tpdeny [jogador]` | Recusa uma solicitação. |
-| `/tpacancel [jogador]` | Cancela uma solicitação enviada. |
+| `/tpapara <jogador>` | Solicita que um jogador venha até você. |
+| `/tpaceitar [jogador]` | Aceita uma solicitação. |
+| `/tpnegar [jogador]` | Recusa uma solicitação. |
+| `/tpacancelar [jogador]` | Cancela uma solicitação enviada. |
 | `/home <nome>` | Teleporta para uma home. |
 | `/homes` | Abre o menu de gerenciamento das homes. |
 | `/sethome <nome>` | Cria ou atualiza uma home. |
@@ -59,7 +59,7 @@ A interface `/homes` permite:
 | Permissão | Função | Padrão |
 |---|---|---|
 | `essentialsplus.tpa` | Usar `/tpa` | `true` |
-| `essentialsplus.tpahere` | Usar `/tpahere` | `true` |
+| `essentialsplus.tpahere` | Usar `/tpapara` | `true` |
 | `essentialsplus.tpaccept` | Aceitar TPA | `true` |
 | `essentialsplus.tpdeny` | Recusar TPA | `true` |
 | `essentialsplus.tpacancel` | Cancelar TPA | `true` |
