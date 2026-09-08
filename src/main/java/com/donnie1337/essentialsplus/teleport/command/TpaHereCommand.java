@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class TpaHereCommand implements CommandExecutor, TabCompleter {
-    private static final String PERMISSION = "essentialsplus.tpahere";
+    private static final String PERMISSION = "essentialsplus.tpaqui";
     private final TeleportService service;
     private final AuthSystemBridge auth = new AuthSystemBridge();
     public TpaHereCommand(TeleportService service) { this.service = service; }
