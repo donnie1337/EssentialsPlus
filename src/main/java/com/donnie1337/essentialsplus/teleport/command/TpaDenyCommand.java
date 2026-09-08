@@ -10,14 +10,14 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class TpaDenyCommand implements CommandExecutor, TabCompleter {
-    private static final String PERMISSION = "essentialsplus.tpdeny";
+    private static final String PERMISSION = "essentialsplus.tpnegar";
     private final TeleportService service;
     public TpaDenyCommand(TeleportService service) { this.service = service; }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Este comando só pode ser usado por jogadores."); return true; }
         if (!player.hasPermission(PERMISSION)) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
-        if (args.length > 1) { player.sendMessage("§cUso: /tpdeny [jogador]"); return true; }
+        if (args.length > 1) { player.sendMessage("§cUso: /tpnegar [jogador]"); return true; }
         service.deny(player, args.length == 1 ? args[0] : null);
         return true;
     }
