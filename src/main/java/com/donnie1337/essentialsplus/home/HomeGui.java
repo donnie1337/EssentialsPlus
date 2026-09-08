@@ -56,14 +56,14 @@ public final class HomeGui implements Listener {
     }
 
     public void openHomes(Player player) {
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "Homes -> Suas Homes");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "Homes → Suas Homes");
         Map<String, Home> homes = service.homes(player);
 
         int slot = FIRST_HOME_SLOT;
         for (Home home : homes.values()) {
             if (slot >= BACK_SLOT) break;
 
-            ItemStack item = new ItemStack(Material.GRASS_BLOCK);
+            ItemStack item = new ItemStack(Material.DIRT_PATH);
             ItemMeta meta = item.getItemMeta();
             meta.setDisplayName("§a" + home.name());
             meta.setLore(List.of(
@@ -144,7 +144,7 @@ public final class HomeGui implements Listener {
             }
 
             ItemStack clicked = event.getCurrentItem();
-            if (clicked == null || clicked.getType() != Material.GRASS_BLOCK || clicked.getItemMeta() == null) return;
+            if (clicked == null || clicked.getType() != Material.DIRT_PATH || clicked.getItemMeta() == null) return;
 
             String name = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
             try {
