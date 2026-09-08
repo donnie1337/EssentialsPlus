@@ -38,7 +38,7 @@ public final class HomeGui implements Listener {
     }
 
     public void openIntro(Player player) {
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO, null), INTRO_SIZE, "Suas homes");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO, null), INTRO_SIZE, "Homes");
 
         ItemStack item = new ItemStack(Material.DIRT);
         ItemMeta meta = item.getItemMeta();
@@ -56,7 +56,7 @@ public final class HomeGui implements Listener {
     }
 
     public void openHomes(Player player) {
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "Suas homes");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "Homes -> Suas Homes");
         Map<String, Home> homes = service.homes(player);
 
         int slot = FIRST_HOME_SLOT;
