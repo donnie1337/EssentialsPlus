@@ -2,6 +2,11 @@ package com.donnie1337.essentialsplus;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
+import com.donnie1337.essentialsplus.home.HomeService;
+import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
+import com.donnie1337.essentialsplus.home.command.HomeCommand;
+import com.donnie1337.essentialsplus.home.command.HomesCommand;
+import com.donnie1337.essentialsplus.home.command.SetHomeCommand;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
@@ -14,6 +19,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class EssentialsPlus extends JavaPlugin {
 
     private TeleportService teleportService;
+    private HomeService homeService;
 
     @Override
     public void onEnable() {
@@ -22,13 +28,27 @@ public final class EssentialsPlus extends JavaPlugin {
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
 
+        homeService = new HomeService(this);
+
         register("tpa", new TpaCommand(teleportService));
         register("tpahere", new TpaHereCommand(teleportService));
         register("tpaccept", new TpaAcceptCommand(teleportService));
         register("tpdeny", new TpaDenyCommand(teleportService));
         register("tpacancel", new TpaCancelCommand(teleportService));
 
-        getLogger().info("EssentialsPlus habilitado com o sistema TPA.");
+        register("home", new HomeCommand(homeService));
+        register("homes", new HomesCommand(homeService));
+        register("sethome", new SetHomeCommand(homeService));
+        register("delhome", new DelHomeCommand(homeService));
+
+        getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
+            @org.bukkit.event.EventHandler
+            public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
+                homeService.unload(event.getPlayer());
+            }
+        }, this);
+
+        getLogger().info("EssentialsPlus habilitado com TPA e sistema de Homes.");
     }
 
     @Override
