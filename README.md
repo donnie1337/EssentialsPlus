@@ -1,30 +1,94 @@
 # EssentialsPlus
 
-Essentials customizado para Paper, desenvolvido do zero com foco em segurança, modularidade e integração com o ecossistema do servidor.
+Essentials customizado para **Paper 26.2**, desenvolvido do zero com foco em utilidades de teleporte, homes, integração e uma experiência simples para o jogador.
 
-## Plataforma
+## ✨ Funcionalidades
+
+### 🧭 Sistema de TPA
+- `/tpa <jogador>` solicita teleporte até outro jogador.
+- `/tpahere <jogador>` solicita que outro jogador se teleporte até você.
+- `/tpaccept [jogador]` aceita uma solicitação.
+- `/tpdeny [jogador]` recusa uma solicitação.
+- `/tpacancel [jogador]` cancela uma solicitação enviada.
+- Solicitações pendentes por jogador.
+- Limite de solicitações simultâneas.
+- Expiração automática das solicitações.
+- Mensagens configuráveis.
+- Botões clicáveis de aceitar e recusar no chat.
+
+### 🏠 Sistema de Homes
+- `/sethome <nome>` salva uma home na localização atual.
+- `/home <nome>` teleporta para uma home salva.
+- `/homes` abre a interface gráfica de gerenciamento das homes.
+- `/delhome <nome>` remove uma home.
+- Limite de homes configurável por jogador.
+- Nomes de homes normalizados e validados.
+- Homes persistidas em `homes.yml`.
+
+### 🖥️ Interface gráfica das Homes
+A interface `/homes` permite:
+
+- Visualizar as homes salvas.
+- **Clique esquerdo:** teleportar.
+- **Clique direito:** abrir o gerenciamento da home.
+- **Shift + clique direito:** deletar imediatamente, sem confirmação.
+- Alterar o nome da home através do menu de gerenciamento.
+- Retornar entre as interfaces usando o botão de voltar.
+- Interface protegida contra retirada e movimentação dos itens.
+
+### 🔗 Integração
+- Integração com **LoginPlus** para respeitar o estado de autenticação.
+- Integração com **ChatPlus** para trabalhar dentro do ecossistema de chat do servidor.
+
+## 🎮 Comandos
+
+| Comando | Função |
+|---|---|
+| `/tpa <jogador>` | Solicita teleporte até um jogador. |
+| `/tpahere <jogador>` | Solicita que um jogador venha até você. |
+| `/tpaccept [jogador]` | Aceita uma solicitação. |
+| `/tpdeny [jogador]` | Recusa uma solicitação. |
+| `/tpacancel [jogador]` | Cancela uma solicitação enviada. |
+| `/home <nome>` | Teleporta para uma home. |
+| `/homes` | Abre o menu de gerenciamento das homes. |
+| `/sethome <nome>` | Cria ou atualiza uma home. |
+| `/delhome <nome>` | Remove uma home. |
+
+## 🔑 Permissões
+
+| Permissão | Função | Padrão |
+|---|---|---|
+| `essentialsplus.tpa` | Usar `/tpa` | `true` |
+| `essentialsplus.tpahere` | Usar `/tpahere` | `true` |
+| `essentialsplus.tpaccept` | Aceitar TPA | `true` |
+| `essentialsplus.tpdeny` | Recusar TPA | `true` |
+| `essentialsplus.tpacancel` | Cancelar TPA | `true` |
+| `essentialsplus.home` | Usar `/home` | `true` |
+| `essentialsplus.homes` | Usar `/homes` | `true` |
+| `essentialsplus.sethome` | Usar `/sethome` | `true` |
+| `essentialsplus.delhome` | Usar `/delhome` | `true` |
+
+## ⚙️ Configuração
+
+O sistema de TPA e homes possui configurações no `config.yml`, incluindo limite de solicitações, tempo de expiração e quantidade padrão de homes.
+
+## 🔗 Dependências
+
+- LoginPlus
+- ChatPlus
+
+## 🏗️ Plataforma
 
 - Java 26
 - Paper 26.2
 - Maven
 
-## TPA
+## 🧪 Build
 
-O primeiro módulo implementado reproduz o fluxo conhecido do EssentialsX, mas com implementação própria:
+```bash
+mvn -B clean package
+```
 
-- `/tpa <jogador>`
-- `/tpahere <jogador>`
-- `/tpaccept [jogador]`
-- `/tpdeny [jogador]`
-- `/tpacancel [jogador]`
-- solicitações pendentes por jogador
-- limite de solicitações simultâneas
-- expiração automática
-- cooldown
-- atraso configurável antes do teleporte
-- cancelamento por movimento, dano, morte e desconexão
-- botões clicáveis de ACEITAR e RECUSAR no chat
-- mensagens em português e configuráveis
-- permissões independentes para integração com CargoPlus
+O projeto possui workflow de build no GitHub Actions.
 
-O projeto não copia a implementação do EssentialsX; a referência é comportamental e arquitetural. O código é próprio do EssentialsPlus.
+> **Nota:** recursos de atraso de teleporte, cancelamento por movimento e cancelamento por dano não fazem parte do fluxo atualmente implementado.
