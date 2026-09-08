@@ -6,6 +6,7 @@ author: donnie1337
 description: Essentials customizado para Paper 26.2.
 website: https://github.com/donnie1337/EssentialsPlus
 softdepend:
+  - LoginPlus
   - ChatPlus
 commands:
   tpa:
