@@ -12,11 +12,9 @@ commands:
   tpa:
     description: Solicita teleporte até outro jogador.
     usage: /tpa <jogador>
-  tpahere:
+  tpaqui:
     description: Solicita que outro jogador se teleporte até você.
     usage: /tpaqui <jogador>
-    aliases:
-      - tpaqui
   tpaccept:
     description: Aceita uma solicitação de teleporte.
     usage: /tpaceitar [jogador]
