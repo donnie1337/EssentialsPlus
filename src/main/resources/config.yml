@@ -8,6 +8,13 @@ tpa:
   cancel-on-death: true
   cancel-on-disconnect: true
 
+homes:
+  enabled: true
+  # A estrutura de limites ja fica preparada para a futura integracao por cargo.
+  # -1 significa ilimitado.
+  limits:
+    default: 1
+
 messages:
   prefix: "&8[&6EssentialsPlus&8] &r"
   player-not-found: "&cJogador não encontrado."
@@ -32,6 +39,15 @@ messages:
   target-offline: "&cO jogador não está mais online."
   teleport-failed: "&cNão foi possível realizar o teleporte."
   too-many-requests: "&cEste jogador já possui muitas solicitações pendentes."
+  home-saved: "&aHome &f{home} &asalva com sucesso."
+  home-teleported: "&aTeleportado para a home &f{home}&a."
+  home-deleted: "&aHome &f{home} &aremovida com sucesso."
+  home-not-found: "&cHome &f{home} &cnão encontrada."
+  homes-empty: "&eVocê ainda não possui nenhuma home."
+  homes-list: "&6&lSuas homes: &f{homes}"
+  homes-disabled: "&cO sistema de Homes está desativado."
+  home-limit: "&cVocê atingiu o limite de &f{limit} &chome(s)."
+  invalid-home-name: "&cNome de home inválido. Use apenas letras, números, _ ou - (até 32 caracteres)."
 
 buttons:
   spacing: "  "
