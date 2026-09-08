@@ -15,7 +15,6 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -213,11 +212,11 @@ public final class HomeGui implements Listener {
         String newName = event.getMessage().trim();
         Player player = event.getPlayer();
         if (newName.equalsIgnoreCase("cancelar")) {
-            Bukkit.getScheduler().runTask(servicePlugin(), () -> openManage(player, oldName));
+            Bukkit.getScheduler().runTask(service.plugin(), () -> openManage(player, oldName));
             return;
         }
 
-        Bukkit.getScheduler().runTask(servicePlugin(), () -> {
+        Bukkit.getScheduler().runTask(service.plugin(), () -> {
             try {
                 if (service.renameHome(player, oldName, newName)) {
                     player.sendMessage("§aHome renomeada de §f" + oldName + " §apara §f" + newName + "§a.");
@@ -237,10 +236,6 @@ public final class HomeGui implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         pendingRenames.remove(event.getPlayer().getUniqueId());
         service.unload(event.getPlayer());
-    }
-
-    private org.bukkit.plugin.java.JavaPlugin servicePlugin() {
-        return (org.bukkit.plugin.java.JavaPlugin) Bukkit.getPluginManager().getPlugin("EssentialsPlus");
     }
 
     private record HomesHolder(Type type, String homeName) implements InventoryHolder {
