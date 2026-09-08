@@ -46,17 +46,17 @@ permissions:
   essentialsplus.tpa:
     description: Permite usar /tpa.
     default: true
-  essentialsplus.tpahere:
+  essentialsplus.tpaqui:
     description: Permite usar /tpaqui.
     default: true
-  essentialsplus.tpaccept:
-    description: Permite aceitar solicitações de teleporte.
+  essentialsplus.tpaceitar:
+    description: Permite usar /tpaceitar.
     default: true
-  essentialsplus.tpdeny:
-    description: Permite recusar solicitações de teleporte.
+  essentialsplus.tpnegar:
+    description: Permite usar /tpnegar.
     default: true
-  essentialsplus.tpacancel:
-    description: Permite cancelar solicitações de teleporte enviadas.
+  essentialsplus.tpacancelar:
+    description: Permite usar /tpacancelar.
     default: true
   essentialsplus.home:
     description: Permite usar /home.
