@@ -14,6 +14,7 @@ public final class DelHomeCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Este comando so pode ser usado por jogadores."); return true; }
         if (!player.hasPermission("essentialsplus.delhome")) { player.sendMessage("§cVoce nao tem permissao para isso."); return true; }
+        if (!service.enabled()) { player.sendMessage("§cO sistema de Homes esta desativado."); return true; }
         if (args.length != 1) { player.sendMessage("§cUso: /delhome <nome>"); return true; }
         try {
             if (!service.deleteHome(player, args[0])) { player.sendMessage("§cHome §f" + args[0] + " §cnao encontrada."); return true; }
