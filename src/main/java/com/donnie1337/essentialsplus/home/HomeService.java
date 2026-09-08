@@ -76,6 +76,10 @@ public final class HomeService {
         return true;
     }
 
+    public JavaPlugin plugin() {
+        return plugin;
+    }
+
     public void unload(Player player) {
         cache.remove(player.getUniqueId());
     }
