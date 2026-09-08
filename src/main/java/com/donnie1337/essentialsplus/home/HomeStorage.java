@@ -68,6 +68,11 @@ public final class HomeStorage {
         save();
     }
 
+    public void renameHome(UUID playerId, String oldName, Home renamed) {
+        saveHome(playerId, renamed);
+        deleteHome(playerId, oldName);
+    }
+
     private void save() {
         try {
             data.save(file);
