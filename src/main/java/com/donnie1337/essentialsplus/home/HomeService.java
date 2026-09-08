@@ -60,6 +60,22 @@ public final class HomeService {
         return true;
     }
 
+    public boolean renameHome(Player player, String oldName, String newName) {
+        String oldNormalized = normalize(oldName);
+        String newNormalized = normalize(newName);
+        Map<String, Home> current = homes(player);
+        Home home = current.get(oldNormalized);
+        if (home == null || current.containsKey(newNormalized)) return false;
+
+        Map<String, Home> updated = new LinkedHashMap<>(current);
+        updated.remove(oldNormalized);
+        Home renamed = new Home(newNormalized, home.location());
+        updated.put(newNormalized, renamed);
+        cache.put(player.getUniqueId(), updated);
+        storage.renameHome(player.getUniqueId(), oldNormalized, renamed);
+        return true;
+    }
+
     public void unload(Player player) {
         cache.remove(player.getUniqueId());
     }
