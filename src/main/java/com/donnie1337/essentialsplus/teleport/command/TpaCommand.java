@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.teleport.command;
 
+import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -12,6 +13,7 @@ import java.util.List;
 
 public final class TpaCommand implements CommandExecutor, TabCompleter {
     private final TeleportService service;
+    private final AuthSystemBridge auth = new AuthSystemBridge();
     public TpaCommand(TeleportService service) { this.service = service; }
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -20,6 +22,7 @@ public final class TpaCommand implements CommandExecutor, TabCompleter {
         if (!player.hasPermission("essentialsplus.tpa")) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
         final Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) { player.sendMessage("§cJogador não encontrado."); return true; }
+        if (!auth.isAuthenticated(target)) { player.sendMessage("§cEsse jogador ainda não está autenticado."); return true; }
         service.request(player, target, false);
         return true;
     }
