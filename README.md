@@ -6,7 +6,7 @@ Essentials customizado para **Paper 26.2**, desenvolvido do zero com foco em uti
 
 ### 🧭 Sistema de TPA
 - `/tpa <jogador>` solicita teleporte até outro jogador.
-- `/tpapara <jogador>` solicita que outro jogador se teleporte até você.
+- `/tpaqui <jogador>` solicita que outro jogador se teleporte até você.
 - `/tpaceitar [jogador]` aceita uma solicitação.
 - `/tpnegar [jogador]` recusa uma solicitação.
 - `/tpacancelar [jogador]` cancela uma solicitação enviada.
@@ -45,7 +45,7 @@ A interface `/homes` permite:
 | Comando | Função |
 |---|---|
 | `/tpa <jogador>` | Solicita teleporte até um jogador. |
-| `/tpapara <jogador>` | Solicita que um jogador venha até você. |
+| `/tpaqui <jogador>` | Solicita que um jogador venha até você. |
 | `/tpaceitar [jogador]` | Aceita uma solicitação. |
 | `/tpnegar [jogador]` | Recusa uma solicitação. |
 | `/tpacancelar [jogador]` | Cancela uma solicitação enviada. |
@@ -59,10 +59,10 @@ A interface `/homes` permite:
 | Permissão | Função | Padrão |
 |---|---|---|
 | `essentialsplus.tpa` | Usar `/tpa` | `true` |
-| `essentialsplus.tpahere` | Usar `/tpapara` | `true` |
-| `essentialsplus.tpaccept` | Aceitar TPA | `true` |
-| `essentialsplus.tpdeny` | Recusar TPA | `true` |
-| `essentialsplus.tpacancel` | Cancelar TPA | `true` |
+| `essentialsplus.tpaqui` | Usar `/tpaqui` | `true` |
+| `essentialsplus.tpaceitar` | Usar `/tpaceitar` | `true` |
+| `essentialsplus.tpnegar` | Usar `/tpnegar` | `true` |
+| `essentialsplus.tpacancelar` | Usar `/tpacancelar` | `true` |
 | `essentialsplus.home` | Usar `/home` | `true` |
 | `essentialsplus.homes` | Usar `/homes` | `true` |
 | `essentialsplus.sethome` | Usar `/sethome` | `true` |
