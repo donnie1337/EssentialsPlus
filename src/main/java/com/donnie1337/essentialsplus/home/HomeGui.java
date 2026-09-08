@@ -159,7 +159,7 @@ public final class HomeGui implements Listener {
                     if (service.deleteHome(player, name)) {
                         player.sendMessage("§aHome §f" + name + " §adeletada com sucesso.");
                     }
-                    openHomes(player);
+                    player.closeInventory();
                     return;
                 }
 
