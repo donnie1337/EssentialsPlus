@@ -44,13 +44,6 @@ public final class EssentialsPlus extends JavaPlugin {
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
 
-        getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
-            @org.bukkit.event.EventHandler
-            public void onQuit(org.bukkit.event.player.PlayerQuitEvent event) {
-                homeService.unload(event.getPlayer());
-            }
-        }, this);
-
         getLogger().info("EssentialsPlus habilitado com TPA e sistema de Homes.");
     }
 
