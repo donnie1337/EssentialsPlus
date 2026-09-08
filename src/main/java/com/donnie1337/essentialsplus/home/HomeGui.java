@@ -18,6 +18,7 @@ import java.util.Map;
 public final class HomeGui implements Listener {
     private static final int SIZE = 27;
     private static final int INTRO_SLOT = 13;
+    private static final int BACK_SLOT = 22;
 
     private final HomeService service;
 
@@ -49,7 +50,7 @@ public final class HomeGui implements Listener {
 
         int slot = 0;
         for (Home home : homes.values()) {
-            if (slot >= SIZE) break;
+            if (slot >= BACK_SLOT) break;
 
             ItemStack item = new ItemStack(Material.GRASS_BLOCK);
             ItemMeta meta = item.getItemMeta();
@@ -73,6 +74,13 @@ public final class HomeGui implements Listener {
             inventory.setItem(13, item);
         }
 
+        ItemStack back = new ItemStack(Material.ARROW);
+        ItemMeta backMeta = back.getItemMeta();
+        backMeta.setDisplayName("§eVoltar");
+        backMeta.setLore(java.util.List.of("§7Voltar para o menu de suas homes."));
+        back.setItemMeta(backMeta);
+        inventory.setItem(BACK_SLOT, back);
+
         player.openInventory(inventory);
     }
 
@@ -90,6 +98,12 @@ public final class HomeGui implements Listener {
         }
 
         if (holder.type() != HomesHolder.Type.HOMES) return;
+
+        if (event.getRawSlot() == BACK_SLOT) {
+            openIntro(player);
+            return;
+        }
+
         ItemStack clicked = event.getCurrentItem();
         if (clicked == null || clicked.getType() != Material.GRASS_BLOCK || clicked.getItemMeta() == null) return;
 
