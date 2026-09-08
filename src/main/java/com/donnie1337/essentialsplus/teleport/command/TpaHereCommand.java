@@ -19,7 +19,7 @@ public final class TpaHereCommand implements CommandExecutor, TabCompleter {
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Este comando só pode ser usado por jogadores."); return true; }
-        if (args.length != 1) { player.sendMessage("§cUso: /tpahere <jogador>"); return true; }
+        if (args.length != 1) { player.sendMessage("§cUso: /tpaqui <jogador>"); return true; }
         if (!player.hasPermission(PERMISSION)) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
         final Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) { player.sendMessage("§cJogador não encontrado."); return true; }
