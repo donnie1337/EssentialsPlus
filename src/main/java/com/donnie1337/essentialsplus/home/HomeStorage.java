@@ -69,8 +69,17 @@ public final class HomeStorage {
     }
 
     public void renameHome(UUID playerId, String oldName, Home renamed) {
-        saveHome(playerId, renamed);
-        deleteHome(playerId, oldName);
+        String oldPath = "players." + playerId + "." + oldName;
+        String newPath = "players." + playerId + "." + renamed.name();
+        Location location = renamed.location();
+        data.set(newPath + ".world", location.getWorld().getName());
+        data.set(newPath + ".x", location.getX());
+        data.set(newPath + ".y", location.getY());
+        data.set(newPath + ".z", location.getZ());
+        data.set(newPath + ".yaw", location.getYaw());
+        data.set(newPath + ".pitch", location.getPitch());
+        data.set(oldPath, null);
+        save();
     }
 
     private void save() {
