@@ -17,6 +17,7 @@ public final class HomesCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Este comando so pode ser usado por jogadores."); return true; }
         if (!player.hasPermission("essentialsplus.homes")) { player.sendMessage("§cVoce nao tem permissao para isso."); return true; }
+        if (!service.enabled()) { player.sendMessage("§cO sistema de Homes esta desativado."); return true; }
         if (args.length != 0) { player.sendMessage("§cUso: /homes"); return true; }
         Map<String, Home> homes = service.homes(player);
         if (homes.isEmpty()) { player.sendMessage("§eVoce ainda nao possui nenhuma home."); return true; }
