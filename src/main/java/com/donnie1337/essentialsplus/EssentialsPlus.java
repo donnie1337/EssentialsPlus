@@ -2,6 +2,7 @@ package com.donnie1337.essentialsplus;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
+import com.donnie1337.essentialsplus.home.HomeGui;
 import com.donnie1337.essentialsplus.home.HomeService;
 import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
 import com.donnie1337.essentialsplus.home.command.HomeCommand;
@@ -29,6 +30,8 @@ public final class EssentialsPlus extends JavaPlugin {
         teleportService.start();
 
         homeService = new HomeService(this);
+        HomeGui homeGui = new HomeGui(homeService);
+        getServer().getPluginManager().registerEvents(homeGui, this);
 
         register("tpa", new TpaCommand(teleportService));
         register("tpahere", new TpaHereCommand(teleportService));
@@ -37,7 +40,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("tpacancel", new TpaCancelCommand(teleportService));
 
         register("home", new HomeCommand(homeService));
-        register("homes", new HomesCommand(homeService));
+        register("homes", new HomesCommand(homeService, homeGui));
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
 
