@@ -19,21 +19,23 @@ public final class AuthSystemBridge {
     private volatile boolean lookupComplete;
 
     public boolean isAuthenticated(Player player) {
-        if (player == null || !player.isOnline()) {
+        if (player == null || !player.isOnline()) return false;
+
+        final Plugin current = Bukkit.getPluginManager().getPlugin(PLUGIN_NAME);
+        if (current == null) {
+            // O EssentialsPlus continua independente quando o LoginPlus não está instalado.
+            clearCachedIntegration();
+            return true;
+        }
+        if (!current.isEnabled()) {
+            // LoginPlus instalado, mas desabilitado: nunca falhar-aberto.
+            clearCachedIntegration();
             return false;
         }
 
-        final Plugin plugin = resolvePlugin();
+        final Plugin plugin = resolvePlugin(current);
         final Method method = isAuthenticated;
-        if (plugin == null) {
-            // O EssentialsPlus continua independente quando o LoginPlus não está instalado.
-            return true;
-        }
-        if (method == null) {
-            // Se o LoginPlus está instalado, mas sua API de autenticação não está disponível,
-            // nunca permita que a integração falhe-aberta.
-            return false;
-        }
+        if (plugin == null || method == null) return false;
 
         try {
             final Object result = method.invoke(plugin, player);
@@ -44,18 +46,10 @@ public final class AuthSystemBridge {
         }
     }
 
-    private Plugin resolvePlugin() {
-        final Plugin current = Bukkit.getPluginManager().getPlugin(PLUGIN_NAME);
-        if (current == null || !current.isEnabled()) {
-            authSystem = null;
-            isAuthenticated = null;
-            lookupComplete = true;
-            return null;
-        }
-
-        if (!lookupComplete || authSystem != current) {
+    private Plugin resolvePlugin(Plugin current) {
+        if (!lookupComplete || authSystem != current || isAuthenticated == null) {
             synchronized (this) {
-                if (!lookupComplete || authSystem != current) {
+                if (!lookupComplete || authSystem != current || isAuthenticated == null) {
                     authSystem = current;
                     try {
                         isAuthenticated = current.getClass().getMethod("isAuthenticated", Player.class);
@@ -66,7 +60,12 @@ public final class AuthSystemBridge {
                 }
             }
         }
-
         return authSystem;
+    }
+
+    private synchronized void clearCachedIntegration() {
+        authSystem = null;
+        isAuthenticated = null;
+        lookupComplete = false;
     }
 }
