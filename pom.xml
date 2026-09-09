@@ -72,7 +72,7 @@
                         <phase>package</phase>
                         <goals>
                             <goal>run</goal>
-                        </executions>
+                        </goals>
                         <configuration>
                             <target>
                                 <delete file="${project.build.directory}/original-EssentialsPlus.jar" quiet="true"/>
