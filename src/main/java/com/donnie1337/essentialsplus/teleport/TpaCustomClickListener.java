@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
 
 public final class TpaCustomClickListener implements Listener {
     private static final String PERMISSION = "essentialsplus.tpa";
-    private static final Pattern TOKEN_PATTERN = Pattern.compile("(?:^|\\s)token\\s*:\\s*(\\d+)");
+    private static final Pattern TOKEN_PATTERN = Pattern.compile("(?:^|[\\s{])token\\s*:\\s*(\\d+)");
 
     private final Plugin plugin;
     private final TeleportService teleportService;
