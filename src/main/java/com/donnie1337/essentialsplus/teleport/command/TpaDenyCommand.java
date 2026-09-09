@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class TpaDenyCommand implements CommandExecutor, TabCompleter {
-    private static final String PERMISSION = "essentialsplus.tpnegar";
+    private static final String PERMISSION = "essentialsplus.tpa";
     private final TeleportService service;
     public TpaDenyCommand(TeleportService service) { this.service = service; }
 
