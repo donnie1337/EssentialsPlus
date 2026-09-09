@@ -24,7 +24,7 @@ public final class TpaCustomClickListener implements Listener {
         plugin.getLogger().info("Botões de TPA clicáveis registrados usando callback interno de chat.");
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         String message = event.getMessage();
         String prefix = "/" + TeleportService.TPA_BUTTON_COMMAND;
