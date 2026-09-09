@@ -33,8 +33,10 @@ commands:
     description: Cancela uma solicitação de teleporte enviada.
     usage: /tpcancelar [jogador]
     aliases:
-      - tpacancelar
+      - tpcancelar
     permission: essentialsplus.tpa
+  tpaaction:
+    description: Callback interno dos botões clicáveis de TPA.
   home:
     description: Teleporta para uma home salva.
     usage: /home <nome>
