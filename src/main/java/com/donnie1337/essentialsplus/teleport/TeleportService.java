@@ -2,8 +2,9 @@ package com.donnie1337.essentialsplus.teleport;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -20,8 +21,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -375,55 +376,36 @@ public final class TeleportService implements Listener {
                 here ? "messages.request-here-received" : "messages.request-received", "");
         raw = raw.replace("{player}", coloredPlayer(requester));
 
-        Component row = legacy(raw).append(Component.newline());
-        row = row.append(legacy("§fClique "));
+        List<BaseComponent> components = new ArrayList<>();
+        addLegacy(components, raw);
+        addLegacy(components, "§fClique ");
         if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) {
-            row = row.append(buttonComponent("buttons.accept.text", "tpaccept", requester.getName()));
+            components.add(buttonComponent("buttons.accept.text", "tpaccept", requester.getName()));
         }
-        row = row.append(legacy("§f para aceitar ou Clique "));
+        addLegacy(components, "§f para aceitar ou Clique ");
         if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) {
-            row = row.append(buttonComponent("buttons.deny.text", "tpdeny", requester.getName()));
+            components.add(buttonComponent("buttons.deny.text", "tpdeny", requester.getName()));
         }
-        row = row.append(legacy("§f!"));
-        recipient.sendMessage(row);
+        addLegacy(components, "§f!");
+        recipient.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
 
     private void sendCancelButton(Player requester, Player recipient) {
         if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
-        requester.sendMessage(buttonComponent("buttons.cancel.text", "tpacancel", recipient.getName()));
+        requester.spigot().sendMessage(buttonComponent("buttons.cancel.text", "tpacancel", recipient.getName()));
     }
 
-    /**
-     * Usa RUN_COMMAND em vez de CUSTOM_CLICK_ACTION. Isso mantém os botões compatíveis
-     * com clientes Paper/Minecraft sem depender do envio de pacotes customizados.
-     * Os comandos ainda passam pelas mesmas verificações de permissão/autenticação.
-     */
-    private Component buttonComponent(String textPath, String command, String targetName) {
+    private BaseComponent buttonComponent(String textPath, String command, String targetName) {
         final String text = color(plugin.getConfig().getString(textPath, "AQUI"));
         final String safeTarget = targetName == null ? "" : targetName.replace("\n", "").replace("\r", "");
-        return legacy(text).clickEvent(ClickEvent.runCommand("/" + command + " " + safeTarget));
+        TextComponent component = new TextComponent(TextComponent.fromLegacyText(text));
+        component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + command + " " + safeTarget));
+        return component;
     }
 
-    private Component legacy(String text) {
-        String value = text == null ? "" : text;
-        Component result = Component.empty();
-        StringBuilder plain = new StringBuilder();
-        StringBuilder formatting = new StringBuilder();
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (c == '§' && i + 1 < value.length()) {
-                if (plain.length() > 0) {
-                    result = result.append(Component.text(plain.toString()));
-                    plain.setLength(0);
-                }
-                formatting.setLength(0);
-                formatting.append('§').append(value.charAt(++i));
-                continue;
-            }
-            plain.append(c);
-        }
-        if (plain.length() > 0) result = result.append(Component.text(plain.toString()));
-        return result;
+    private void addLegacy(List<BaseComponent> components, String text) {
+        if (text == null || text.isEmpty()) return;
+        Collections.addAll(components, TextComponent.fromLegacyText(text));
     }
 
     private void message(Player player, String path, String... replacements) {
@@ -471,9 +453,9 @@ public final class TeleportService implements Listener {
             }
         }
         try {
-            Object api = cargoApiMethod.invoke(current);
-            Object result = cargoNicknameColorMethod.invoke(api, player.getUniqueId());
-            return result instanceof String value && !value.isBlank() ? value : "§f";
+            Object api = cargoApiMethod.invoke(cargoPlugin);
+            Object value = cargoNicknameColorMethod.invoke(api, player.getUniqueId());
+            return value == null ? "§f" : value.toString();
         } catch (ReflectiveOperationException | LinkageError ex) {
             return "§f";
         }
@@ -485,19 +467,25 @@ public final class TeleportService implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        removeAllRequestsFor(event.getPlayer().getUniqueId());
+        clearPlayer(event.getEntity());
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        removeAllRequestsFor(event.getPlayer().getUniqueId());
+        clearPlayer(event.getPlayer());
     }
 
-    private void removeAllRequestsFor(UUID playerId) {
+    private void clearPlayer(Player player) {
+        final UUID playerId = player.getUniqueId();
         incoming.remove(playerId);
+        for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
+            final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
+            synchronized (requests) {
+                TpaRequest request = requests.remove(playerId);
+                if (request != null) removeButtonsForRequest(request);
+                if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
+            }
+        }
         buttonActions.remove(playerId);
     }
-
-    private enum ButtonActionType { ACCEPT, DENY, CANCEL }
-    private record ButtonAction(int token, ButtonActionType type, UUID targetId) { }
 }
