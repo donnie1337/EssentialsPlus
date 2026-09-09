@@ -260,7 +260,9 @@ public final class TeleportService implements Listener {
 
     private int nextButtonToken() {
         int token = buttonToken.updateAndGet(value -> value >= 2_000_000_000 ? 1000 : value + 1);
-        while (buttonActions.values().stream().anyMatch(action -> action.token() == token)) token = buttonToken.incrementAndGet();
+        while (buttonActions.values().stream().anyMatch(action -> action.token() == token)) {
+            token = buttonToken.incrementAndGet();
+        }
         return token;
     }
 
