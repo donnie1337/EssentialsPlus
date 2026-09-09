@@ -27,7 +27,7 @@ messages:
   request-received: "&c&lSERVIDOR &7• &r{player}&f está pedindo para se teleportar até você."
   request-here-received: "&c&lSERVIDOR &7• &r{player}&f está pedindo para se teleportar até você."
   request-accepted: "&c&lSERVIDOR &7• &fVocê aceitou o pedido de teleporte de &r{player}&f!"
-  request-accepted-sender: "&c&lSERVIDOR &7• &fVocê pediu para se teleportar até &r{player}&f!"
+  request-accepted-sender: "&c&lSERVIDOR &7• &r{player}&f aceitou seu pedido de teleporta. Levando você até lá..."
   request-denied: "&c&lSERVIDOR &7• &fVocê recusou o pedido de teleporte de &r{player}&f."
   request-denied-sender: "&c&lSERVIDOR &7• &r{player}&f recusou seu pedido de teleporte."
   request-expired: "&c&lSERVIDOR &7• &fO pedido de teleporte de &r{player}&f expirou."
