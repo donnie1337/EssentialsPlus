@@ -18,7 +18,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -30,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class TeleportService {
     public static final Key TPA_BUTTON_KEY = Key.key("essentialsplus:tpa_action");
+    public static final String TPA_BUTTON_COMMAND = "__essentialsplus_tpa";
 
     private final Plugin plugin;
     private final ChatPlusBridge chatPlusBridge;
@@ -217,28 +217,17 @@ public final class TeleportService {
 
     private BaseComponent[] buttonComponent(String label, int token, String hover) {
         BaseComponent[] components = TextComponent.fromLegacyText(label);
-        ClickEvent click = createCustomClick(token);
+        ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + TPA_BUTTON_COMMAND + " " + token);
         HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover)));
         for (BaseComponent component : components) {
-            if (click != null) component.setClickEvent(click);
+            component.setClickEvent(click);
             component.setHoverEvent(hoverEvent);
         }
         return components;
     }
 
-    private ClickEvent createCustomClick(int token) {
-        try {
-            Class<?> type = Class.forName("net.md_5.bungee.api.chat.ClickEventCustom");
-            Constructor<?> constructor = type.getConstructor(String.class, String.class);
-            Object value = constructor.newInstance(TPA_BUTTON_KEY.asString(), "{token:" + token + "}");
-            if (value instanceof ClickEvent click) return click;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            plugin.getLogger().warning("ClickEventCustom não está disponível neste runtime; botão de TPA ficará sem ação.");
-        }
-        return null;
-    }
-
     public boolean handleButton(Player player, int token) {
+        if (player == null || !player.hasPermission("essentialsplus.tpa")) return false;
         ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(player.getUniqueId());
         if (actions == null) return false;
         ButtonAction action = actions.remove(token);
