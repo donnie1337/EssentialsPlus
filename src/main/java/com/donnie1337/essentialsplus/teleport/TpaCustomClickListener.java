@@ -85,13 +85,17 @@ public final class TpaCustomClickListener implements Listener {
         }
     }
 
-    private Player extractPlayer(Event event) throws ReflectiveOperationException {
-        Object direct = invoke(event, "getPlayer");
-        if (direct instanceof Player player) return player;
+    private Player extractPlayer(Event event) {
+        try {
+            Object direct = invoke(event, "getPlayer");
+            if (direct instanceof Player player) return player;
 
-        Object connection = invoke(event, "getCommonConnection");
-        Object player = connection == null ? null : invoke(connection, "getPlayer");
-        return player instanceof Player p ? p : null;
+            Object connection = invoke(event, "getCommonConnection");
+            Object player = connection == null ? null : invoke(connection, "getPlayer");
+            return player instanceof Player p ? p : null;
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            return null;
+        }
     }
 
     private Object invoke(Object target, String methodName) throws ReflectiveOperationException {
