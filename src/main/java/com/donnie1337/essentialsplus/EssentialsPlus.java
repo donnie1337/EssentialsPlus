@@ -10,6 +10,7 @@ import com.donnie1337.essentialsplus.home.command.HomesCommand;
 import com.donnie1337.essentialsplus.home.command.SetHomeCommand;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
+import com.donnie1337.essentialsplus.teleport.command.TpaActionCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaDenyCommand;
@@ -38,6 +39,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("tpaccept", new TpaAcceptCommand(teleportService));
         register("tpdeny", new TpaDenyCommand(teleportService));
         register("tpacancel", new TpaCancelCommand(teleportService));
+        register("tpaaction", new TpaActionCommand(teleportService));
 
         register("home", new HomeCommand(homeService));
         register("homes", new HomesCommand(homeService, homeGui));
