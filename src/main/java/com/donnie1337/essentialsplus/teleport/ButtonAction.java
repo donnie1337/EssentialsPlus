@@ -27,4 +27,16 @@ public record ButtonAction(
     public static ButtonAction find(int token) {
         return HISTORY.get(token);
     }
+
+    public static ButtonAction findRelated(int token, ButtonActionType type, UUID targetId) {
+        ButtonAction source = HISTORY.get(token);
+        if (source == null) return null;
+        ButtonAction best = null;
+        for (ButtonAction action : HISTORY.values()) {
+            if (action.type() != type || !action.targetId().equals(targetId)) continue;
+            if (action.createdAt() < source.createdAt()) continue;
+            if (best == null || action.createdAt() < best.createdAt()) best = action;
+        }
+        return best;
+    }
 }
