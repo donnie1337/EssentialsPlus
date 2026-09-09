@@ -16,6 +16,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -150,7 +151,8 @@ public final class TeleportService implements Listener {
     private void sendRequestMessage(Player recipient, Player requester, boolean here) {
         String raw = plugin.getConfig().getString(here ? "messages.request-here-received" : "messages.request-received", "");
         raw = raw.replace("{player}", coloredPlayer(requester));
-        List<BaseComponent> row = new ArrayList<>(List.of(TextComponent.fromLegacyText(color(raw))));
+        List<BaseComponent> row = new ArrayList<>();
+        Collections.addAll(row, TextComponent.fromLegacyText(color(raw)));
         row.add(new TextComponent("\n"));
         appendLegacy(row, "§fClique ");
         if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) appendButton(row, "buttons.accept.text", "/tpaccept " + requester.getName());
