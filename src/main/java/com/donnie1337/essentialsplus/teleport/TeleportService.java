@@ -4,7 +4,6 @@ import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -30,8 +29,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class TeleportService implements Listener {
-    private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
-
     private final JavaPlugin plugin;
     private final ChatPlusBridge chatPlusBridge;
     private final AuthSystemBridge authSystemBridge;
@@ -408,7 +405,25 @@ public final class TeleportService implements Listener {
     }
 
     private Component legacy(String text) {
-        return LEGACY_SERIALIZER.deserialize(text == null ? "" : text);
+        String value = text == null ? "" : text;
+        Component result = Component.empty();
+        StringBuilder plain = new StringBuilder();
+        StringBuilder formatting = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c == '§' && i + 1 < value.length()) {
+                if (plain.length() > 0) {
+                    result = result.append(Component.text(plain.toString()));
+                    plain.setLength(0);
+                }
+                formatting.setLength(0);
+                formatting.append('§').append(value.charAt(++i));
+                continue;
+            }
+            plain.append(c);
+        }
+        if (plain.length() > 0) result = result.append(Component.text(plain.toString()));
+        return result;
     }
 
     private void message(Player player, String path, String... replacements) {
