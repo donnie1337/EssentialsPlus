@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 public final class TpaAcceptCommand implements CommandExecutor, TabCompleter {
-    private static final String PERMISSION = "essentialsplus.tpaceitar";
+    private static final String PERMISSION = "essentialsplus.tpa";
     private final TeleportService service;
     public TpaAcceptCommand(TeleportService service) { this.service = service; }
 
