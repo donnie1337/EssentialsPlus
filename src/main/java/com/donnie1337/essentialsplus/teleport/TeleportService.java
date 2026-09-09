@@ -245,8 +245,9 @@ public final class TeleportService {
     }
 
     private TextComponent buttonComponent(String label, String color, int token) {
-        BaseComponent[] legacy = TextComponent.fromLegacyText(color(label));
-        TextComponent component = legacy.length == 0 ? new TextComponent(label) : new TextComponent(legacy[0]);
+        String formatted = color + label;
+        BaseComponent[] legacy = TextComponent.fromLegacyText(formatted);
+        TextComponent component = legacy.length == 0 ? new TextComponent(formatted) : new TextComponent(legacy[0]);
         component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/essentialsplus:tpaaction " + token));
         return component;
     }
@@ -365,77 +366,46 @@ public final class TeleportService {
         if (actions.isEmpty()) buttonActions.remove(ownerId, actions);
     }
 
+    private String coloredPlayer(Player player) {
+        if (player == null) return "";
+        String display = player.getDisplayName();
+        if (display != null && !display.equals(player.getName())) return display;
+        String list = player.getPlayerListName();
+        if (list != null && !list.equals(player.getName())) return list;
+        String cargoColor = cargoNicknameColor(player);
+        return (cargoColor == null ? "§f" : cargoColor) + player.getName();
+    }
+
+    private String cargoNicknameColor(Player player) {
+        try {
+            RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(Class.forName("com.cargoplus.api.CargoPlusAPI"));
+            if (registration == null) return null;
+            Object api = registration.getProvider();
+            Object result = api.getClass().getMethod("getNicknameColor", UUID.class).invoke(api, player.getUniqueId());
+            return result == null ? null : result.toString();
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return null;
+        }
+    }
+
+    private String color(String text) {
+        return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
+    }
+
     private void message(Player player, String path, String... replacements) {
         if (player == null || !player.isOnline()) return;
         String raw = plugin.getConfig().getString("messages." + path, "");
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             String key = replacements[i];
             String replacement = replacements[i + 1];
-            if ("player".equals(key)) {
-                Player target = Bukkit.getPlayerExact(replacement);
-                if (target != null) replacement = coloredPlayer(target);
-            }
-            raw = raw.replace("{" + key + "}", replacement);
+            if ("player".equals(key)) replacement = coloredPlayer(Bukkit.getPlayerExact(replacement));
+            raw = raw.replace("{" + key + "}", replacement == null ? "" : replacement);
         }
-        String colored = color(raw);
-        if (!chatPlusBridge.sendSystemMessage(player, colored)) player.sendMessage(colored);
-    }
-
-    private String coloredPlayer(Player player) {
-        if (player == null) return "";
-        String color = extractLegacyColor(player.getDisplayName());
-        if (color == null) color = extractLegacyColor(player.getPlayerListName());
-        if (color == null) color = cargoNicknameColor(player);
-        return (color == null ? "§f" : color) + player.getName();
-    }
-
-    private String extractLegacyColor(String value) {
-        if (value == null || value.isEmpty()) return null;
-        value = color(value);
-        for (int i = 0; i < value.length() - 1; i++) {
-            if (value.charAt(i) != ChatColor.COLOR_CHAR) continue;
-            char code = Character.toLowerCase(value.charAt(i + 1));
-            if ("0123456789abcdef".indexOf(code) >= 0) return "§" + code;
-            if (code == 'x' && i + 13 < value.length()) return value.substring(i, i + 14);
-        }
-        return null;
-    }
-
-    private String cargoNicknameColor(Player player) {
+        String formatted = color(raw);
         try {
-            Class<?> apiClass = Class.forName("com.cargoplus.api.CargoPlusAPI");
-            RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(apiClass);
-            if (registration == null || registration.getProvider() == null) return null;
-            Object value = apiClass.getMethod("getNicknameColor", UUID.class).invoke(registration.getProvider(), player.getUniqueId());
-            return value == null ? null : color(value.toString());
-        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
-            return null;
+            chatPlusBridge.sendSystemMessage(player, formatted);
+        } catch (Exception ignored) {
+            player.sendMessage(formatted);
         }
-    }
-
-    private String color(String text) {
-        if (text == null) return "";
-        return ChatColor.translateAlternateColorCodes('&', text);
-    }
-
-    public void clearPlayer(Player player) {
-        if (player == null) return;
-        UUID id = player.getUniqueId();
-        List<TpaRequest> own = incoming.remove(id);
-        if (own != null) synchronized (own) { own.forEach(this::removeButtonsForRequest); }
-        for (var entry : incoming.entrySet()) {
-            List<TpaRequest> requests = entry.getValue();
-            List<TpaRequest> removed = new ArrayList<>();
-            synchronized (requests) {
-                requests.removeIf(request -> {
-                    boolean match = request.requesterId().equals(id);
-                    if (match) removed.add(request);
-                    return match;
-                });
-            }
-            removed.forEach(this::removeButtonsForRequest);
-            if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
-        }
-        buttonActions.remove(id);
     }
 }
