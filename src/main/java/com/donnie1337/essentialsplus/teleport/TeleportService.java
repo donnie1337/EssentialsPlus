@@ -2,8 +2,6 @@ package com.donnie1337.essentialsplus.teleport;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
-import net.kyori.adventure.key.Key;
-import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -32,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class TeleportService implements Listener {
-    private static final String BUTTON_IDENTIFIER_PREFIX = "essentialsplus:tpa/";
     private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 
     private final JavaPlugin plugin;
@@ -42,29 +39,27 @@ public final class TeleportService implements Listener {
     private final ConcurrentMap<UUID, ConcurrentMap<Integer, ButtonAction>> buttonActions = new ConcurrentHashMap<>();
     private final AtomicInteger buttonToken = new AtomicInteger(1000);
     private BukkitTask expirationTask;
-    private CustomTpaClickListener customTpaClickListener;
     private volatile Plugin cargoPlugin;
     private volatile Method cargoApiMethod;
     private volatile Method cargoNicknameColorMethod;
 
     public TeleportService(JavaPlugin plugin, ChatPlusBridge chatPlusBridge, AuthSystemBridge authSystemBridge) {
-        this.plugin = plugin; this.chatPlusBridge = chatPlusBridge; this.authSystemBridge = authSystemBridge;
+        this.plugin = plugin;
+        this.chatPlusBridge = chatPlusBridge;
+        this.authSystemBridge = authSystemBridge;
     }
 
     public JavaPlugin plugin() { return plugin; }
 
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        customTpaClickListener = new CustomTpaClickListener(this);
-        com.github.retrooper.packetevents.PacketEvents.getAPI().getEventManager().registerListener(customTpaClickListener);
         expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, this::expireRequests, 20L, 20L);
     }
 
     public void shutdown() {
-        if (expirationTask != null) { expirationTask.cancel(); expirationTask = null; }
-        if (customTpaClickListener != null) {
-            com.github.retrooper.packetevents.PacketEvents.getAPI().getEventManager().unregisterListener(customTpaClickListener);
-            customTpaClickListener = null;
+        if (expirationTask != null) {
+            expirationTask.cancel();
+            expirationTask = null;
         }
         incoming.clear();
         buttonActions.clear();
@@ -76,16 +71,27 @@ public final class TeleportService implements Listener {
         if (!authenticated(requester)) return false;
         if (!enabled()) { message(requester, "disabled"); return false; }
         if (requester.getUniqueId().equals(recipient.getUniqueId())) { message(requester, "cannot-self"); return false; }
+
         final long now = System.currentTimeMillis();
-        if (hasPendingOutgoingRequest(requester.getUniqueId(), now)) { message(requester, "pending-request"); return false; }
+        if (hasPendingOutgoingRequest(requester.getUniqueId(), now)) {
+            message(requester, "pending-request");
+            return false;
+        }
+
         final int max = Math.max(1, plugin.getConfig().getInt("tpa.max-pending-requests", 5));
         final UUID recipientId = recipient.getUniqueId();
         final LinkedHashMap<UUID, TpaRequest> requests = incoming.computeIfAbsent(recipientId, ignored -> new LinkedHashMap<>());
         synchronized (requests) {
             removeExpired(requests, now);
-            if (requests.size() >= max) { if (requests.isEmpty()) incoming.remove(recipientId, requests); message(requester, "too-many-requests"); return false; }
-            requests.put(requester.getUniqueId(), new TpaRequest(requester.getUniqueId(), requester.getName(), recipientId, recipient.getName(), here, now));
+            if (requests.size() >= max) {
+                if (requests.isEmpty()) incoming.remove(recipientId, requests);
+                message(requester, "too-many-requests");
+                return false;
+            }
+            requests.put(requester.getUniqueId(), new TpaRequest(
+                    requester.getUniqueId(), requester.getName(), recipientId, recipient.getName(), here, now));
         }
+
         message(requester, "request-sent", "player", recipient.getName());
         sendCancelButton(requester, recipient);
         sendRequestMessage(recipient, requester, here);
@@ -103,14 +109,35 @@ public final class TeleportService implements Listener {
         if (!authenticated(recipient)) return false;
         final TpaRequest request = findRequest(recipient.getUniqueId(), requesterId);
         if (request == null) { message(recipient, "no-request"); return false; }
-        removeRequest(request);
+
         final Player requester = Bukkit.getPlayer(request.requesterId());
-        if (requester == null || !requester.isOnline()) { message(recipient, "target-offline"); return false; }
-        if (!authenticated(requester)) { message(recipient, "target-not-authenticated"); return false; }
-        final Player teleported; final Location destination;
-        if (request.here()) { teleported = recipient; destination = requester.getLocation().clone(); }
-        else { teleported = requester; destination = recipient.getLocation().clone(); }
-        performTeleport(teleported, destination);
+        if (requester == null || !requester.isOnline()) {
+            removeRequest(request);
+            message(recipient, "target-offline");
+            return false;
+        }
+        if (!authenticated(requester)) {
+            removeRequest(request);
+            message(recipient, "target-not-authenticated");
+            return false;
+        }
+
+        final Player teleported;
+        final Location destination;
+        if (request.here()) {
+            teleported = recipient;
+            destination = requester.getLocation().clone();
+        } else {
+            teleported = requester;
+            destination = recipient.getLocation().clone();
+        }
+
+        if (!performTeleport(teleported, destination)) {
+            message(recipient, "teleport-failed");
+            return false;
+        }
+
+        removeRequest(request);
         message(recipient, "request-accepted", "player", request.requesterName());
         message(requester, "request-accepted-sender", "player", recipient.getName());
         return true;
@@ -135,7 +162,8 @@ public final class TeleportService implements Listener {
     }
 
     public boolean cancel(Player requester, String recipientName) {
-        if (!authenticated(requester)) return false; boolean removed = false;
+        if (!authenticated(requester)) return false;
+        boolean removed = false;
         for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
             final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
             synchronized (requests) {
@@ -152,6 +180,7 @@ public final class TeleportService implements Listener {
             }
         }
         if (removed) message(requester, "request-cancelled");
+        else message(requester, "no-request");
         return removed;
     }
 
@@ -178,32 +207,54 @@ public final class TeleportService implements Listener {
         if (requests == null) return List.of();
         synchronized (requests) {
             removeExpired(requests, System.currentTimeMillis());
-            if (requests.isEmpty()) { incoming.remove(recipient.getUniqueId(), requests); return List.of(); }
+            if (requests.isEmpty()) {
+                incoming.remove(recipient.getUniqueId(), requests);
+                return List.of();
+            }
             return Collections.unmodifiableList(requests.values().stream().map(TpaRequest::requesterName).toList());
         }
     }
 
     public List<String> pendingRecipientNames(Player requester) {
         if (!authenticated(requester)) return List.of();
-        final List<String> names = new ArrayList<>(); final long now = System.currentTimeMillis();
+        final List<String> names = new ArrayList<>();
+        final long now = System.currentTimeMillis();
         for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
             final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
             synchronized (requests) {
-                final TpaRequest request = requests.get(requester.getUniqueId()); if (request == null) continue;
-                if (request.isExpired(now, timeoutMillis())) { requests.remove(requester.getUniqueId()); removeButtonsForRequest(request); if (requests.isEmpty()) incoming.remove(entry.getKey(), requests); continue; }
-                names.add(request.recipientName()); break;
+                final TpaRequest request = requests.get(requester.getUniqueId());
+                if (request == null) continue;
+                if (request.isExpired(now, timeoutMillis())) {
+                    requests.remove(requester.getUniqueId());
+                    removeButtonsForRequest(request);
+                    if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
+                    continue;
+                }
+                names.add(request.recipientName());
+                break;
             }
         }
         return Collections.unmodifiableList(names);
     }
 
-    private boolean authenticated(Player player) { if (authSystemBridge.isAuthenticated(player)) return true; message(player, "auth-required"); return false; }
+    private boolean authenticated(Player player) {
+        if (authSystemBridge.isAuthenticated(player)) return true;
+        message(player, "auth-required");
+        return false;
+    }
 
     private boolean hasPendingOutgoingRequest(UUID requesterId, long now) {
         for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
-            final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue(); synchronized (requests) {
-                final TpaRequest request = requests.get(requesterId); if (request == null) continue;
-                if (request.isExpired(now, timeoutMillis())) { requests.remove(requesterId); removeButtonsForRequest(request); if (requests.isEmpty()) incoming.remove(entry.getKey(), requests); continue; }
+            final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
+            synchronized (requests) {
+                final TpaRequest request = requests.get(requesterId);
+                if (request == null) continue;
+                if (request.isExpired(now, timeoutMillis())) {
+                    requests.remove(requesterId);
+                    removeButtonsForRequest(request);
+                    if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
+                    continue;
+                }
                 return true;
             }
         }
@@ -211,18 +262,28 @@ public final class TeleportService implements Listener {
     }
 
     private TpaRequest findRequest(UUID recipientId, String requesterName) {
-        final LinkedHashMap<UUID, TpaRequest> requests = incoming.get(recipientId); if (requests == null) return null;
+        final LinkedHashMap<UUID, TpaRequest> requests = incoming.get(recipientId);
+        if (requests == null) return null;
         synchronized (requests) {
             removeExpired(requests, System.currentTimeMillis());
-            if (requesterName == null || requesterName.isBlank()) { final List<TpaRequest> values = new ArrayList<>(requests.values()); return values.isEmpty() ? null : values.get(values.size() - 1); }
-            for (TpaRequest request : requests.values()) if (request.requesterName().equalsIgnoreCase(requesterName)) return request;
+            if (requesterName == null || requesterName.isBlank()) {
+                final List<TpaRequest> values = new ArrayList<>(requests.values());
+                return values.isEmpty() ? null : values.get(values.size() - 1);
+            }
+            for (TpaRequest request : requests.values()) {
+                if (request.requesterName().equalsIgnoreCase(requesterName)) return request;
+            }
         }
         return null;
     }
 
     private TpaRequest findRequest(UUID recipientId, UUID requesterId) {
-        final LinkedHashMap<UUID, TpaRequest> requests = incoming.get(recipientId); if (requests == null) return null;
-        synchronized (requests) { removeExpired(requests, System.currentTimeMillis()); return requests.get(requesterId); }
+        final LinkedHashMap<UUID, TpaRequest> requests = incoming.get(recipientId);
+        if (requests == null) return null;
+        synchronized (requests) {
+            removeExpired(requests, System.currentTimeMillis());
+            return requests.get(requesterId);
+        }
     }
 
     private void removeRequest(TpaRequest request) {
@@ -240,7 +301,8 @@ public final class TeleportService implements Listener {
         for (Map.Entry<UUID, LinkedHashMap<UUID, TpaRequest>> entry : incoming.entrySet()) {
             final LinkedHashMap<UUID, TpaRequest> requests = entry.getValue();
             synchronized (requests) {
-                final List<TpaRequest> expired = requests.values().stream().filter(request -> request.isExpired(now, timeoutMillis())).toList();
+                final List<TpaRequest> expired = requests.values().stream()
+                        .filter(request -> request.isExpired(now, timeoutMillis())).toList();
                 expired.forEach(request -> {
                     requests.remove(request.requesterId());
                     removeButtonsForRequest(request);
@@ -255,15 +317,24 @@ public final class TeleportService implements Listener {
     }
 
     private void removeExpired(LinkedHashMap<UUID, TpaRequest> requests, long now) {
-        final List<TpaRequest> expired = requests.values().stream().filter(request -> request.isExpired(now, timeoutMillis())).toList();
+        final List<TpaRequest> expired = requests.values().stream()
+                .filter(request -> request.isExpired(now, timeoutMillis())).toList();
         for (TpaRequest request : expired) {
             requests.remove(request.requesterId());
             removeButtonsForRequest(request);
         }
     }
 
-    private long timeoutMillis() { return TimeUnit.SECONDS.toMillis(Math.max(0, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20))); }
-    private void performTeleport(Player player, Location destination) { if (!player.isOnline() || destination.getWorld() == null || !authenticated(player)) return; player.teleport(destination); }
+    private long timeoutMillis() {
+        return TimeUnit.SECONDS.toMillis(Math.max(1,
+                plugin.getConfig().getLong("tpa.request-timeout-seconds", 20)));
+    }
+
+    private boolean performTeleport(Player player, Location destination) {
+        if (!player.isOnline() || destination == null || destination.getWorld() == null) return false;
+        if (!authenticated(player)) return false;
+        return player.teleport(destination);
+    }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
         if (player == null) return -1;
@@ -302,77 +373,66 @@ public final class TeleportService implements Listener {
         if (actions.isEmpty()) buttonActions.remove(ownerId, actions);
     }
 
-    void handleCustomButton(Player player, String identifier) {
-        if (player == null || !player.isOnline()) return;
-        if (!identifier.startsWith(BUTTON_IDENTIFIER_PREFIX)) return;
-
-        final String[] parts = identifier.substring(BUTTON_IDENTIFIER_PREFIX.length()).split("/");
-        if (parts.length != 2) return;
-
-        final ButtonActionType type;
-        try { type = ButtonActionType.valueOf(parts[0].toUpperCase(Locale.ROOT)); }
-        catch (IllegalArgumentException ignored) { return; }
-
-        final int token;
-        try { token = Integer.parseInt(parts[1]); }
-        catch (NumberFormatException ignored) { return; }
-
-        final ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(player.getUniqueId());
-        final ButtonAction action = actions == null ? null : actions.get(token);
-        if (action == null || action.type() != type) return;
-
-        actions.remove(token, action);
-        if (actions.isEmpty()) buttonActions.remove(player.getUniqueId(), actions);
-
-        switch (action.type()) {
-            case ACCEPT -> accept(player, action.targetId());
-            case DENY -> deny(player, action.targetId());
-            case CANCEL -> cancel(player, action.targetId());
-        }
-    }
-
     private void sendRequestMessage(Player recipient, Player requester, boolean here) {
-        String raw = plugin.getConfig().getString(here ? "messages.request-here-received" : "messages.request-received", "");
+        String raw = plugin.getConfig().getString(
+                here ? "messages.request-here-received" : "messages.request-received", "");
         raw = raw.replace("{player}", coloredPlayer(requester));
 
         Component row = legacy(raw).append(Component.newline());
         row = row.append(legacy("§fClique "));
-        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) row = row.append(buttonComponent("buttons.accept.text", recipient, ButtonActionType.ACCEPT, requester.getUniqueId()));
+        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) {
+            row = row.append(buttonComponent("buttons.accept.text", "tpaccept", requester.getName()));
+        }
         row = row.append(legacy("§f para aceitar ou Clique "));
-        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) row = row.append(buttonComponent("buttons.deny.text", recipient, ButtonActionType.DENY, requester.getUniqueId()));
+        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) {
+            row = row.append(buttonComponent("buttons.deny.text", "tpdeny", requester.getName()));
+        }
         row = row.append(legacy("§f!"));
         recipient.sendMessage(row);
     }
 
     private void sendCancelButton(Player requester, Player recipient) {
         if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
-        requester.sendMessage(buttonComponent("buttons.cancel.text", requester, ButtonActionType.CANCEL, recipient.getUniqueId()));
+        requester.sendMessage(buttonComponent("buttons.cancel.text", "tpacancel", recipient.getName()));
     }
 
-    private Component buttonComponent(String textPath, Player buttonOwner, ButtonActionType type, UUID targetId) {
+    /**
+     * Usa RUN_COMMAND em vez de CUSTOM_CLICK_ACTION. Isso mantém os botões compatíveis
+     * com clientes Paper/Minecraft sem depender do envio de pacotes customizados.
+     * Os comandos ainda passam pelas mesmas verificações de permissão/autenticação.
+     */
+    private Component buttonComponent(String textPath, String command, String targetName) {
         final String text = color(plugin.getConfig().getString(textPath, "AQUI"));
-        final int token = registerButton(buttonOwner, type, targetId);
-        if (token < 0) return Component.empty();
-
-        final Key key = Key.key("essentialsplus", "tpa/" + type.name().toLowerCase(Locale.ROOT) + "/" + token);
-        return legacy(text).clickEvent(ClickEvent.custom(key, BinaryTagHolder.binaryTagHolder("{}")));
+        final String safeTarget = targetName == null ? "" : targetName.replace("\n", "").replace("\r", "");
+        return legacy(text).clickEvent(ClickEvent.runCommand("/" + command + " " + safeTarget));
     }
 
-    private Component legacy(String text) { return LEGACY_SERIALIZER.deserialize(text == null ? "" : text); }
+    private Component legacy(String text) {
+        return LEGACY_SERIALIZER.deserialize(text == null ? "" : text);
+    }
 
     private void message(Player player, String path, String... replacements) {
         if (player == null || !player.isOnline()) return;
         String raw = plugin.getConfig().getString("messages." + path, "");
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             String replacement = replacements[i + 1];
-            if ("player".equals(replacements[i])) { Player target = Bukkit.getPlayerExact(replacement); if (target != null) replacement = coloredPlayer(target); }
+            if ("player".equals(replacements[i])) {
+                Player target = Bukkit.getPlayerExact(replacement);
+                if (target != null) replacement = coloredPlayer(target);
+            }
             raw = raw.replace("{" + replacements[i] + "}", replacement);
         }
         final String colored = color(raw);
-        if (!chatPlusBridge.sendSystemMessage(player, colored)) { final String prefix = plugin.getConfig().getString("messages.prefix", ""); player.sendMessage(color(prefix) + colored); }
+        if (!chatPlusBridge.sendSystemMessage(player, colored)) {
+            final String prefix = plugin.getConfig().getString("messages.prefix", "");
+            player.sendMessage(color(prefix) + colored);
+        }
     }
 
-    private String coloredPlayer(Player player) { if (player == null) return ""; String color = cargoNicknameColor(player); return color + player.getName(); }
+    private String coloredPlayer(Player player) {
+        if (player == null) return "";
+        return cargoNicknameColor(player) + player.getName();
+    }
 
     private String cargoNicknameColor(Player player) {
         if (player == null || !player.isOnline()) return "§f";
@@ -399,14 +459,29 @@ public final class TeleportService implements Listener {
             Object api = cargoApiMethod.invoke(current);
             Object result = cargoNicknameColorMethod.invoke(api, player.getUniqueId());
             return result instanceof String value && !value.isBlank() ? value : "§f";
-        } catch (ReflectiveOperationException | LinkageError ex) { return "§f"; }
+        } catch (ReflectiveOperationException | LinkageError ex) {
+            return "§f";
+        }
     }
 
-    private String color(String value) { return value == null ? "" : value.replace('&', '§'); }
+    private String color(String value) {
+        return value == null ? "" : value.replace('&', '§');
+    }
 
-    @EventHandler public void onDeath(PlayerDeathEvent event) { removeAllRequestsFor(event.getPlayer().getUniqueId()); }
-    @EventHandler public void onQuit(PlayerQuitEvent event) { removeAllRequestsFor(event.getPlayer().getUniqueId()); }
-    private void removeAllRequestsFor(UUID playerId) { incoming.remove(playerId); buttonActions.remove(playerId); }
+    @EventHandler
+    public void onDeath(PlayerDeathEvent event) {
+        removeAllRequestsFor(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        removeAllRequestsFor(event.getPlayer().getUniqueId());
+    }
+
+    private void removeAllRequestsFor(UUID playerId) {
+        incoming.remove(playerId);
+        buttonActions.remove(playerId);
+    }
 
     private enum ButtonActionType { ACCEPT, DENY, CANCEL }
     private record ButtonAction(int token, ButtonActionType type, UUID targetId) { }
