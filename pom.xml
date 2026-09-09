@@ -31,20 +31,6 @@
             <version>26.2.build.121-stable</version>
             <scope>provided</scope>
         </dependency>
-        <!-- Paper supplies Adventure API at runtime. Do not shade it. -->
-        <dependency>
-            <groupId>net.kyori</groupId>
-            <artifactId>adventure-api</artifactId>
-            <version>5.2.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- The legacy serializer is not guaranteed to be present as a standalone
-             plugin dependency, so package only this serializer into the plugin. -->
-        <dependency>
-            <groupId>net.kyori</groupId>
-            <artifactId>adventure-text-serializer-legacy</artifactId>
-            <version>5.2.0</version>
-        </dependency>
     </dependencies>
 
     <build>
@@ -72,11 +58,6 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
                             <outputFile>${project.build.directory}/EssentialsPlus.jar</outputFile>
-                            <artifactSet>
-                                <includes>
-                                    <include>net.kyori:adventure-text-serializer-legacy</include>
-                                </includes>
-                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
@@ -91,7 +72,7 @@
                         <phase>package</phase>
                         <goals>
                             <goal>run</goal>
-                        </goals>
+                        </executions>
                         <configuration>
                             <target>
                                 <delete file="${project.build.directory}/original-EssentialsPlus.jar" quiet="true"/>
