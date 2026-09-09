@@ -17,6 +17,10 @@ public final class VanishService {
         this.plugin = plugin;
     }
 
+    public Plugin getPlugin() {
+        return plugin;
+    }
+
     public boolean isVanished(Player player) {
         return player != null && vanished.contains(player.getUniqueId());
     }
