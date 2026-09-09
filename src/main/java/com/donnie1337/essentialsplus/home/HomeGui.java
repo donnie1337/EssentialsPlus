@@ -5,6 +5,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Event.Result;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -129,7 +130,11 @@ public final class HomeGui implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!(event.getView().getTopInventory().getHolder() instanceof HomesHolder holder)) return;
 
+        // O menu e todos os seus itens sao somente visuais/interativos.
+        // Bloqueia tambem shift-click, hotbar, troca de cursor e demais formas de mover itens.
         event.setCancelled(true);
+        event.setResult(Result.DENY);
+
         if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getView().getTopInventory().getSize()) return;
 
         if (holder.type() == HomesHolder.Type.INTRO && event.getRawSlot() == INTRO_SLOT) {
@@ -168,7 +173,7 @@ public final class HomeGui implements Listener {
                     return;
                 }
 
-                if (event.isLeftClick()) {
+                if (event.isLeftClick() && !event.isShiftClick()) {
                     player.closeInventory();
                     player.teleport(home.location());
                     player.sendMessage("§aTeleportado para a home §f" + home.name() + "§a.");
@@ -198,7 +203,10 @@ public final class HomeGui implements Listener {
 
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
-        if (event.getView().getTopInventory().getHolder() instanceof HomesHolder) event.setCancelled(true);
+        if (event.getView().getTopInventory().getHolder() instanceof HomesHolder) {
+            event.setCancelled(true);
+            event.setResult(Result.DENY);
+        }
     }
 
     @EventHandler
