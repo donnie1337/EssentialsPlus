@@ -127,7 +127,7 @@ public final class TpaCustomClickListener implements Listener {
         String raw = plugin.getConfig().getString("messages." + key, "");
         if (result == ButtonResult.CANCEL_BLOCKED_ACCEPTED || result == ButtonResult.CANCEL_BLOCKED_DENIED) {
             Player target = Bukkit.getPlayer(action.targetId());
-            String name = target != null ? target.getName() : "";
+            String name = target != null ? target.getDisplayName() : "";
             raw = raw.replace("{player}", name);
         }
         String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", ""));
