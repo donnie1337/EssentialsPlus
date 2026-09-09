@@ -5,6 +5,8 @@ import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -227,15 +229,15 @@ public final class TeleportService {
         int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
         int deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
         components.add(new TextComponent(" "));
-        components.add(buttonComponent("[ACEITAR]", "§a", accept));
+        components.add(buttonComponent("ACEITAR", "§a§l", accept, "Clique para aceitar a solicitação."));
         components.add(new TextComponent(" "));
-        components.add(buttonComponent("[RECUSAR]", "§c", deny));
+        components.add(buttonComponent("RECUSAR", "§c§l", deny, "Clique para recusar a solicitação."));
         recipient.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
 
     private void sendCancelButton(Player requester, Player recipient) {
         int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
-        requester.spigot().sendMessage(buttonComponent("[CANCELAR]", "§c", token));
+        requester.spigot().sendMessage(buttonComponent("CANCELAR", "§c§l", token, "Clique para cancelar sua solicitação de TPA."));
     }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
@@ -244,11 +246,10 @@ public final class TeleportService {
         return token;
     }
 
-    private TextComponent buttonComponent(String label, String color, int token) {
-        String formatted = color + label;
-        BaseComponent[] legacy = TextComponent.fromLegacyText(formatted);
-        TextComponent component = legacy.length == 0 ? new TextComponent(formatted) : new TextComponent(legacy[0]);
+    private TextComponent buttonComponent(String label, String color, int token, String hover) {
+        TextComponent component = new TextComponent(color + label);
         component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/essentialsplus:tpaaction " + token));
+        component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(color(hover))));
         return component;
     }
 
@@ -388,8 +389,9 @@ public final class TeleportService {
         }
     }
 
-    private String color(String text) {
-        return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
+    private String color(String value) {
+        if (value == null) return "";
+        return ChatColor.translateAlternateColorCodes('&', value);
     }
 
     private void message(Player player, String path, String... replacements) {
@@ -401,11 +403,7 @@ public final class TeleportService {
             if ("player".equals(key)) replacement = coloredPlayer(Bukkit.getPlayerExact(replacement));
             raw = raw.replace("{" + key + "}", replacement == null ? "" : replacement);
         }
-        String formatted = color(raw);
-        try {
-            chatPlusBridge.sendSystemMessage(player, formatted);
-        } catch (Exception ignored) {
-            player.sendMessage(formatted);
-        }
+        raw = color(raw);
+        chatPlusBridge.sendSystemMessage(player, raw);
     }
 }
