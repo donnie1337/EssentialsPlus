@@ -67,5 +67,5 @@ buttons:
     hover: "&7Clique para recusar a solicitação."
   cancel:
     enabled: true
-    text: "&e&l[ CANCELAR ]"
+    text: "&fClique &c&lAQUI&f para cancelar"
     hover: "&7Clique para cancelar sua solicitação de TPA."
