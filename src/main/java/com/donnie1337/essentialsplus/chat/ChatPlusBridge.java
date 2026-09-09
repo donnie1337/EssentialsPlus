@@ -4,60 +4,47 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-/**
- * Optional integration with ChatPlus. EssentialsPlus never links directly
- * against ChatPlus classes, so the TPA system remains functional when
- * ChatPlus is not installed or is updated independently.
- */
+/** Integration with ChatPlus. */
 public final class ChatPlusBridge {
-    private static final String PLUGIN_NAME = "ChatPlus";
+    private Plugin plugin;
+    private Method sendSystemMessage;
 
-    private volatile Plugin chatPlus;
-    private volatile Method sendSystemMessage;
-    private volatile boolean lookupComplete;
-
-    public boolean sendSystemMessage(Player player, String message) {
-        if (player == null || !player.isOnline() || message == null) return false;
-
-        final Plugin plugin = resolvePlugin();
-        final Method method = sendSystemMessage;
-        if (plugin == null || method == null) return false;
-
+    public boolean connect() {
+        Plugin found = Bukkit.getPluginManager().getPlugin("ChatPlus");
+        if (found == null || !found.isEnabled()) return false;
         try {
-            method.invoke(plugin, player, message);
+            Method method = found.getClass().getMethod("sendSystemMessage", Player.class, String.class);
+            this.plugin = found;
+            this.sendSystemMessage = method;
             return true;
-        } catch (IllegalAccessException | InvocationTargetException | LinkageError ignored) {
+        } catch (ReflectiveOperationException ignored) {
+            this.plugin = null;
+            this.sendSystemMessage = null;
             return false;
         }
     }
 
-    private Plugin resolvePlugin() {
-        final Plugin current = Bukkit.getPluginManager().getPlugin(PLUGIN_NAME);
-        if (current == null || !current.isEnabled()) {
-            chatPlus = null;
-            sendSystemMessage = null;
-            lookupComplete = true;
-            return null;
-        }
+    public boolean isAvailable() {
+        return plugin != null && plugin.isEnabled() && sendSystemMessage != null;
+    }
 
-        if (!lookupComplete || chatPlus != current) {
-            synchronized (this) {
-                if (!lookupComplete || chatPlus != current) {
-                    chatPlus = current;
-                    try {
-                        sendSystemMessage = current.getClass().getMethod(
-                                "sendSystemMessage", Player.class, String.class);
-                    } catch (NoSuchMethodException ignored) {
-                        sendSystemMessage = null;
-                    }
-                    lookupComplete = true;
-                }
-            }
+    public boolean sendSystemMessage(Player player, String message) {
+        if (player == null || message == null) return false;
+        if (!isAvailable() && !connect()) return false;
+        try {
+            sendSystemMessage.invoke(plugin, player, message);
+            return true;
+        } catch (ReflectiveOperationException ignored) {
+            return false;
         }
+    }
 
-        return chatPlus;
+    /** Sends directly to the player, bypassing ChatPlus's global system prefix. */
+    public boolean sendDirect(Player player, String message) {
+        if (player == null || !player.isOnline() || message == null) return false;
+        player.sendMessage(message);
+        return true;
     }
 }
