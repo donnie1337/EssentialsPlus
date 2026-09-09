@@ -18,25 +18,25 @@ commands:
   tpaqui:
     description: Solicita que outro jogador se teleporte até você.
     usage: /tpaqui <jogador>
-    permission: essentialsplus.tpaqui
+    permission: essentialsplus.tpa
   tpaccept:
     description: Aceita uma solicitação de teleporte.
     usage: /tpaceitar [jogador]
     aliases:
       - tpaceitar
-    permission: essentialsplus.tpaceitar
+    permission: essentialsplus.tpa
   tpdeny:
     description: Recusa uma solicitação de teleporte.
     usage: /tpnegar [jogador]
     aliases:
       - tpnegar
-    permission: essentialsplus.tpnegar
+    permission: essentialsplus.tpa
   tpacancel:
     description: Cancela uma solicitação de teleporte enviada.
     usage: /tpacancelar [jogador]
     aliases:
       - tpacancelar
-    permission: essentialsplus.tpacancelar
+    permission: essentialsplus.tpa
   home:
     description: Teleporta para uma home salva.
     usage: /home <nome>
@@ -55,20 +55,26 @@ commands:
     permission: essentialsplus.delhome
 permissions:
   essentialsplus.tpa:
-    description: Permite usar /tpa.
+    description: Permite usar todos os comandos do sistema de TPA.
     default: true
+    children:
+      essentialsplus.tpa: true
+      essentialsplus.tpaqui: true
+      essentialsplus.tpaceitar: true
+      essentialsplus.tpnegar: true
+      essentialsplus.tpacancelar: true
   essentialsplus.tpaqui:
-    description: Permite usar /tpaqui.
-    default: true
+    description: Permissão interna do comando /tpaqui.
+    default: false
   essentialsplus.tpaceitar:
-    description: Permite usar /tpaceitar.
-    default: true
+    description: Permissão interna do comando /tpaceitar.
+    default: false
   essentialsplus.tpnegar:
-    description: Permite usar /tpnegar.
-    default: true
+    description: Permissão interna do comando /tpnegar.
+    default: false
   essentialsplus.tpacancelar:
-    description: Permite usar /tpacancelar.
-    default: true
+    description: Permissão interna do comando /tpacancelar.
+    default: false
   essentialsplus.home:
     description: Permite usar /home.
     default: true
