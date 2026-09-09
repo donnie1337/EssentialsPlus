@@ -24,12 +24,6 @@ public final class TpaCustomClickListener implements Listener {
         this.teleportService = teleportService;
     }
 
-    /**
-     * Registers the custom-click listener without linking the plugin class directly to
-     * one specific Paper/Bukkit PlayerCustomClickEvent class. Paper 26.2 exposes the
-     * event in io.papermc.paper.event.player, while some 26.2 server implementations
-     * expose the Bukkit-compatible org.bukkit.event.player variant.
-     */
     public void register(PluginManager pluginManager) {
         Class<? extends Event> eventClass = findEventClass();
         if (eventClass == null) {
@@ -85,9 +79,7 @@ public final class TpaCustomClickListener implements Listener {
             int token = Integer.parseInt(matcher.group(1));
             teleportService.handleButton(player, token);
         } catch (NumberFormatException ignored) {
-            Player player = extractPlayer(event);
-            String name = player == null ? "desconhecido" : player.getName();
-            plugin.getLogger().fine("Token de botão TPA inválido recebido de " + name + ".");
+            plugin.getLogger().fine("Token de botão TPA inválido recebido.");
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             plugin.getLogger().fine("Não foi possível processar o clique personalizado de TPA.");
         }
@@ -115,7 +107,7 @@ public final class TpaCustomClickListener implements Listener {
             Object result = stringMethod.invoke(value);
             if (result != null) return result.toString();
         } catch (ReflectiveOperationException ignored) {
-            // Fall back to toString for Bukkit JsonElement and similar payloads.
+            // Fall back to toString for other payload implementations.
         }
         return value.toString();
     }
