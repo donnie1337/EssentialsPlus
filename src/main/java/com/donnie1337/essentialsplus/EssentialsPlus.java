@@ -15,6 +15,9 @@ import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaDenyCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaHereCommand;
+import com.donnie1337.essentialsplus.vanish.VanishCommand;
+import com.donnie1337.essentialsplus.vanish.VanishListener;
+import com.donnie1337.essentialsplus.vanish.VanishService;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -22,10 +25,15 @@ public final class EssentialsPlus extends JavaPlugin {
 
     private TeleportService teleportService;
     private HomeService homeService;
+    private VanishService vanishService;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+
+        vanishService = new VanishService(this);
+        getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
+        register("v", new VanishCommand(vanishService));
 
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
@@ -46,12 +54,13 @@ public final class EssentialsPlus extends JavaPlugin {
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
 
-        getLogger().info("EssentialsPlus habilitado com TPA e sistema de Homes.");
+        getLogger().info("EssentialsPlus habilitado com TPA, Homes e Vanish.");
     }
 
     @Override
     public void onDisable() {
         if (teleportService != null) teleportService.shutdown();
+        if (vanishService != null) vanishService.clear();
     }
 
     private void register(String name, org.bukkit.command.CommandExecutor executor) {
