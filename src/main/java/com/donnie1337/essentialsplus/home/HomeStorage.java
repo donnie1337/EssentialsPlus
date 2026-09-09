@@ -23,10 +23,14 @@ public final class HomeStorage {
         this.file = new File(plugin.getDataFolder(), "homes.yml");
         if (!file.exists()) {
             try {
-                if (!file.getParentFile().exists()) file.getParentFile().mkdirs();
-                file.createNewFile();
+                if (!file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
+                    throw new IOException("Não foi possível criar a pasta de dados do plugin.");
+                }
+                if (!file.createNewFile()) {
+                    throw new IOException("Não foi possível criar homes.yml.");
+                }
             } catch (IOException exception) {
-                throw new IllegalStateException("Nao foi possivel criar homes.yml", exception);
+                throw new IllegalStateException("Não foi possível criar homes.yml", exception);
             }
         }
         this.data = YamlConfiguration.loadConfiguration(file);
@@ -35,18 +39,31 @@ public final class HomeStorage {
     public Map<String, Home> loadHomes(UUID playerId) {
         ConfigurationSection section = data.getConfigurationSection("players." + playerId);
         if (section == null) return Map.of();
+
         Map<String, Home> homes = new LinkedHashMap<>();
         for (String name : section.getKeys(false)) {
             String path = section.getCurrentPath() + "." + name;
-            World world = plugin.getServer().getWorld(data.getString(path + ".world", ""));
-            if (world == null) continue;
-            Location location = new Location(world,
-                    data.getDouble(path + ".x"),
-                    data.getDouble(path + ".y"),
-                    data.getDouble(path + ".z"),
-                    (float) data.getDouble(path + ".yaw"),
-                    (float) data.getDouble(path + ".pitch"));
-            homes.put(name, new Home(name, location));
+            if (!data.isConfigurationSection(path)) continue;
+
+            String worldName = data.getString(path + ".world", "");
+            World world = plugin.getServer().getWorld(worldName);
+            if (world == null) {
+                plugin.getLogger().warning("Home '" + name + "' ignorada: mundo '" + worldName + "' não está carregado.");
+                continue;
+            }
+
+            double x = data.getDouble(path + ".x", Double.NaN);
+            double y = data.getDouble(path + ".y", Double.NaN);
+            double z = data.getDouble(path + ".z", Double.NaN);
+            float yaw = (float) data.getDouble(path + ".yaw", 0.0D);
+            float pitch = (float) data.getDouble(path + ".pitch", 0.0D);
+
+            if (!valid(x, y, z) || !Float.isFinite(yaw) || !Float.isFinite(pitch)) {
+                plugin.getLogger().warning("Home '" + name + "' ignorada: localização inválida em homes.yml.");
+                continue;
+            }
+
+            homes.put(name, new Home(name, new Location(world, x, y, z, yaw, pitch)));
         }
         return Collections.unmodifiableMap(homes);
     }
@@ -54,6 +71,10 @@ public final class HomeStorage {
     public void saveHome(UUID playerId, Home home) {
         String path = "players." + playerId + "." + home.name();
         Location location = home.location();
+        if (!validLocation(location)) {
+            throw new IllegalArgumentException("A localização da home é inválida.");
+        }
+
         data.set(path + ".world", location.getWorld().getName());
         data.set(path + ".x", location.getX());
         data.set(path + ".y", location.getY());
@@ -72,6 +93,10 @@ public final class HomeStorage {
         String oldPath = "players." + playerId + "." + oldName;
         String newPath = "players." + playerId + "." + renamed.name();
         Location location = renamed.location();
+        if (!validLocation(location)) {
+            throw new IllegalArgumentException("A localização da home é inválida.");
+        }
+
         data.set(newPath + ".world", location.getWorld().getName());
         data.set(newPath + ".x", location.getX());
         data.set(newPath + ".y", location.getY());
@@ -82,11 +107,23 @@ public final class HomeStorage {
         save();
     }
 
+    private boolean validLocation(Location location) {
+        return location != null
+                && location.getWorld() != null
+                && valid(location.getX(), location.getY(), location.getZ())
+                && Float.isFinite(location.getYaw())
+                && Float.isFinite(location.getPitch());
+    }
+
+    private boolean valid(double x, double y, double z) {
+        return Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z);
+    }
+
     private void save() {
         try {
             data.save(file);
         } catch (IOException exception) {
-            plugin.getLogger().severe("Nao foi possivel salvar homes.yml: " + exception.getMessage());
+            plugin.getLogger().severe("Não foi possível salvar homes.yml: " + exception.getMessage());
         }
     }
 }
