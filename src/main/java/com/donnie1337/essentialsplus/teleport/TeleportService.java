@@ -2,15 +2,15 @@ package com.donnie1337.essentialsplus.teleport;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
-import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
-import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEventCustom;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -19,6 +19,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -174,7 +175,7 @@ public final class TeleportService {
         String acceptHover = plugin.getConfig().getString("buttons.accept.hover", "&7Clique para aceitar a solicitação.");
         String denyHover = plugin.getConfig().getString("buttons.deny.hover", "&7Clique para negar a solicitação.");
 
-        Component message = Component.empty();
+        List<BaseComponent> message = new ArrayList<>();
         int cursor = 0;
         while (cursor < raw.length()) {
             int acceptPos = raw.indexOf("{accept}", cursor);
@@ -184,19 +185,19 @@ public final class TeleportService {
             if (acceptPos >= 0 && (denyPos < 0 || acceptPos < denyPos)) { nextPos = acceptPos; isAccept = true; }
             else if (denyPos >= 0) nextPos = denyPos;
             if (nextPos < 0) {
-                message = message.append(legacy(raw.substring(cursor)));
+                message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor))));
                 break;
             }
-            if (nextPos > cursor) message = message.append(legacy(raw.substring(cursor, nextPos)));
+            if (nextPos > cursor) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor, nextPos))));
             if (isAccept) {
-                if (acceptEnabled) message = message.append(buttonComponent(acceptText, accept, acceptHover));
+                if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover)));
             } else if (denyEnabled) {
-                message = message.append(buttonComponent(denyText, deny, denyHover));
+                message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover)));
             }
             cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
         }
-        if (raw.isEmpty()) message = legacy(raw);
-        sendComponent(recipient, message);
+        if (raw.isEmpty()) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw)));
+        if (!message.isEmpty()) recipient.spigot().sendMessage(message.toArray(BaseComponent[]::new));
     }
 
     private void sendCancelButton(Player requester, Player recipient) {
@@ -204,15 +205,7 @@ public final class TeleportService {
         int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
         String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar"));
         String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
-        sendComponent(requester, buttonComponent(text, token, hover));
-    }
-
-    private void sendComponent(Player player, Component component) {
-        if (player instanceof Audience audience) {
-            audience.sendMessage(component);
-            return;
-        }
-        plugin.getLogger().warning("O Player do servidor não implementa Adventure Audience; mensagem clicável de TPA não pôde ser enviada.");
+        requester.spigot().sendMessage(buttonComponent(text, token, hover));
     }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
@@ -221,10 +214,15 @@ public final class TeleportService {
         return token;
     }
 
-    private Component buttonComponent(String label, int token, String hover) {
-        return legacy(label)
-            .clickEvent(ClickEvent.custom(TPA_BUTTON_KEY, BinaryTagHolder.binaryTagHolder("{token:" + token + "}")))
-            .hoverEvent(HoverEvent.showText(legacy(color(hover))));
+    private BaseComponent[] buttonComponent(String label, int token, String hover) {
+        BaseComponent[] components = TextComponent.fromLegacyText(label);
+        ClickEventCustom click = new ClickEventCustom(TPA_BUTTON_KEY.asString(), "{token:" + token + "}");
+        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover)));
+        for (BaseComponent component : components) {
+            component.setClickEvent(click);
+            component.setHoverEvent(hoverEvent);
+        }
+        return components;
     }
 
     public boolean handleButton(Player player, int token) {
