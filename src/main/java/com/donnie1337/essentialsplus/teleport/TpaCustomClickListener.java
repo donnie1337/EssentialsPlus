@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.teleport;
 
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
@@ -9,12 +10,15 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public final class TpaCustomClickListener implements Listener {
     private static final String PERMISSION = "essentialsplus.tpa";
 
     private final Plugin plugin;
     private final TeleportService teleportService;
+    private final ConcurrentMap<Integer, ButtonResult> results = new ConcurrentHashMap<>();
 
     public TpaCustomClickListener(Plugin plugin, TeleportService teleportService) {
         this.plugin = plugin;
@@ -59,10 +63,47 @@ public final class TpaCustomClickListener implements Listener {
 
             Player player = invokePlayer(event);
             if (player == null || !player.hasPermission(PERMISSION)) return;
-            teleportService.handleButton(player, token);
+
+            ButtonAction action = ButtonAction.find(token);
+            if (action == null) return;
+
+            ButtonResult previous = results.get(token);
+            if (previous != null) {
+                sendResultMessage(player, previous);
+                return;
+            }
+
+            long timeout = plugin.getConfig().getLong("tpa.request-timeout-seconds", 20L) * 1000L;
+            if (timeout > 0 && System.currentTimeMillis() - action.createdAt() >= timeout) {
+                results.put(token, ButtonResult.EXPIRED);
+                sendResultMessage(player, ButtonResult.EXPIRED);
+                return;
+            }
+
+            boolean handled = teleportService.handleButton(player, token);
+            if (!handled) return;
+
+            ButtonResult result = switch (action.type()) {
+                case ACCEPT -> ButtonResult.ACCEPTED;
+                case DENY -> ButtonResult.DENIED;
+                case CANCEL -> ButtonResult.CANCELLED;
+            };
+            results.put(token, result);
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             // Ignore unsupported event representation without breaking chat processing.
         }
+    }
+
+    private void sendResultMessage(Player player, ButtonResult result) {
+        String key = switch (result) {
+            case ACCEPTED -> "request-already-accepted";
+            case DENIED -> "request-already-denied";
+            case EXPIRED -> "request-expired-cannot-respond";
+            case CANCELLED -> "request-already-cancelled";
+        };
+        String raw = plugin.getConfig().getString("messages." + key, "");
+        String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", ""));
+        player.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + raw));
     }
 
     private String invokeIdentifier(Event event) throws ReflectiveOperationException {
@@ -98,5 +139,12 @@ public final class TpaCustomClickListener implements Listener {
             Object player = getPlayer.invoke(connection);
             return player instanceof Player ? (Player) player : null;
         }
+    }
+
+    private enum ButtonResult {
+        ACCEPTED,
+        DENIED,
+        EXPIRED,
+        CANCELLED
     }
 }
