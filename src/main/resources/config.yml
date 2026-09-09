@@ -25,14 +25,14 @@ messages:
   no-permission: "Você não tem permissão para executar este comando."
   auth-required: "Você precisa estar autenticado para executar este comando."
   target-not-authenticated: "O jogador ainda não está autenticado."
-  request-sent: "Você pediu para se teleportar até {player}!"
+  request-sent: "Você pediu para se teleportar até {player}&f!"
   request-received: "{player}&f está pedindo para se teleportar até você."
   request-here-received: "{player}&f está pedindo para que você se teleporte até ele."
-  request-accepted: "Você aceitou o pedido de teleporte de {player}!"
-  request-accepted-sender: "{player} aceitou seu pedido de teleporte. Levando você até lá..."
-  request-denied: "Você recusou o pedido de teleporte de {player}."
-  request-denied-sender: "{player} recusou seu pedido de teleporte."
-  request-expired: "O pedido de teleporte de {player} expirou."
+  request-accepted: "Você aceitou o pedido de teleporte de {player}&f!"
+  request-accepted-sender: "{player}&f aceitou seu pedido de teleporte. Levando você até lá..."
+  request-denied: "Você recusou o pedido de teleporte de {player}&f."
+  request-denied-sender: "{player}&f recusou seu pedido de teleporte."
+  request-expired: "O pedido de teleporte de {player}&f expirou."
   no-request: "Você não possui solicitações de TPA pendentes."
   request-cancelled: "Solicitação de TPA cancelada."
   pending-request: "Você já possui uma solicitação de TPA pendente. Aguarde ela expirar ou ser respondida."
@@ -66,7 +66,7 @@ buttons:
   deny:
     enabled: true
     text: "&c&lAQUI"
-    hover: "&7Clique para recusar a solicitação."
+    hover: "&7Clique para negar a solicitação."
   cancel:
     enabled: true
     text: "&fClique &c&lAQUI&f para cancelar"
