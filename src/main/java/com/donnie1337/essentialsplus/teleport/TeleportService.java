@@ -159,7 +159,7 @@ public final class TeleportService {
         components.add(new TextComponent(" "));
         components.add(buttonComponent("AQUI", "§a§l", accept, "Clique para aceitar a solicitação."));
         components.add(new TextComponent(" para aceitar ou "));
-        components.add(buttonComponent("AQUI", "§c§l", deny, "Clique para recusar a solicitação."));
+        components.add(buttonComponent("AQUI", "§c§l", deny, "Clique para negar a solicitação."));
         components.add(new TextComponent(" para negar!"));
         recipient.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
@@ -216,7 +216,7 @@ public final class TeleportService {
     private long timeoutMillis() { long seconds = plugin.getConfig().getLong("tpa.request-timeout-seconds", 20L); return seconds <= 0 ? 0 : seconds * 1000L; }
     private void removeButtonsForRequest(TpaRequest request) { removeButton(request.recipientId(), request.requesterId(), ButtonActionType.ACCEPT); removeButton(request.recipientId(), request.requesterId(), ButtonActionType.DENY); removeButton(request.requesterId(), request.recipientId(), ButtonActionType.CANCEL); }
     private void removeButton(UUID ownerId, UUID targetId, ButtonActionType type) { ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(ownerId); if (actions == null) return; actions.values().removeIf(action -> action.type() == type && action.targetId().equals(targetId)); if (actions.isEmpty()) buttonActions.remove(ownerId, actions); }
-    private String coloredPlayer(Player player) { if (player == null) return ""; String display = player.getDisplayName(); if (display != null && !display.equals(player.getName())) return display; String list = player.getPlayerListName(); if (list != null && !list.equals(player.getName())) return list; String cargoColor = cargoNicknameColor(player); return (cargoColor == null ? "§f" : cargoColor) + player.getName(); }
+    private String coloredPlayer(Player player) { if (player == null) return ""; String cargoColor = cargoNicknameColor(player); return (cargoColor == null ? "§f" : cargoColor) + player.getName(); }
     private String cargoNicknameColor(Player player) { try { RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(Class.forName("com.cargoplus.api.CargoPlusAPI")); if (registration == null) return null; Object api = registration.getProvider(); Object result = api.getClass().getMethod("getNicknameColor", UUID.class).invoke(api, player.getUniqueId()); return result == null ? null : result.toString(); } catch (ReflectiveOperationException | LinkageError ignored) { return null; } }
     private void message(Player player, String key, String... replacements) { if (player == null || !player.isOnline()) return; String raw = plugin.getConfig().getString("messages." + key, ""); for (int i = 0; i + 1 < replacements.length; i += 2) { String replacement = replacements[i + 1]; if ("player".equals(replacements[i])) { Player target = Bukkit.getPlayerExact(replacement); replacement = coloredPlayer(target); } raw = raw.replace("{" + replacements[i] + "}", replacement == null ? "" : replacement); } String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", "")); chatPlusBridge.sendDirect(player, color(prefix + raw)); }
     private String color(String text) { return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text); }
