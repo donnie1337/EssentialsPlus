@@ -30,7 +30,7 @@ public final class EssentialsPlus extends JavaPlugin {
 
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
-        getServer().getPluginManager().registerEvents(new TpaCustomClickListener(this, teleportService), this);
+        new TpaCustomClickListener(this, teleportService).register(getServer().getPluginManager());
 
         homeService = new HomeService(this);
         HomeGui homeGui = new HomeGui(homeService);
