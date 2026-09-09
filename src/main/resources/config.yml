@@ -24,8 +24,8 @@ messages:
   auth-required: "Você precisa estar autenticado para executar este comando."
   target-not-authenticated: "O jogador ainda não está autenticado."
   request-sent: "Você pediu para se teleportar até {player}!"
-  request-received: "{player} está pedindo para se teleportar até você."
-  request-here-received: "{player} está pedindo para que você se teleporte até ele."
+  request-received: "&c&lSERVIDOR &7• &r{player}&f está pedindo para se teleportar até você."
+  request-here-received: "&c&lSERVIDOR &7• &r{player}&f está pedindo para que você se teleporte até ele."
   request-accepted: "Você aceitou o pedido de teleporte de {player}!"
   request-accepted-sender: "{player} aceitou seu pedido de teleporte. Levando você até lá..."
   request-denied: "Você recusou o pedido de teleporte de {player}."
@@ -50,6 +50,10 @@ messages:
   invalid-home-name: "Nome de home inválido. Use apenas letras, números, _ ou - (até 32 caracteres)."
   home-world-unavailable: "Não foi possível carregar o mundo desta home."
   home-location-invalid: "A localização desta home não é mais válida."
+  usage-home: "Uso: /home <nome>"
+  usage-homes: "Uso: /homes"
+  usage-sethome: "Uso: /sethome <nome>"
+  usage-delhome: "Uso: /delhome <nome>"
 
 buttons:
   spacing: "  "
