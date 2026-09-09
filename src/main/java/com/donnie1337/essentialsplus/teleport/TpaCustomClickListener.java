@@ -1,12 +1,14 @@
 package com.donnie1337.essentialsplus.teleport;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.plugin.EventExecutor;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
+
+import java.lang.reflect.Method;
 
 public final class TpaCustomClickListener implements Listener {
     private static final String PERMISSION = "essentialsplus.tpa";
@@ -20,33 +22,81 @@ public final class TpaCustomClickListener implements Listener {
     }
 
     public void register(PluginManager pluginManager) {
-        pluginManager.registerEvents(this, plugin);
-        plugin.getLogger().info("Botões de TPA clicáveis registrados usando callback interno de chat.");
+        registerEventType(pluginManager, "org.bukkit.event.player.PlayerCustomClickEvent");
+        registerEventType(pluginManager, "io.papermc.paper.event.player.PlayerCustomClickEvent");
+        plugin.getLogger().info("Botões de TPA registrados usando custom click, sem execução de comando.");
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
-    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
-        String message = event.getMessage();
-        String prefix = "/" + TeleportService.TPA_BUTTON_COMMAND;
-        if (!message.regionMatches(true, 0, prefix, 0, prefix.length())) return;
-
-        String remainder = message.substring(prefix.length()).trim();
-        if (remainder.isEmpty() || remainder.indexOf(' ') >= 0) {
-            event.setCancelled(true);
-            return;
-        }
-
-        int token;
+    @SuppressWarnings("unchecked")
+    private void registerEventType(PluginManager pluginManager, String className) {
         try {
-            token = Integer.parseInt(remainder);
-        } catch (NumberFormatException ignored) {
-            event.setCancelled(true);
-            return;
+            Class<?> rawType = Class.forName(className);
+            if (!Event.class.isAssignableFrom(rawType)) return;
+            Class<? extends Event> eventType = (Class<? extends Event>) rawType;
+            EventExecutor executor = (listener, event) -> handleCustomClick(event);
+            pluginManager.registerEvent(eventType, this, EventPriority.NORMAL, executor, plugin, true);
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            // This server does not expose this custom-click API variant.
         }
+    }
 
-        Player player = event.getPlayer();
-        event.setCancelled(true);
-        if (!player.hasPermission(PERMISSION)) return;
-        teleportService.handleButton(player, token);
+    private void handleCustomClick(Event event) {
+        try {
+            String id = invokeIdentifier(event);
+            if (!TeleportService.TPA_BUTTON_KEY.asString().equalsIgnoreCase(id)) return;
+
+            String payload = invokePayload(event);
+            if (payload == null) return;
+            String digits = payload.replaceAll("[^0-9-]", "");
+            if (digits.isEmpty()) return;
+
+            int token;
+            try {
+                token = Integer.parseInt(digits);
+            } catch (NumberFormatException ignored) {
+                return;
+            }
+
+            Player player = invokePlayer(event);
+            if (player == null || !player.hasPermission(PERMISSION)) return;
+            teleportService.handleButton(player, token);
+        } catch (ReflectiveOperationException | RuntimeException ignored) {
+            // Ignore unsupported event representation without breaking chat processing.
+        }
+    }
+
+    private String invokeIdentifier(Event event) throws ReflectiveOperationException {
+        Object identifier;
+        try {
+            identifier = event.getClass().getMethod("getId").invoke(event);
+        } catch (NoSuchMethodException ignored) {
+            identifier = event.getClass().getMethod("getIdentifier").invoke(event);
+        }
+        return identifier == null ? "" : identifier.toString();
+    }
+
+    private String invokePayload(Event event) throws ReflectiveOperationException {
+        try {
+            Object data = event.getClass().getMethod("getData").invoke(event);
+            return data == null ? null : data.toString();
+        } catch (NoSuchMethodException ignored) {
+            Object tag = event.getClass().getMethod("getTag").invoke(event);
+            return tag == null ? null : tag.toString();
+        }
+    }
+
+    private Player invokePlayer(Event event) throws ReflectiveOperationException {
+        try {
+            Method getPlayer = event.getClass().getMethod("getPlayer");
+            Object player = getPlayer.invoke(event);
+            return player instanceof Player ? (Player) player : null;
+        } catch (NoSuchMethodException ignored) {
+            Method commonConnection = event.getClass().getMethod("getCommonConnection");
+            Object connection = commonConnection.invoke(event);
+            if (connection == null) return null;
+            Method getPlayer = connection.getClass().getMethod("getPlayer");
+            Object player = getPlayer.invoke(connection);
+            return player instanceof Player ? (Player) player : null;
+        }
     }
 }
