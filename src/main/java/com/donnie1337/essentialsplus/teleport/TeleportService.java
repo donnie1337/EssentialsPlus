@@ -2,6 +2,7 @@ package com.donnie1337.essentialsplus.teleport;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.nbt.api.BinaryTagHolder;
 import net.kyori.adventure.text.Component;
@@ -195,7 +196,7 @@ public final class TeleportService {
             cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
         }
         if (raw.isEmpty()) message = legacy(raw);
-        recipient.sendMessage(message);
+        sendComponent(recipient, message);
     }
 
     private void sendCancelButton(Player requester, Player recipient) {
@@ -203,7 +204,15 @@ public final class TeleportService {
         int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
         String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar"));
         String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
-        requester.sendMessage(buttonComponent(text, token, hover));
+        sendComponent(requester, buttonComponent(text, token, hover));
+    }
+
+    private void sendComponent(Player player, Component component) {
+        if (player instanceof Audience audience) {
+            audience.sendMessage(component);
+            return;
+        }
+        plugin.getLogger().warning("O Player do servidor não implementa Adventure Audience; mensagem clicável de TPA não pôde ser enviada.");
     }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
