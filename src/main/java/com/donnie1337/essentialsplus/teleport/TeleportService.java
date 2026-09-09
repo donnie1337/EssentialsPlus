@@ -12,6 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -31,6 +32,9 @@ public final class TeleportService implements Listener {
     private final AuthSystemBridge authSystemBridge;
     private final ConcurrentMap<UUID, LinkedHashMap<UUID, TpaRequest>> incoming = new ConcurrentHashMap<>();
     private BukkitTask expirationTask;
+    private volatile Plugin cargoPlugin;
+    private volatile Method cargoApiMethod;
+    private volatile Method cargoNicknameColorMethod;
 
     public TeleportService(JavaPlugin plugin, ChatPlusBridge chatPlusBridge, AuthSystemBridge authSystemBridge) {
         this.plugin = plugin; this.chatPlusBridge = chatPlusBridge; this.authSystemBridge = authSystemBridge;
@@ -56,7 +60,7 @@ public final class TeleportService implements Listener {
             if (requests.size() >= max) { if (requests.isEmpty()) incoming.remove(recipientId, requests); message(requester, "too-many-requests"); return false; }
             requests.put(requester.getUniqueId(), new TpaRequest(requester.getUniqueId(), requester.getName(), recipientId, recipient.getName(), here, now));
         }
-        message(requester, "request-sent", "player", recipient.getName()); sendCancelButton(requester, recipient.getName()); sendRequestMessage(recipient, requester.getName(), here); return true;
+        message(requester, "request-sent", "player", recipient.getName()); sendCancelButton(requester, recipient.getName()); sendRequestMessage(recipient, requester, here); return true;
     }
 
     public boolean accept(Player recipient, String requesterName) {
@@ -143,16 +147,50 @@ public final class TeleportService implements Listener {
     private long timeoutMillis() { return TimeUnit.SECONDS.toMillis(Math.max(0, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20))); }
     private void performTeleport(Player player, Location destination) { if (!player.isOnline() || destination.getWorld() == null || !authenticated(player)) return; player.teleport(destination); }
 
-    private void sendRequestMessage(Player recipient, String requesterName, boolean here) {
-        message(recipient, here ? "request-here-received" : "request-received", "player", requesterName); final List<BaseComponent> row = new ArrayList<>();
-        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) appendButton(row, "buttons.accept.text", "/tpaccept " + requesterName);
-        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) { if (!row.isEmpty()) appendLegacy(row, plugin.getConfig().getString("buttons.spacing", "  ")); appendButton(row, "buttons.deny.text", "/tpdeny " + requesterName); }
-        if (!row.isEmpty()) recipient.spigot().sendMessage(row.toArray(new BaseComponent[0]));
+    private void sendRequestMessage(Player recipient, Player requester, boolean here) {
+        String raw = plugin.getConfig().getString(here ? "messages.request-here-received" : "messages.request-received", "");
+        raw = raw.replace("{player}", coloredPlayer(requester));
+        List<BaseComponent> row = new ArrayList<>(List.of(TextComponent.fromLegacyText(color(raw))));
+        row.add(new TextComponent("\n"));
+        appendLegacy(row, "§fClique ");
+        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) appendButton(row, "buttons.accept.text", "/tpaccept " + requester.getName());
+        appendLegacy(row, "§f para aceitar ou ");
+        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) appendButton(row, "buttons.deny.text", "/tpdeny " + requester.getName());
+        appendLegacy(row, "§f!");
+        recipient.spigot().sendMessage(row.toArray(new BaseComponent[0]));
     }
     private void sendCancelButton(Player requester, String recipientName) { if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return; final List<BaseComponent> row = new ArrayList<>(); appendButton(row, "buttons.cancel.text", "/tpacancel " + recipientName); requester.spigot().sendMessage(row.toArray(new BaseComponent[0])); }
     private void appendButton(List<BaseComponent> row, String textPath, String command) { final BaseComponent[] components = TextComponent.fromLegacyText(color(plugin.getConfig().getString(textPath, command))); final ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, command); for (BaseComponent component : components) component.setClickEvent(click); Collections.addAll(row, components); }
     private void appendLegacy(List<BaseComponent> row, String text) { Collections.addAll(row, TextComponent.fromLegacyText(color(text))); }
-    private void message(Player player, String path, String... replacements) { if (player == null || !player.isOnline()) return; String raw = plugin.getConfig().getString("messages." + path, ""); for (int i = 0; i + 1 < replacements.length; i += 2) raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]); final String colored = color(raw); if (!chatPlusBridge.sendSystemMessage(player, colored)) { final String prefix = plugin.getConfig().getString("messages.prefix", ""); player.sendMessage(color(prefix) + colored); } }
+    private void message(Player player, String path, String... replacements) { if (player == null || !player.isOnline()) return; String raw = plugin.getConfig().getString("messages." + path, ""); for (int i = 0; i + 1 < replacements.length; i += 2) { String replacement = replacements[i + 1]; if ("player".equals(replacements[i])) { Player target = Bukkit.getPlayerExact(replacement); if (target != null) replacement = coloredPlayer(target); } raw = raw.replace("{" + replacements[i] + "}", replacement); } final String colored = color(raw); if (!chatPlusBridge.sendSystemMessage(player, colored)) { final String prefix = plugin.getConfig().getString("messages.prefix", ""); player.sendMessage(color(prefix) + colored); } }
+    private String coloredPlayer(Player player) { if (player == null) return ""; String color = cargoNicknameColor(player); return color + player.getName(); }
+    private String cargoNicknameColor(Player player) {
+        if (player == null || !player.isOnline()) return "§f";
+        Plugin current = Bukkit.getPluginManager().getPlugin("CargoPlus");
+        if (current == null || !current.isEnabled()) return "§f";
+        if (cargoPlugin != current || cargoApiMethod == null || cargoNicknameColorMethod == null) {
+            synchronized (this) {
+                if (cargoPlugin != current || cargoApiMethod == null || cargoNicknameColorMethod == null) {
+                    try {
+                        cargoPlugin = current;
+                        cargoApiMethod = current.getClass().getMethod("api");
+                        Object api = cargoApiMethod.invoke(current);
+                        cargoNicknameColorMethod = api.getClass().getMethod("getNicknameColor", UUID.class);
+                    } catch (ReflectiveOperationException | LinkageError ex) {
+                        cargoPlugin = current;
+                        cargoApiMethod = null;
+                        cargoNicknameColorMethod = null;
+                        return "§f";
+                    }
+                }
+            }
+        }
+        try {
+            Object api = cargoApiMethod.invoke(current);
+            Object result = cargoNicknameColorMethod.invoke(api, player.getUniqueId());
+            return result instanceof String value && !value.isBlank() ? value : "§f";
+        } catch (ReflectiveOperationException | LinkageError ex) { return "§f"; }
+    }
     private String color(String value) { return value == null ? "" : value.replace('&', '§'); }
 
     @EventHandler public void onDeath(PlayerDeathEvent event) { removeAllRequestsFor(event.getPlayer().getUniqueId()); }
