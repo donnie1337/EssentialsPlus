@@ -23,14 +23,14 @@ messages:
   no-permission: "&c✖ &fVocê não tem permissão para executar este comando."
   auth-required: "&c✖ &fVocê precisa estar autenticado para executar este comando."
   target-not-authenticated: "&c✖ &fO jogador ainda não está autenticado."
-  request-sent: "&a✔ &fSolicitação de TPA enviada para &e{player}&f."
-  request-received: "&e➜ &f{player} quer se teleportar até você."
-  request-here-received: "&e➜ &f{player} quer que você se teleporte até ele."
-  request-accepted: "&a✔ &fSolicitação de TPA de &e{player} &faceita."
-  request-accepted-sender: "&a✔ &e{player} &faceitou sua solicitação de TPA."
-  request-denied: "&c✖ &fSolicitação de TPA de &e{player} &frecusada."
-  request-denied-sender: "&c✖ &e{player} &frecusou sua solicitação de TPA."
-  request-expired: "&c✖ &fA solicitação de TPA de &e{player} &fexpirou."
+  request-sent: "&c&lSERVIDOR &7• &fVocê pediu para se teleportar até &r{player}&f!"
+  request-received: "&c&lSERVIDOR &7• &r{player}&f está pedindo para se teleportar até você."
+  request-here-received: "&c&lSERVIDOR &7• &r{player}&f está pedindo para se teleportar até você."
+  request-accepted: "&c&lSERVIDOR &7• &fVocê aceitou o pedido de teleporte de &r{player}&f!"
+  request-accepted-sender: "&c&lSERVIDOR &7• &fVocê pediu para se teleportar até &r{player}&f!"
+  request-denied: "&c&lSERVIDOR &7• &fVocê recusou o pedido de teleporte de &r{player}&f."
+  request-denied-sender: "&c&lSERVIDOR &7• &r{player}&f recusou seu pedido de teleporte."
+  request-expired: "&c&lSERVIDOR &7• &fO pedido de teleporte de &r{player}&f expirou."
   no-request: "&c✖ &fVocê não possui solicitações de TPA pendentes."
   request-cancelled: "&e⚠ &fSolicitação de TPA cancelada."
   pending-request: "&c✖ &fVocê já possui uma solicitação de TPA pendente. Aguarde ela expirar ou ser respondida."
@@ -53,11 +53,11 @@ buttons:
   spacing: "  "
   accept:
     enabled: true
-    text: "&a&l[ ACEITAR ]"
+    text: "&a&lAQUI"
     hover: "&7Clique para aceitar a solicitação."
   deny:
     enabled: true
-    text: "&c&l[ RECUSAR ]"
+    text: "&c&lAQUI"
     hover: "&7Clique para recusar a solicitação."
   cancel:
     enabled: true
