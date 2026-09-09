@@ -62,6 +62,8 @@
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <minimizeJar>false</minimizeJar>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <outputFile>${project.build.directory}/EssentialsPlus.jar</outputFile>
                             <artifactSet>
                                 <includes>
                                     <include>net.kyori:adventure-text-serializer-legacy</include>
