@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEventCustom;
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
@@ -18,6 +18,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -216,13 +217,25 @@ public final class TeleportService {
 
     private BaseComponent[] buttonComponent(String label, int token, String hover) {
         BaseComponent[] components = TextComponent.fromLegacyText(label);
-        ClickEventCustom click = new ClickEventCustom(TPA_BUTTON_KEY.asString(), "{token:" + token + "}");
+        ClickEvent click = createCustomClick(token);
         HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover)));
         for (BaseComponent component : components) {
-            component.setClickEvent(click);
+            if (click != null) component.setClickEvent(click);
             component.setHoverEvent(hoverEvent);
         }
         return components;
+    }
+
+    private ClickEvent createCustomClick(int token) {
+        try {
+            Class<?> type = Class.forName("net.md_5.bungee.api.chat.ClickEventCustom");
+            Constructor<?> constructor = type.getConstructor(String.class, String.class);
+            Object value = constructor.newInstance(TPA_BUTTON_KEY.asString(), "{token:" + token + "}");
+            if (value instanceof ClickEvent click) return click;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            plugin.getLogger().warning("ClickEventCustom não está disponível neste runtime; botão de TPA ficará sem ação.");
+        }
+        return null;
     }
 
     public boolean handleButton(Player player, int token) {
