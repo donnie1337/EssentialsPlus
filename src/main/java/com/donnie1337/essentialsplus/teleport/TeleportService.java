@@ -2,29 +2,28 @@ package com.donnie1337.essentialsplus.teleport;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.nbt.api.BinaryTagHolder;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.Criteria;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Score;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,7 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public final class TeleportService implements Listener {
-    private static final String BUTTON_OBJECTIVE = "ep_tpa";
+    private static final String BUTTON_IDENTIFIER_PREFIX = "essentialsplus:tpa/";
+    private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacySection();
 
     private final JavaPlugin plugin;
     private final ChatPlusBridge chatPlusBridge;
@@ -42,6 +42,7 @@ public final class TeleportService implements Listener {
     private final ConcurrentMap<UUID, ConcurrentMap<Integer, ButtonAction>> buttonActions = new ConcurrentHashMap<>();
     private final AtomicInteger buttonToken = new AtomicInteger(1000);
     private BukkitTask expirationTask;
+    private CustomTpaClickListener customTpaClickListener;
     private volatile Plugin cargoPlugin;
     private volatile Method cargoApiMethod;
     private volatile Method cargoNicknameColorMethod;
@@ -50,14 +51,21 @@ public final class TeleportService implements Listener {
         this.plugin = plugin; this.chatPlusBridge = chatPlusBridge; this.authSystemBridge = authSystemBridge;
     }
 
+    public JavaPlugin plugin() { return plugin; }
+
     public void start() {
         Bukkit.getPluginManager().registerEvents(this, plugin);
-        ensureButtonObjective();
+        customTpaClickListener = new CustomTpaClickListener(this);
+        com.github.retrooper.packetevents.PacketEvents.getAPI().getEventManager().registerListener(customTpaClickListener);
         expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, this::expireRequests, 20L, 20L);
     }
 
     public void shutdown() {
         if (expirationTask != null) { expirationTask.cancel(); expirationTask = null; }
+        if (customTpaClickListener != null) {
+            com.github.retrooper.packetevents.PacketEvents.getAPI().getEventManager().unregisterListener(customTpaClickListener);
+            customTpaClickListener = null;
+        }
         incoming.clear();
         buttonActions.clear();
     }
@@ -257,28 +265,11 @@ public final class TeleportService implements Listener {
     private long timeoutMillis() { return TimeUnit.SECONDS.toMillis(Math.max(0, plugin.getConfig().getLong("tpa.request-timeout-seconds", 20))); }
     private void performTeleport(Player player, Location destination) { if (!player.isOnline() || destination.getWorld() == null || !authenticated(player)) return; player.teleport(destination); }
 
-    private void ensureButtonObjective() {
-        if (Bukkit.getScoreboardManager() == null) return;
-        Objective objective = Bukkit.getScoreboardManager().getMainScoreboard().getObjective(BUTTON_OBJECTIVE);
-        if (objective == null) objective = Bukkit.getScoreboardManager().getMainScoreboard().registerNewObjective(BUTTON_OBJECTIVE, Criteria.TRIGGER, "EssentialsPlus TPA");
-        objective.setDisplayName("EssentialsPlus TPA");
-    }
-
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
         if (player == null) return -1;
-        ensureButtonObjective();
         final int token = nextButtonToken();
         buttonActions.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>())
                 .put(token, new ButtonAction(token, type, targetId));
-
-        if (Bukkit.getScoreboardManager() != null) {
-            final Objective objective = Bukkit.getScoreboardManager().getMainScoreboard().getObjective(BUTTON_OBJECTIVE);
-            if (objective != null) {
-                final Score score = objective.getScore(player.getName());
-                score.setScore(token);
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "scoreboard players enable " + player.getName() + " " + BUTTON_OBJECTIVE);
-            }
-        }
         return token;
     }
 
@@ -311,30 +302,27 @@ public final class TeleportService implements Listener {
         if (actions.isEmpty()) buttonActions.remove(ownerId, actions);
     }
 
-    @EventHandler public void onButtonCommand(PlayerCommandPreprocessEvent event) {
-        final Player player = event.getPlayer();
-        final String command = event.getMessage();
-        final String prefix = "/trigger " + BUTTON_OBJECTIVE + " set ";
-        if (!command.regionMatches(true, 0, prefix, 0, prefix.length())) return;
+    void handleCustomButton(Player player, String identifier) {
+        if (player == null || !player.isOnline()) return;
+        if (!identifier.startsWith(BUTTON_IDENTIFIER_PREFIX)) return;
 
-        event.setCancelled(true);
-        final String value = command.substring(prefix.length()).trim();
-        if (!value.matches("\\d+")) {
-            sendUnknownCommand(player);
-            return;
-        }
+        final String[] parts = identifier.substring(BUTTON_IDENTIFIER_PREFIX.length()).split("/");
+        if (parts.length != 2) return;
+
+        final ButtonActionType type;
+        try { type = ButtonActionType.valueOf(parts[0].toUpperCase(Locale.ROOT)); }
+        catch (IllegalArgumentException ignored) { return; }
 
         final int token;
-        try { token = Integer.parseInt(value); }
-        catch (NumberFormatException exception) { sendUnknownCommand(player); return; }
+        try { token = Integer.parseInt(parts[1]); }
+        catch (NumberFormatException ignored) { return; }
 
         final ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(player.getUniqueId());
-        final ButtonAction action = actions == null ? null : actions.remove(token);
-        if (actions != null && actions.isEmpty()) buttonActions.remove(player.getUniqueId(), actions);
-        if (action == null) {
-            sendUnknownCommand(player);
-            return;
-        }
+        final ButtonAction action = actions == null ? null : actions.get(token);
+        if (action == null || action.type() != type) return;
+
+        actions.remove(token, action);
+        if (actions.isEmpty()) buttonActions.remove(player.getUniqueId(), actions);
 
         switch (action.type()) {
             case ACCEPT -> accept(player, action.targetId());
@@ -343,44 +331,34 @@ public final class TeleportService implements Listener {
         }
     }
 
-    private void sendUnknownCommand(Player player) {
-        if (player == null || !player.isOnline()) return;
-        if (!chatPlusBridge.sendSystemMessage(player, plugin.getConfig().getString("messages.unknown-command", "Comando não encontrado."))) {
-            message(player, "unknown-command");
-        }
-    }
-
     private void sendRequestMessage(Player recipient, Player requester, boolean here) {
         String raw = plugin.getConfig().getString(here ? "messages.request-here-received" : "messages.request-received", "");
         raw = raw.replace("{player}", coloredPlayer(requester));
-        List<BaseComponent> row = new ArrayList<>();
-        Collections.addAll(row, TextComponent.fromLegacyText(color(raw)));
-        row.add(new TextComponent("\n"));
-        appendLegacy(row, "§fClique ");
-        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) appendButton(row, "buttons.accept.text", recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
-        appendLegacy(row, "§f para aceitar ou Clique ");
-        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) appendButton(row, "buttons.deny.text", recipient, ButtonActionType.DENY, requester.getUniqueId());
-        appendLegacy(row, "§f!");
-        recipient.spigot().sendMessage(row.toArray(new BaseComponent[0]));
+
+        Component row = legacy(raw).append(Component.newline());
+        row = row.append(legacy("§fClique "));
+        if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) row = row.append(buttonComponent("buttons.accept.text", recipient, ButtonActionType.ACCEPT, requester.getUniqueId()));
+        row = row.append(legacy("§f para aceitar ou Clique "));
+        if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) row = row.append(buttonComponent("buttons.deny.text", recipient, ButtonActionType.DENY, requester.getUniqueId()));
+        row = row.append(legacy("§f!"));
+        recipient.sendMessage(row);
     }
 
     private void sendCancelButton(Player requester, Player recipient) {
         if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
-        final List<BaseComponent> row = new ArrayList<>();
-        appendButton(row, "buttons.cancel.text", requester, ButtonActionType.CANCEL, recipient.getUniqueId());
-        requester.spigot().sendMessage(row.toArray(new BaseComponent[0]));
+        requester.sendMessage(buttonComponent("buttons.cancel.text", requester, ButtonActionType.CANCEL, recipient.getUniqueId()));
     }
 
-    private void appendButton(List<BaseComponent> row, String textPath, Player buttonOwner, ButtonActionType type, UUID targetId) {
-        final BaseComponent[] components = TextComponent.fromLegacyText(color(plugin.getConfig().getString(textPath, "AQUI")));
+    private Component buttonComponent(String textPath, Player buttonOwner, ButtonActionType type, UUID targetId) {
+        final String text = color(plugin.getConfig().getString(textPath, "AQUI"));
         final int token = registerButton(buttonOwner, type, targetId);
-        if (token < 0) return;
-        final ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/trigger " + BUTTON_OBJECTIVE + " set " + token);
-        for (BaseComponent component : components) component.setClickEvent(click);
-        Collections.addAll(row, components);
+        if (token < 0) return Component.empty();
+
+        final Key key = Key.key("essentialsplus", "tpa/" + type.name().toLowerCase(Locale.ROOT) + "/" + token);
+        return legacy(text).clickEvent(ClickEvent.custom(key, BinaryTagHolder.binaryTagHolder("{}")));
     }
 
-    private void appendLegacy(List<BaseComponent> row, String text) { Collections.addAll(row, TextComponent.fromLegacyText(color(text))); }
+    private Component legacy(String text) { return LEGACY_SERIALIZER.deserialize(text == null ? "" : text); }
 
     private void message(Player player, String path, String... replacements) {
         if (player == null || !player.isOnline()) return;
