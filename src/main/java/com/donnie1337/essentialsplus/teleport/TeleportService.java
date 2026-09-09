@@ -156,7 +156,7 @@ public final class TeleportService implements Listener {
         row.add(new TextComponent("\n"));
         appendLegacy(row, "§fClique ");
         if (plugin.getConfig().getBoolean("buttons.accept.enabled", true)) appendButton(row, "buttons.accept.text", "/tpaccept " + requester.getName());
-        appendLegacy(row, "§f para aceitar ou ");
+        appendLegacy(row, "§f para aceitar ou Clique ");
         if (plugin.getConfig().getBoolean("buttons.deny.enabled", true)) appendButton(row, "buttons.deny.text", "/tpdeny " + requester.getName());
         appendLegacy(row, "§f!");
         recipient.spigot().sendMessage(row.toArray(new BaseComponent[0]));
