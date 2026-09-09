@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class TeleportService {
     public static final Key TPA_BUTTON_KEY = Key.key("essentialsplus:tpa_action");
-    public static final String TPA_BUTTON_COMMAND = "__essentialsplus_tpa";
+    public static final String TPA_BUTTON_COMMAND = "tpaaction";
 
     private final Plugin plugin;
     private final ChatPlusBridge chatPlusBridge;
@@ -191,9 +191,9 @@ public final class TeleportService {
             }
             if (nextPos > cursor) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor, nextPos))));
             if (isAccept) {
-                if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover)));
+                if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, "/tpaaction " + accept, acceptHover)));
             } else if (denyEnabled) {
-                message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover)));
+                message.addAll(Arrays.asList(buttonComponent(denyText, "/tpaaction " + deny, denyHover)));
             }
             cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
         }
@@ -206,7 +206,7 @@ public final class TeleportService {
         int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
         String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar"));
         String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
-        requester.spigot().sendMessage(buttonComponent(text, token, hover));
+        requester.spigot().sendMessage(buttonComponent(text, "/tpaaction " + token, hover));
     }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
@@ -215,9 +215,9 @@ public final class TeleportService {
         return token;
     }
 
-    private BaseComponent[] buttonComponent(String label, int token, String hover) {
+    private BaseComponent[] buttonComponent(String label, String command, String hover) {
         BaseComponent[] components = TextComponent.fromLegacyText(label);
-        ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + TPA_BUTTON_COMMAND + " " + token);
+        ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, command);
         HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover)));
         for (BaseComponent component : components) {
             component.setClickEvent(click);
