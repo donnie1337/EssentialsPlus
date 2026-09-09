@@ -62,6 +62,7 @@
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <outputFile>${project.build.directory}/EssentialsPlus.jar</outputFile>
                         </configuration>
                     </execution>
                 </executions>
