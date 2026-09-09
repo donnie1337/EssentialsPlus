@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.teleport;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -69,15 +70,31 @@ public final class TpaCustomClickListener implements Listener {
 
             ButtonResult previous = results.get(token);
             if (previous != null) {
-                sendResultMessage(player, previous);
+                sendResultMessage(player, previous, action);
                 return;
             }
 
             long timeout = plugin.getConfig().getLong("tpa.request-timeout-seconds", 20L) * 1000L;
             if (timeout > 0 && System.currentTimeMillis() - action.createdAt() >= timeout) {
                 results.put(token, ButtonResult.EXPIRED);
-                sendResultMessage(player, ButtonResult.EXPIRED);
+                sendResultMessage(player, ButtonResult.EXPIRED, action);
                 return;
+            }
+
+            if (action.type() == ButtonActionType.CANCEL) {
+                ButtonAction accept = ButtonAction.findRelated(token, ButtonActionType.ACCEPT, player.getUniqueId());
+                ButtonAction deny = ButtonAction.findRelated(token, ButtonActionType.DENY, player.getUniqueId());
+
+                if (accept != null && results.get(accept.token()) == ButtonResult.ACCEPTED) {
+                    results.put(token, ButtonResult.CANCEL_BLOCKED_ACCEPTED);
+                    sendResultMessage(player, ButtonResult.CANCEL_BLOCKED_ACCEPTED, action);
+                    return;
+                }
+                if (deny != null && results.get(deny.token()) == ButtonResult.DENIED) {
+                    results.put(token, ButtonResult.CANCEL_BLOCKED_DENIED);
+                    sendResultMessage(player, ButtonResult.CANCEL_BLOCKED_DENIED, action);
+                    return;
+                }
             }
 
             boolean handled = teleportService.handleButton(player, token);
@@ -94,14 +111,21 @@ public final class TpaCustomClickListener implements Listener {
         }
     }
 
-    private void sendResultMessage(Player player, ButtonResult result) {
+    private void sendResultMessage(Player player, ButtonResult result, ButtonAction action) {
         String key = switch (result) {
             case ACCEPTED -> "request-already-accepted";
             case DENIED -> "request-already-denied";
             case EXPIRED -> "request-expired-cannot-respond";
             case CANCELLED -> "request-already-cancelled";
+            case CANCEL_BLOCKED_ACCEPTED -> "request-cannot-cancel-accepted";
+            case CANCEL_BLOCKED_DENIED -> "request-cannot-cancel-denied";
         };
         String raw = plugin.getConfig().getString("messages." + key, "");
+        if (result == ButtonResult.CANCEL_BLOCKED_ACCEPTED || result == ButtonResult.CANCEL_BLOCKED_DENIED) {
+            Player target = Bukkit.getPlayer(action.targetId());
+            String name = target != null ? target.getName() : "";
+            raw = raw.replace("{player}", name);
+        }
         String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", ""));
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + raw));
     }
@@ -145,6 +169,8 @@ public final class TpaCustomClickListener implements Listener {
         ACCEPTED,
         DENIED,
         EXPIRED,
-        CANCELLED
+        CANCELLED,
+        CANCEL_BLOCKED_ACCEPTED,
+        CANCEL_BLOCKED_DENIED
     }
 }
