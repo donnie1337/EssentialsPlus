@@ -18,6 +18,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -191,9 +192,9 @@ public final class TeleportService {
             }
             if (nextPos > cursor) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor, nextPos))));
             if (isAccept) {
-                if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, "/tpaaction " + accept, acceptHover)));
+                if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover)));
             } else if (denyEnabled) {
-                message.addAll(Arrays.asList(buttonComponent(denyText, "/tpaaction " + deny, denyHover)));
+                message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover)));
             }
             cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
         }
@@ -206,7 +207,7 @@ public final class TeleportService {
         int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
         String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar"));
         String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
-        requester.spigot().sendMessage(buttonComponent(text, "/tpaaction " + token, hover));
+        requester.spigot().sendMessage(buttonComponent(text, token, hover));
     }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
@@ -215,15 +216,26 @@ public final class TeleportService {
         return token;
     }
 
-    private BaseComponent[] buttonComponent(String label, String command, String hover) {
+    private BaseComponent[] buttonComponent(String label, int token, String hover) {
         BaseComponent[] components = TextComponent.fromLegacyText(label);
-        ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, command);
+        ClickEvent click = createCustomClick(token);
         HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover)));
         for (BaseComponent component : components) {
-            component.setClickEvent(click);
+            if (click != null) component.setClickEvent(click);
             component.setHoverEvent(hoverEvent);
         }
         return components;
+    }
+
+    private ClickEvent createCustomClick(int token) {
+        try {
+            Class<?> type = Class.forName("net.md_5.bungee.api.chat.ClickEventCustom");
+            Constructor<?> constructor = type.getConstructor(String.class, String.class);
+            return (ClickEvent) constructor.newInstance(TPA_BUTTON_KEY.asString(), Integer.toString(token));
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            plugin.getLogger().warning("ClickEventCustom não está disponível neste servidor; botão de TPA sem ação.");
+            return null;
+        }
     }
 
     public boolean handleButton(Player player, int token) {
@@ -278,19 +290,12 @@ public final class TeleportService {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             if (c == ChatColor.COLOR_CHAR && i + 1 < text.length()) {
-                if (!segment.isEmpty()) {
-                    result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated));
-                    segment.setLength(0);
-                }
+                if (!segment.isEmpty()) { result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated)); segment.setLength(0); }
                 ChatColor code = ChatColor.getByChar(text.charAt(++i));
                 if (code == null) { segment.append(ChatColor.COLOR_CHAR).append(text.charAt(i)); continue; }
-                if (code == ChatColor.RESET) {
-                    currentColor = NamedTextColor.WHITE;
-                    bold = italic = underlined = strikethrough = obfuscated = false;
-                } else if (code.isColor()) {
-                    currentColor = adventureColor(code);
-                    bold = italic = underlined = strikethrough = obfuscated = false;
-                } else if (code == ChatColor.BOLD) bold = true;
+                if (code == ChatColor.RESET) { currentColor = NamedTextColor.WHITE; bold = italic = underlined = strikethrough = obfuscated = false; }
+                else if (code.isColor()) { currentColor = adventureColor(code); bold = italic = underlined = strikethrough = obfuscated = false; }
+                else if (code == ChatColor.BOLD) bold = true;
                 else if (code == ChatColor.ITALIC) italic = true;
                 else if (code == ChatColor.UNDERLINE) underlined = true;
                 else if (code == ChatColor.STRIKETHROUGH) strikethrough = true;
