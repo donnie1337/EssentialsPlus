@@ -150,23 +150,58 @@ public final class TeleportService {
     }
 
     private void sendRequestMessage(Player recipient, Player requester, boolean here) {
-        String raw = plugin.getConfig().getString(here ? "messages.request-here-received" : "messages.request-received", "");
-        raw = color(raw.replace("{player}", coloredPlayer(requester)));
-        List<BaseComponent> components = new ArrayList<>();
-        for (BaseComponent component : TextComponent.fromLegacyText(raw)) components.add(component);
+        String key = here ? "messages.request-here-received" : "messages.request-received";
+        String raw = plugin.getConfig().getString(key, "{player}&f está pedindo para se teleportar até você. Clique {accept} para aceitar ou {deny} para negar!");
+        raw = raw.replace("{player}", coloredPlayer(requester));
+        String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", ""));
+        raw = color(prefix + raw);
+
         int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
         int deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
-        components.add(new TextComponent(" "));
-        components.add(buttonComponent("AQUI", "§a§l", accept, "Clique para aceitar a solicitação."));
-        components.add(new TextComponent(" para aceitar ou "));
-        components.add(buttonComponent("AQUI", "§c§l", deny, "Clique para negar a solicitação."));
-        components.add(new TextComponent(" para negar!"));
+        boolean acceptEnabled = plugin.getConfig().getBoolean("buttons.accept.enabled", true);
+        boolean denyEnabled = plugin.getConfig().getBoolean("buttons.deny.enabled", true);
+        String acceptText = color(plugin.getConfig().getString("buttons.accept.text", "&a&lAQUI"));
+        String denyText = color(plugin.getConfig().getString("buttons.deny.text", "&c&lAQUI"));
+        String acceptHover = plugin.getConfig().getString("buttons.accept.hover", "&7Clique para aceitar a solicitação.");
+        String denyHover = plugin.getConfig().getString("buttons.deny.hover", "&7Clique para negar a solicitação.");
+
+        List<BaseComponent> components = new ArrayList<>();
+        appendRequestComponents(components, raw, acceptEnabled ? buttonComponent(acceptText, "", accept, acceptHover) : null, denyEnabled ? buttonComponent(denyText, "", deny, denyHover) : null);
         recipient.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
 
+    private void appendRequestComponents(List<BaseComponent> components, String raw, BaseComponent accept, BaseComponent deny) {
+        int cursor = 0;
+        while (cursor < raw.length()) {
+            int acceptPos = raw.indexOf("{accept}", cursor);
+            int denyPos = raw.indexOf("{deny}", cursor);
+            int nextPos = -1;
+            boolean isAccept = false;
+            if (acceptPos >= 0 && (denyPos < 0 || acceptPos < denyPos)) { nextPos = acceptPos; isAccept = true; }
+            else if (denyPos >= 0) nextPos = denyPos;
+            if (nextPos < 0) {
+                addLegacyText(components, raw.substring(cursor));
+                break;
+            }
+            addLegacyText(components, raw.substring(cursor, nextPos));
+            BaseComponent button = isAccept ? accept : deny;
+            if (button != null) components.add(button);
+            cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
+        }
+        if (raw.isEmpty()) return;
+    }
+
+    private void addLegacyText(List<BaseComponent> components, String text) {
+        if (text == null || text.isEmpty()) return;
+        for (BaseComponent component : TextComponent.fromLegacyText(text)) components.add(component);
+    }
+
     private void sendCancelButton(Player requester, Player recipient) {
+        if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
         int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
-        requester.spigot().sendMessage(buttonComponent("CANCELAR", "§c§l", token, "Clique para cancelar sua solicitação de TPA."));
+        String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar"));
+        String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
+        requester.spigot().sendMessage(buttonComponent(text, "", token, hover));
     }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
