@@ -2,6 +2,7 @@ package com.donnie1337.essentialsplus.teleport;
 
 import java.util.UUID;
 
+/** Representa uma ação registrada para um botão de interação do TPA. */
 public record ButtonAction(
         int token,
         ButtonActionType type,
