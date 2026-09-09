@@ -157,9 +157,10 @@ public final class TeleportService {
         int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
         int deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
         components.add(new TextComponent(" "));
-        components.add(buttonComponent("ACEITAR", "§a§l", accept, "Clique para aceitar a solicitação."));
-        components.add(new TextComponent(" "));
-        components.add(buttonComponent("RECUSAR", "§c§l", deny, "Clique para recusar a solicitação."));
+        components.add(buttonComponent("AQUI", "§a§l", accept, "Clique para aceitar a solicitação."));
+        components.add(new TextComponent(" para aceitar ou "));
+        components.add(buttonComponent("AQUI", "§c§l", deny, "Clique para recusar a solicitação."));
+        components.add(new TextComponent(" para negar!"));
         recipient.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
 
