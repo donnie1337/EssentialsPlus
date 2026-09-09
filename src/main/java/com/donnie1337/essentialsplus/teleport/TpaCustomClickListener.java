@@ -76,8 +76,11 @@ public final class TpaCustomClickListener implements Listener {
 
             long timeout = plugin.getConfig().getLong("tpa.request-timeout-seconds", 20L) * 1000L;
             if (timeout > 0 && System.currentTimeMillis() - action.createdAt() >= timeout) {
-                results.put(token, ButtonResult.EXPIRED);
-                sendResultMessage(player, ButtonResult.EXPIRED, action);
+                ButtonResult expiredResult = action.type() == ButtonActionType.CANCEL
+                        ? ButtonResult.CANCEL_BLOCKED_EXPIRED
+                        : ButtonResult.EXPIRED;
+                results.put(token, expiredResult);
+                sendResultMessage(player, expiredResult, action);
                 return;
             }
 
@@ -119,6 +122,7 @@ public final class TpaCustomClickListener implements Listener {
             case CANCELLED -> "request-already-cancelled";
             case CANCEL_BLOCKED_ACCEPTED -> "request-cannot-cancel-accepted";
             case CANCEL_BLOCKED_DENIED -> "request-cannot-cancel-denied";
+            case CANCEL_BLOCKED_EXPIRED -> "request-cannot-cancel-expired";
         };
         String raw = plugin.getConfig().getString("messages." + key, "");
         if (result == ButtonResult.CANCEL_BLOCKED_ACCEPTED || result == ButtonResult.CANCEL_BLOCKED_DENIED) {
@@ -171,6 +175,7 @@ public final class TpaCustomClickListener implements Listener {
         EXPIRED,
         CANCELLED,
         CANCEL_BLOCKED_ACCEPTED,
-        CANCEL_BLOCKED_DENIED
+        CANCEL_BLOCKED_DENIED,
+        CANCEL_BLOCKED_EXPIRED
     }
 }
