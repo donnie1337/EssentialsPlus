@@ -226,18 +226,18 @@ public final class TeleportService {
         List<BaseComponent> components = new ArrayList<>();
         for (BaseComponent component : TextComponent.fromLegacyText(raw)) components.add(component);
 
-        int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
-        int deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
+        registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
+        registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
         components.add(new TextComponent(" "));
-        components.add(buttonComponent("ACEITAR", "§a§l", accept, "Clique para aceitar a solicitação."));
+        components.add(buttonComponent("ACEITAR", "§a§l", "/essentialsplus:tpaccept " + requester.getName(), "Clique para aceitar a solicitação."));
         components.add(new TextComponent(" "));
-        components.add(buttonComponent("RECUSAR", "§c§l", deny, "Clique para recusar a solicitação."));
+        components.add(buttonComponent("RECUSAR", "§c§l", "/essentialsplus:tpdeny " + requester.getName(), "Clique para recusar a solicitação."));
         recipient.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
 
     private void sendCancelButton(Player requester, Player recipient) {
-        int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
-        requester.spigot().sendMessage(buttonComponent("CANCELAR", "§c§l", token, "Clique para cancelar sua solicitação de TPA."));
+        registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
+        requester.spigot().sendMessage(buttonComponent("CANCELAR", "§c§l", "/essentialsplus:tpacancel " + recipient.getName(), "Clique para cancelar sua solicitação de TPA."));
     }
 
     private int registerButton(Player player, ButtonActionType type, UUID targetId) {
@@ -246,9 +246,9 @@ public final class TeleportService {
         return token;
     }
 
-    private TextComponent buttonComponent(String label, String color, int token, String hover) {
+    private TextComponent buttonComponent(String label, String color, String command, String hover) {
         TextComponent component = new TextComponent(color + label);
-        component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/essentialsplus:tpaaction " + token));
+        component.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command));
         component.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text(color(hover))));
         return component;
     }
@@ -379,31 +379,25 @@ public final class TeleportService {
 
     private String cargoNicknameColor(Player player) {
         try {
-            RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(Class.forName("com.cargoplus.api.CargoPlusAPI"));
+            RegisteredServiceProvider<?> registration =
+                Bukkit.getServicesManager().getRegistration(Class.forName("com.cargoplus.api.CargoPlusAPI"));
             if (registration == null) return null;
             Object api = registration.getProvider();
-            Object result = api.getClass().getMethod("getNicknameColor", UUID.class).invoke(api, player.getUniqueId());
+            Object result = api.getClass().getMethod("getNicknameColor", UUID.class)
+                .invoke(api, player.getUniqueId());
             return result == null ? null : result.toString();
         } catch (ReflectiveOperationException | LinkageError ignored) {
             return null;
         }
     }
 
-    private String color(String value) {
-        if (value == null) return "";
-        return ChatColor.translateAlternateColorCodes('&', value);
+    private void message(Player player, String key, String... replacements) {
+        String raw = plugin.getConfig().getString("messages." + key, "");
+        for (int i = 0; i + 1 < replacements.length; i += 2) raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
+        player.sendMessage(color(plugin.getConfig().getString("messages.prefix", "") + raw));
     }
 
-    private void message(Player player, String path, String... replacements) {
-        if (player == null || !player.isOnline()) return;
-        String raw = plugin.getConfig().getString("messages." + path, "");
-        for (int i = 0; i + 1 < replacements.length; i += 2) {
-            String key = replacements[i];
-            String replacement = replacements[i + 1];
-            if ("player".equals(key)) replacement = coloredPlayer(Bukkit.getPlayerExact(replacement));
-            raw = raw.replace("{" + key + "}", replacement == null ? "" : replacement);
-        }
-        raw = color(raw);
-        chatPlusBridge.sendSystemMessage(player, raw);
+    private String color(String text) {
+        return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
     }
 }
