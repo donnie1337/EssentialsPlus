@@ -12,36 +12,45 @@ commands:
   tpa:
     description: Solicita teleporte até outro jogador.
     usage: /tpa <jogador>
+    permission: essentialsplus.tpa
   tpaqui:
     description: Solicita que outro jogador se teleporte até você.
     usage: /tpaqui <jogador>
+    permission: essentialsplus.tpaqui
   tpaccept:
     description: Aceita uma solicitação de teleporte.
     usage: /tpaceitar [jogador]
     aliases:
       - tpaceitar
+    permission: essentialsplus.tpaceitar
   tpdeny:
     description: Recusa uma solicitação de teleporte.
     usage: /tpnegar [jogador]
     aliases:
       - tpnegar
+    permission: essentialsplus.tpnegar
   tpacancel:
     description: Cancela uma solicitação de teleporte enviada.
     usage: /tpacancelar [jogador]
     aliases:
       - tpacancelar
+    permission: essentialsplus.tpacancelar
   home:
     description: Teleporta para uma home salva.
     usage: /home <nome>
+    permission: essentialsplus.home
   homes:
     description: Lista suas homes salvas.
     usage: /homes
+    permission: essentialsplus.homes
   sethome:
     description: Salva uma home na sua localização atual.
     usage: /sethome <nome>
+    permission: essentialsplus.sethome
   delhome:
     description: Remove uma home salva.
     usage: /delhome <nome>
+    permission: essentialsplus.delhome
 permissions:
   essentialsplus.tpa:
     description: Permite usar /tpa.
