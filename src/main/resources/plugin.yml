@@ -37,7 +37,6 @@ commands:
     permission: essentialsplus.tpa
   tpaaction:
     description: Ação interna dos botões do sistema de TPA.
-    permission: essentialsplus.tpa
   home:
     description: Teleporta para uma home salva.
     usage: /home <nome>
