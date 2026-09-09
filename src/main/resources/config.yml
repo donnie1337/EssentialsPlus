@@ -17,6 +17,7 @@ homes:
 
 messages:
   prefix: "&c&lSERVIDOR &7• &r"
+  tpa-prefix: "&b&lTPA &7• &r"
   unknown-command: "Comando não encontrado."
   player-not-found: "Jogador não encontrado."
   cannot-self: "Você não pode enviar uma solicitação para si mesmo."
