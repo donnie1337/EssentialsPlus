@@ -14,6 +14,10 @@ commands:
     description: Ativa ou desativa o modo vanish.
     usage: /v
     permission: essentialsplus.vanish
+  fly:
+    description: Ativa ou desativa o modo voo.
+    usage: /fly
+    permission: essentialsplus.fly
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
@@ -70,6 +74,7 @@ permissions:
     default: op
     children:
       essentialsplus.vanish: true
+      essentialsplus.fly: true
       essentialsplus.teleport: true
       essentialsplus.tpa: true
       essentialsplus.home: true
@@ -79,6 +84,9 @@ permissions:
   essentialsplus.vanish:
     description: Permite usar o /v.
     default: false
+  essentialsplus.fly:
+    description: Permite usar o /fly.
+    default: op
   essentialsplus.teleport:
     description: Permite usar os comandos de teleporte direto da staff.
     default: op
@@ -100,7 +108,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpcancelar.
+    description: Permissão interna do comando /tpacancelar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
