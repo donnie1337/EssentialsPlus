@@ -70,11 +70,10 @@ commands:
     permission: essentialsplus.delhome
 permissions:
   essentialsplus.admin:
-    description: Permite usar todos os comandos e recursos administrativos do EssentialsPlus.
+    description: Permite usar os recursos administrativos do EssentialsPlus.
     default: op
     children:
       essentialsplus.vanish: true
-      essentialsplus.fly: true
       essentialsplus.teleport: true
       essentialsplus.tpa: true
       essentialsplus.home: true
@@ -86,7 +85,7 @@ permissions:
     default: false
   essentialsplus.fly:
     description: Permite usar o /fly.
-    default: op
+    default: false
   essentialsplus.teleport:
     description: Permite usar os comandos de teleporte direto da staff.
     default: op
@@ -108,7 +107,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpacancelar.
+    description: Permissão interna do comando /tpcancelar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
