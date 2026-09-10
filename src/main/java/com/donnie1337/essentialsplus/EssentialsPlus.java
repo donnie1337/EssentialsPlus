@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus;
 
+import com.donnie1337.essentialsplus.admin.command.FlyCommand;
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import com.donnie1337.essentialsplus.home.HomeGui;
@@ -39,6 +40,7 @@ public final class EssentialsPlus extends JavaPlugin {
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
         register("v", new VanishCommand(vanishService));
+        register("fly", new FlyCommand());
 
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
@@ -63,7 +65,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
 
-        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes e Vanish.");
+        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish e Fly.");
     }
 
     @Override
