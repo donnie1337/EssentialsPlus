@@ -26,12 +26,12 @@ public final class HomeGui implements Listener {
     private static final int HOMES_SIZE = 54;
     private static final int MANAGE_SIZE = 45;
     private static final int INTRO_SLOT = 13;
-    private static final int FIRST_HOME_SLOT = 11;
     private static final int ALTER_NAME_SLOT = 20;
     private static final int TELEPORT_SLOT = 22;
     private static final int DELETE_SLOT = 24;
     private static final int MANAGE_BACK_SLOT = 40;
     private static final int BACK_SLOT = 49;
+    private static final int[] HOME_SLOTS = {11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33, 38, 39, 40, 41, 42};
 
     private final HomeService service;
     private final Map<UUID, String> pendingRenames = new HashMap<>();
@@ -42,16 +42,13 @@ public final class HomeGui implements Listener {
 
     public void openIntro(Player player) {
         Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO, null), INTRO_SIZE, "§8Homes");
-
         fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
-
-        ItemStack item = item(Material.COMPASS, "§aSuas homes", List.of(
+        inventory.setItem(INTRO_SLOT, item(Material.COMPASS, "§aSuas homes", List.of(
                 "§7Gerencie todos os pontos de",
                 "§7teleporte personalizados.",
                 "",
                 "§eClique para abrir"
-        ));
-        inventory.setItem(INTRO_SLOT, item);
+        )));
         player.openInventory(inventory);
     }
 
@@ -60,18 +57,15 @@ public final class HomeGui implements Listener {
         fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
 
         Map<String, Home> homes = service.homes(player);
-        int slot = FIRST_HOME_SLOT;
-        int[] homeSlots = {11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33, 38, 39, 40, 41, 42};
-
+        int index = 0;
         for (Home home : homes.values()) {
-            if (slot >= homeSlots.length) break;
-            inventory.setItem(homeSlots[slot], item(Material.LODESTONE, "§a" + home.name(), List.of(
+            if (index >= HOME_SLOTS.length) break;
+            inventory.setItem(HOME_SLOTS[index++], item(Material.LODESTONE, "§a" + home.name(), List.of(
                     "",
                     "§7Clique esquerdo §f→ §eTeleportar",
                     "§7Clique direito §f→ §eGerenciar",
                     "§7Shift + direito §f→ §cDeletar"
             )));
-            slot++;
         }
 
         if (homes.isEmpty()) {
@@ -97,7 +91,7 @@ public final class HomeGui implements Listener {
         inventory.setItem(13, item(Material.LODESTONE, "§a" + home.name(), List.of(
                 "§7Sua localização salva",
                 "",
-                "§8Clique em uma opção abaixo"
+                "§8Escolha uma ação abaixo"
         )));
 
         inventory.setItem(20, item(Material.NAME_TAG, "§eRenomear Home", List.of(
