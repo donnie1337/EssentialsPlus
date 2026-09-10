@@ -24,12 +24,14 @@ import java.util.UUID;
 public final class HomeGui implements Listener {
     private static final int INTRO_SIZE = 27;
     private static final int HOMES_SIZE = 54;
-    private static final int MANAGE_SIZE = 36;
+    private static final int MANAGE_SIZE = 45;
     private static final int INTRO_SLOT = 13;
     private static final int FIRST_HOME_SLOT = 11;
-    private static final int ALTER_NAME_SLOT = 13;
+    private static final int ALTER_NAME_SLOT = 20;
+    private static final int TELEPORT_SLOT = 22;
+    private static final int DELETE_SLOT = 24;
+    private static final int MANAGE_BACK_SLOT = 40;
     private static final int BACK_SLOT = 49;
-    private static final int MANAGE_BACK_SLOT = 31;
 
     private final HomeService service;
     private final Map<UUID, String> pendingRenames = new HashMap<>();
@@ -39,60 +41,46 @@ public final class HomeGui implements Listener {
     }
 
     public void openIntro(Player player) {
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO, null), INTRO_SIZE, "Homes");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO, null), INTRO_SIZE, "§8Homes");
 
-        ItemStack item = new ItemStack(Material.DIRT);
-        ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§aSuas homes");
-        meta.setLore(List.of(
+        fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
+
+        ItemStack item = item(Material.COMPASS, "§aSuas homes", List.of(
                 "§7Gerencie todos os pontos de",
                 "§7teleporte personalizados.",
                 "",
-                "§aClique para gerenciar"
+                "§eClique para abrir"
         ));
-        item.setItemMeta(meta);
         inventory.setItem(INTRO_SLOT, item);
-
         player.openInventory(inventory);
     }
 
     public void openHomes(Player player) {
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "Homes → Suas Homes");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "§8Homes §7→ §fSuas Homes");
+        fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
+
         Map<String, Home> homes = service.homes(player);
-
         int slot = FIRST_HOME_SLOT;
-        for (Home home : homes.values()) {
-            if (slot >= BACK_SLOT) break;
+        int[] homeSlots = {11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33, 38, 39, 40, 41, 42};
 
-            ItemStack item = new ItemStack(Material.DIRT_PATH);
-            ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName("§a" + home.name());
-            meta.setLore(List.of(
+        for (Home home : homes.values()) {
+            if (slot >= homeSlots.length) break;
+            inventory.setItem(homeSlots[slot], item(Material.LODESTONE, "§a" + home.name(), List.of(
                     "",
-                    "§eBotão esquerdo: §fTeleportar",
-                    "§eBotão direito: §fGerenciar",
-                    "§eShift + direito: §fDeletar"
-            ));
-            item.setItemMeta(meta);
-            inventory.setItem(slot++, item);
+                    "§7Clique esquerdo §f→ §eTeleportar",
+                    "§7Clique direito §f→ §eGerenciar",
+                    "§7Shift + direito §f→ §cDeletar"
+            )));
+            slot++;
         }
 
         if (homes.isEmpty()) {
-            ItemStack item = new ItemStack(Material.BARRIER);
-            ItemMeta meta = item.getItemMeta();
-            meta.setDisplayName("§cNenhuma home encontrada");
-            meta.setLore(List.of("§7Use §f/sethome <nome> §7para criar uma."));
-            item.setItemMeta(meta);
-            inventory.setItem(FIRST_HOME_SLOT, item);
+            inventory.setItem(22, item(Material.BARRIER, "§cNenhuma home encontrada", List.of(
+                    "§7Use §f/sethome <nome> §7para criar uma."
+            )));
         }
 
-        ItemStack back = new ItemStack(Material.ARROW);
-        ItemMeta backMeta = back.getItemMeta();
-        backMeta.setDisplayName("§eVoltar");
-        backMeta.setLore(List.of("§7Voltar para o menu de suas homes."));
-        back.setItemMeta(backMeta);
-        inventory.setItem(BACK_SLOT, back);
-
+        inventory.setItem(BACK_SLOT, item(Material.ARROW, "§eVoltar", List.of("§7Voltar para o menu de homes.")));
         player.openInventory(inventory);
     }
 
@@ -103,25 +91,36 @@ public final class HomeGui implements Listener {
             return;
         }
 
-        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.MANAGE, home.name()), MANAGE_SIZE, "Gerenciar home");
+        Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.MANAGE, home.name()), MANAGE_SIZE, "§8Gerenciar §7→ §f" + home.name());
+        fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
 
-        ItemStack nameTag = new ItemStack(Material.NAME_TAG);
-        ItemMeta meta = nameTag.getItemMeta();
-        meta.setDisplayName("§aAlterar o nome");
-        meta.setLore(List.of(
-                "§7Atual: §f" + home.name(),
-                "§aClique para alterar"
-        ));
-        nameTag.setItemMeta(meta);
-        inventory.setItem(ALTER_NAME_SLOT, nameTag);
+        inventory.setItem(13, item(Material.LODESTONE, "§a" + home.name(), List.of(
+                "§7Sua localização salva",
+                "",
+                "§8Clique em uma opção abaixo"
+        )));
 
-        ItemStack back = new ItemStack(Material.ARROW);
-        ItemMeta backMeta = back.getItemMeta();
-        backMeta.setDisplayName("§eVoltar");
-        backMeta.setLore(List.of("§7Voltar para suas homes."));
-        back.setItemMeta(backMeta);
-        inventory.setItem(MANAGE_BACK_SLOT, back);
+        inventory.setItem(20, item(Material.NAME_TAG, "§eRenomear Home", List.of(
+                "§7Altere o nome desta home.",
+                "",
+                "§7Nome atual: §f" + home.name(),
+                "",
+                "§aClique para renomear"
+        )));
 
+        inventory.setItem(22, item(Material.ENDER_PEARL, "§bTeleportar", List.of(
+                "§7Teleporte diretamente para esta home.",
+                "",
+                "§aClique para teleportar"
+        )));
+
+        inventory.setItem(24, item(Material.BARRIER, "§cDeletar Home", List.of(
+                "§7Remove permanentemente esta home.",
+                "",
+                "§cClique para deletar"
+        )));
+
+        inventory.setItem(MANAGE_BACK_SLOT, item(Material.ARROW, "§eVoltar", List.of("§7Voltar para suas homes.")));
         player.openInventory(inventory);
     }
 
@@ -130,8 +129,6 @@ public final class HomeGui implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!(event.getView().getTopInventory().getHolder() instanceof HomesHolder holder)) return;
 
-        // O menu e todos os seus itens sao somente visuais/interativos.
-        // Bloqueia tambem shift-click, hotbar, troca de cursor e demais formas de mover itens.
         event.setCancelled(true);
         event.setResult(Result.DENY);
 
@@ -149,7 +146,7 @@ public final class HomeGui implements Listener {
             }
 
             ItemStack clicked = event.getCurrentItem();
-            if (clicked == null || clicked.getType() != Material.DIRT_PATH || clicked.getItemMeta() == null) return;
+            if (clicked == null || clicked.getType() != Material.LODESTONE || clicked.getItemMeta() == null) return;
 
             String name = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
             try {
@@ -185,18 +182,39 @@ public final class HomeGui implements Listener {
         }
 
         if (holder.type() == HomesHolder.Type.MANAGE) {
+            String homeName = holder.homeName();
+            if (homeName == null) return;
+
             if (event.getRawSlot() == MANAGE_BACK_SLOT) {
                 openHomes(player);
                 return;
             }
 
             if (event.getRawSlot() == ALTER_NAME_SLOT) {
-                String homeName = holder.homeName();
-                if (homeName == null) return;
                 pendingRenames.put(player.getUniqueId(), homeName);
                 player.closeInventory();
                 player.sendMessage("§eDigite no chat o novo nome da home §f" + homeName + "§e.");
                 player.sendMessage("§7Digite §fcancelar §7para desistir.");
+                return;
+            }
+
+            if (event.getRawSlot() == TELEPORT_SLOT) {
+                Home home = service.getHome(player, homeName);
+                if (home == null) {
+                    openHomes(player);
+                    return;
+                }
+                player.closeInventory();
+                player.teleport(home.location());
+                player.sendMessage("§aTeleportado para a home §f" + home.name() + "§a.");
+                return;
+            }
+
+            if (event.getRawSlot() == DELETE_SLOT) {
+                if (service.deleteHome(player, homeName)) {
+                    player.sendMessage("§aHome §f" + homeName + " §adeletada com sucesso.");
+                }
+                player.closeInventory();
             }
         }
     }
@@ -244,6 +262,28 @@ public final class HomeGui implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         pendingRenames.remove(event.getPlayer().getUniqueId());
         service.unload(event.getPlayer());
+    }
+
+    private static ItemStack item(Material material, String name, List<String> lore) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(name);
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private static void fillBorder(Inventory inventory, Material material) {
+        int size = inventory.getSize();
+        int rows = size / 9;
+        ItemStack filler = item(material, "§r", List.of());
+        for (int slot = 0; slot < size; slot++) {
+            int row = slot / 9;
+            int column = slot % 9;
+            if (row == 0 || row == rows - 1 || column == 0 || column == 8) {
+                inventory.setItem(slot, filler);
+            }
+        }
     }
 
     private record HomesHolder(Type type, String homeName) implements InventoryHolder {
