@@ -19,15 +19,15 @@ commands:
     usage: /fly
     permission: essentialsplus.fly
   ec:
-    description: Abre o Ender Chest pessoal.
-    usage: /ec
-    aliases:
-      - enderchest
-    permission: essentialsplus.ec
+    description: Abre o Ender Chest pessoal ou visualiza o Ender Chest de outro jogador.
+    usage: /ec [jogador]
   bau:
-    description: Abre o baú estendido pessoal.
-    usage: /bau
-    permission: essentialsplus.bau
+    description: Abre o baú estendido pessoal ou visualiza o baú de outro jogador.
+    usage: /bau [jogador]
+  ver:
+    description: Visualiza o inventário de outro jogador.
+    usage: /ver <jogador>
+    permission: essentialsplus.inspect
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
@@ -42,7 +42,7 @@ commands:
     permission: essentialsplus.tpa
   tpaqui:
     description: Solicita que outro jogador se teleporte até você.
-    usage: /tpa <jogador>
+    usage: /tpaqui <jogador>
     permission: essentialsplus.tpa
   tpaccept:
     description: Aceita uma solicitação de teleporte.
@@ -90,6 +90,7 @@ permissions:
       essentialsplus.homes: true
       essentialsplus.sethome: true
       essentialsplus.delhome: true
+      essentialsplus.inspect: true
   essentialsplus.vanish:
     description: Permite usar o /v.
     default: false
@@ -97,10 +98,13 @@ permissions:
     description: Permite usar o /fly.
     default: false
   essentialsplus.ec:
-    description: Permite usar o /ec e o alias /enderchest.
+    description: Permite usar o /ec.
     default: false
   essentialsplus.bau:
-    description: Permite usar o /bau e o baú estendido pessoal.
+    description: Permite usar o /bau.
+    default: false
+  essentialsplus.inspect:
+    description: Permite visualizar inventários, Ender Chests e baús estendidos de outros jogadores sem retirar itens.
     default: false
   essentialsplus.teleport:
     description: Permite usar os comandos de teleporte direto da staff.
