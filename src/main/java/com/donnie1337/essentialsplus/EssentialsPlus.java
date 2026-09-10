@@ -13,6 +13,8 @@ import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
 import com.donnie1337.essentialsplus.home.command.HomeCommand;
 import com.donnie1337.essentialsplus.home.command.HomesCommand;
 import com.donnie1337.essentialsplus.home.command.SetHomeCommand;
+import com.donnie1337.essentialsplus.inspect.InspectListener;
+import com.donnie1337.essentialsplus.inspect.VerCommand;
 import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.TpaCustomClickListener;
@@ -45,11 +47,14 @@ public final class EssentialsPlus extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
+        getServer().getPluginManager().registerEvents(new InspectListener(), this);
+
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("ec", new EcCommand());
+        register("ver", new VerCommand());
 
         bauService = new BauService(this);
         getServer().getPluginManager().registerEvents(new BauListener(bauService), this);
@@ -79,7 +84,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
 
-        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly, Ender Chest e Bau.");
+        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly, Ender Chest, Bau e Ver.");
     }
 
     @Override
