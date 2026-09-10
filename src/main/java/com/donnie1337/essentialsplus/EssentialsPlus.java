@@ -19,7 +19,6 @@ import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.TpaCustomClickListener;
 import com.donnie1337.essentialsplus.teleport.command.TpCommand;
-import com.donnie1337.essentialsplus.teleport.command.TpHereCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCommand;
@@ -67,7 +66,6 @@ public final class EssentialsPlus extends JavaPlugin {
 
         staffTeleportService = new StaffTeleportService(this);
         register("tp", new TpCommand(staffTeleportService));
-        register("tphere", new TpHereCommand(staffTeleportService));
 
         homeService = new HomeService(this);
         HomeGui homeGui = new HomeGui(homeService);
