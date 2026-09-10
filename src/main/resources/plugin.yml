@@ -81,6 +81,7 @@ permissions:
     children:
       essentialsplus.vanish: true
       essentialsplus.teleport: true
+      essentialsplus.inspect: true
   essentialsplus.vanish:
     description: Permite usar o /v.
     default: false
