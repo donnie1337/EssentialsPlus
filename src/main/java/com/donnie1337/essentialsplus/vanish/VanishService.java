@@ -9,6 +9,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.Team;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -106,6 +107,10 @@ public final class VanishService {
      * TextDisplay nametag. CargoPlus/another nametag system therefore keeps
      * full control over the prefix and nickname, while EssentialsPlus only
      * contributes the vanish suffix.
+     *
+     * Paper's Adventure Team.suffix() methods are accessed through reflection
+     * so EssentialsPlus remains compatible with the Spigot API used at build
+     * time while still preserving the Adventure component and hover on Paper.
      */
     private void applyVanishSuffix(Player player) {
         Team team = findTeam(player);
@@ -114,7 +119,8 @@ public final class VanishService {
         UUID uuid = player.getUniqueId();
         TeamSuffixState state = suffixStates.get(uuid);
         if (state == null) {
-            Component originalSuffix = team.suffix();
+            Component originalSuffix = readPaperSuffix(team);
+            if (originalSuffix == null) originalSuffix = Component.empty();
             state = new TeamSuffixState(team.getName(), originalSuffix);
             suffixStates.put(uuid, state);
         }
@@ -125,8 +131,9 @@ public final class VanishService {
                         .color(NamedTextColor.GRAY)
                         .hoverEvent(HoverEvent.showText(VANISH_HOVER)));
 
-        if (!team.suffix().equals(expectedSuffix)) {
-            team.suffix(expectedSuffix);
+        Component currentSuffix = readPaperSuffix(team);
+        if (!expectedSuffix.equals(currentSuffix)) {
+            writePaperSuffix(team, expectedSuffix);
         }
     }
 
@@ -139,7 +146,30 @@ public final class VanishService {
         Team team = scoreboard.getTeam(state.teamName());
         if (team == null) return;
 
-        team.suffix(state.originalSuffix());
+        writePaperSuffix(team, state.originalSuffix());
+    }
+
+    private Component readPaperSuffix(Team team) {
+        try {
+            Method method = team.getClass().getMethod("suffix");
+            Object result = method.invoke(team);
+            return result instanceof Component component ? component : null;
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
+    }
+
+    private void writePaperSuffix(Team team, Component suffix) {
+        try {
+            for (Method method : team.getClass().getMethods()) {
+                if (!method.getName().equals("suffix") || method.getParameterCount() != 1) continue;
+                if (!method.getParameterTypes()[0].isInstance(suffix)) continue;
+                method.invoke(team, suffix);
+                return;
+            }
+        } catch (ReflectiveOperationException ignored) {
+            // The running server does not expose Paper's Adventure suffix API.
+        }
     }
 
     private Team findTeam(Player player) {
