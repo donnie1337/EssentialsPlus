@@ -39,17 +39,17 @@ public final class TpCommand implements CommandExecutor {
         }
 
         if (args.length == 2) {
-            Player player = service.findPlayer(args[0]);
+            Player subject = service.findPlayer(args[0]);
             Player target = service.findPlayer(args[1]);
-            if (player == null || target == null) {
+            if (subject == null || target == null) {
                 send(sender, "player-not-found");
                 return true;
             }
-            if (!service.teleport(player, target, player)) {
+            if (!service.teleport(subject, target)) {
                 send(sender, "teleport-failed");
                 return true;
             }
-            send(sender, "player-teleported-to", "player", player.getName(), "target", target.getName());
+            send(sender, "player-teleported-to", "player", subject.getName(), "target", target.getName());
             return true;
         }
 
