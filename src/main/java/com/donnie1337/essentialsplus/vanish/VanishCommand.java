@@ -6,9 +6,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 public final class VanishCommand implements CommandExecutor, TabCompleter {
@@ -40,32 +38,10 @@ public final class VanishCommand implements CommandExecutor, TabCompleter {
 
         if (enabled) {
             player.sendMessage(ChatColor.RED + "§lATENÇÃO " + ChatColor.DARK_GRAY + "• " + ChatColor.WHITE + "Você ficou invisível para outros jogadores.");
-            broadcastStaff(player, "FICOU INVISÍVEL.");
         } else {
             player.sendMessage(ChatColor.GREEN + "§lATENÇÃO " + ChatColor.DARK_GRAY + "• " + ChatColor.WHITE + "Você voltou a ficar visível para outros jogadores.");
-            broadcastStaff(player, "NÃO ESTÁ MAIS INVISÍVEL.");
         }
         return true;
-    }
-
-    /**
-     * Sends the vanish event through ChatPlus so /v uses exactly the same
-     * staff-chat format as /s, including the CargoPlus prefix, nickname color
-     * and the existing hover on the cargo. EssentialsPlus does not construct
-     * another [S] message itself, avoiding duplicated or broken CargoPlus
-     * gradients.
-     */
-    private void broadcastStaff(Player player, String message) {
-        Plugin chatPlus = player.getServer().getPluginManager().getPlugin("ChatPlus");
-        if (chatPlus == null || !chatPlus.isEnabled()) return;
-
-        try {
-            Method method = chatPlus.getClass().getMethod("sendStaffSystemMessage", Player.class, String.class);
-            method.invoke(chatPlus, player, message);
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            // ChatPlus is optional; if its integration API is unavailable,
-            // do not fall back to a second, differently formatted staff chat.
-        }
     }
 
     @Override
