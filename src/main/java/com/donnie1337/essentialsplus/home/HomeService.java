@@ -99,7 +99,7 @@ public final class HomeService {
     private String normalize(String name) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Nome da home invalido.");
         String normalized = name.toLowerCase(Locale.ROOT);
-        if (!normalized.matches("[a-z0-9_-]{1,32}")) throw new IllegalArgumentException("Nome da home invalido.");
+        if (!normalized.matches("[a-z0-9_-]{1,16}")) throw new IllegalArgumentException("Nome da home invalido.");
         return normalized;
     }
 }
