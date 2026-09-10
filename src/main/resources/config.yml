@@ -15,6 +15,10 @@ homes:
   limits:
     default: 1
 
+teleport:
+  staff:
+    enabled: true
+
 messages:
   prefix: "&c&lSERVIDOR &7• &r"
   tpa-prefix: ""
@@ -49,6 +53,13 @@ messages:
   target-offline: "&b&lᴛᴘᴀ &8• &cO jogador não está mais online."
   teleport-failed: "&b&lᴛᴘᴀ &8• &cNão foi possível realizar o teleporte."
   too-many-requests: "&b&lᴛᴘᴀ &8• &cEste jogador já possui muitas solicitações pendentes."
+  teleported-to: "&b&lᴛᴘ &8• &rTeleportado até {player}&f."
+  player-teleported-to: "&b&lᴛᴘ &8• &r{player}&f foi teleportado até {target}&f."
+  player-teleported-here: "&b&lᴛᴘ &8• &r{player}&f foi teleportado até você."
+  teleported-by-staff: "&b&lᴛᴘ &8• &rVocê foi teleportado por {player}&f."
+  player-only: "&b&lᴛᴘ &8• &cEste comando precisa ser usado por um jogador."
+  usage-tp: "&b&lᴛᴘ &8• &fUso: /tp <jogador> [jogador]"
+  usage-tphere: "&b&lᴛᴘ &8• &fUso: /tphere <jogador>"
   home-saved: "Home {home} salva com sucesso."
   home-teleported: "Teleportado para a home {home}."
   home-deleted: "Home {home} removida com sucesso."
