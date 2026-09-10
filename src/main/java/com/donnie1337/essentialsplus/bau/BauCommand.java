@@ -34,7 +34,7 @@ public final class BauCommand implements CommandExecutor {
             return true;
         }
 
-        if (args.length != 1 || !player.hasPermission(INSPECT_PERMISSION)) {
+        if (args.length != 1) {
             player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
             return true;
         }
@@ -42,6 +42,21 @@ public final class BauCommand implements CommandExecutor {
         Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
             player.sendMessage("§e§lᴄʜᴀᴛ §8• §rJogador não encontrado ou offline.");
+            return true;
+        }
+
+        if (target.getUniqueId().equals(player.getUniqueId())) {
+            if (!player.hasPermission(PERMISSION)) {
+                player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+                return true;
+            }
+
+            player.openInventory(bauService.createInventory(player));
+            return true;
+        }
+
+        if (!player.hasPermission(INSPECT_PERMISSION)) {
+            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
             return true;
         }
 
