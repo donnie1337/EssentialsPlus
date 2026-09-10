@@ -42,37 +42,49 @@ public final class HomeService {
     }
 
     public boolean setHome(Player player, String name) {
+        UUID playerId = player.getUniqueId();
         String normalized = normalize(name);
-        Map<String, Home> homes = new LinkedHashMap<>(homes(player));
-        if (!homes.containsKey(normalized) && getHomeLimit(player) >= 0 && homes.size() >= getHomeLimit(player)) return false;
-        homes.put(normalized, new Home(normalized, player.getLocation()));
-        cache.put(player.getUniqueId(), homes);
-        storage.saveHome(player.getUniqueId(), homes.get(normalized));
+        Map<String, Home> current = homes(player);
+        if (!current.containsKey(normalized) && getHomeLimit(player) >= 0 && current.size() >= getHomeLimit(player)) return false;
+
+        Home home = new Home(normalized, player.getLocation());
+        if (!storage.saveHome(playerId, home)) return false;
+
+        Map<String, Home> updated = new LinkedHashMap<>(current);
+        updated.put(normalized, home);
+        cache.put(playerId, updated);
         return true;
     }
 
     public boolean deleteHome(Player player, String name) {
+        UUID playerId = player.getUniqueId();
         String normalized = normalize(name);
-        Map<String, Home> homes = new LinkedHashMap<>(homes(player));
-        if (homes.remove(normalized) == null) return false;
-        cache.put(player.getUniqueId(), homes);
-        storage.deleteHome(player.getUniqueId(), normalized);
+        Map<String, Home> current = homes(player);
+        if (!current.containsKey(normalized)) return false;
+
+        if (!storage.deleteHome(playerId, normalized)) return false;
+
+        Map<String, Home> updated = new LinkedHashMap<>(current);
+        updated.remove(normalized);
+        cache.put(playerId, updated);
         return true;
     }
 
     public boolean renameHome(Player player, String oldName, String newName) {
+        UUID playerId = player.getUniqueId();
         String oldNormalized = normalize(oldName);
         String newNormalized = normalize(newName);
         Map<String, Home> current = homes(player);
         Home home = current.get(oldNormalized);
         if (home == null || current.containsKey(newNormalized)) return false;
 
+        Home renamed = new Home(newNormalized, home.location());
+        if (!storage.renameHome(playerId, oldNormalized, renamed)) return false;
+
         Map<String, Home> updated = new LinkedHashMap<>(current);
         updated.remove(oldNormalized);
-        Home renamed = new Home(newNormalized, home.location());
         updated.put(newNormalized, renamed);
-        cache.put(player.getUniqueId(), updated);
-        storage.renameHome(player.getUniqueId(), oldNormalized, renamed);
+        cache.put(playerId, updated);
         return true;
     }
 
