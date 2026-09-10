@@ -42,7 +42,6 @@ public final class HomeGui implements Listener {
 
     public void openIntro(Player player) {
         Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.INTRO, null), INTRO_SIZE, "§8Homes");
-        fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
         inventory.setItem(INTRO_SLOT, item(Material.COMPASS, "§aSuas homes", List.of(
                 "§7Gerencie todos os pontos de",
                 "§7teleporte personalizados.",
@@ -54,7 +53,6 @@ public final class HomeGui implements Listener {
 
     public void openHomes(Player player) {
         Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "§8Homes §7→ §fSuas Homes");
-        fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
 
         Map<String, Home> homes = service.homes(player);
         int index = 0;
@@ -86,7 +84,6 @@ public final class HomeGui implements Listener {
         }
 
         Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.MANAGE, home.name()), MANAGE_SIZE, "§8Gerenciar §7→ §f" + home.name());
-        fillBorder(inventory, Material.GRAY_STAINED_GLASS_PANE);
 
         inventory.setItem(13, item(Material.LODESTONE, "§a" + home.name(), List.of(
                 "§7Sua localização salva",
@@ -265,19 +262,6 @@ public final class HomeGui implements Listener {
         meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
-    }
-
-    private static void fillBorder(Inventory inventory, Material material) {
-        int size = inventory.getSize();
-        int rows = size / 9;
-        ItemStack filler = item(material, "§r", List.of());
-        for (int slot = 0; slot < size; slot++) {
-            int row = slot / 9;
-            int column = slot % 9;
-            if (row == 0 || row == rows - 1 || column == 0 || column == 8) {
-                inventory.setItem(slot, filler);
-            }
-        }
     }
 
     private record HomesHolder(Type type, String homeName) implements InventoryHolder {
