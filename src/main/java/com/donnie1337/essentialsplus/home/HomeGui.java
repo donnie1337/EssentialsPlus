@@ -3,6 +3,7 @@ package com.donnie1337.essentialsplus.home;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Event.Result;
@@ -58,7 +59,10 @@ public final class HomeGui implements Listener {
         int index = 0;
         for (Home home : homes.values()) {
             if (index >= HOME_SLOTS.length) break;
-            inventory.setItem(HOME_SLOTS[index++], item(Material.LODESTONE, "§a" + home.name(), List.of(
+            inventory.setItem(HOME_SLOTS[index++], item(worldMaterial(home), "§a" + home.name(), List.of(
+                    "",
+                    "§7Mundo: §f" + worldName(home),
+                    "§7Localização: §f" + coordinates(home),
                     "",
                     "§7Clique esquerdo §f→ §eTeleportar",
                     "§7Clique direito §f→ §eGerenciar",
@@ -85,8 +89,13 @@ public final class HomeGui implements Listener {
 
         Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.MANAGE, home.name()), MANAGE_SIZE, "§8Gerenciar §7→ §f" + home.name());
 
-        inventory.setItem(13, item(Material.LODESTONE, "§a" + home.name(), List.of(
+        inventory.setItem(13, item(worldMaterial(home), "§a" + home.name(), List.of(
                 "§7Sua localização salva",
+                "",
+                "§7Mundo: §f" + worldName(home),
+                "§7X: §f" + home.location().getBlockX(),
+                "§7Y: §f" + home.location().getBlockY(),
+                "§7Z: §f" + home.location().getBlockZ(),
                 "",
                 "§8Escolha uma ação abaixo"
         )));
@@ -102,11 +111,16 @@ public final class HomeGui implements Listener {
         inventory.setItem(22, item(Material.ENDER_PEARL, "§bTeleportar", List.of(
                 "§7Teleporte diretamente para esta home.",
                 "",
+                "§7Destino: §f" + worldName(home),
+                "§7Localização: §f" + coordinates(home),
+                "",
                 "§aClique para teleportar"
         )));
 
         inventory.setItem(24, item(Material.BARRIER, "§cDeletar Home", List.of(
                 "§7Remove permanentemente esta home.",
+                "",
+                "§7Home: §f" + home.name(),
                 "",
                 "§cClique para deletar"
         )));
@@ -137,7 +151,7 @@ public final class HomeGui implements Listener {
             }
 
             ItemStack clicked = event.getCurrentItem();
-            if (clicked == null || clicked.getType() != Material.LODESTONE || clicked.getItemMeta() == null) return;
+            if (clicked == null || !isHomeMaterial(clicked.getType()) || clicked.getItemMeta() == null) return;
 
             String name = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
             try {
@@ -253,6 +267,29 @@ public final class HomeGui implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         pendingRenames.remove(event.getPlayer().getUniqueId());
         service.unload(event.getPlayer());
+    }
+
+    private static Material worldMaterial(Home home) {
+        World world = home.location().getWorld();
+        if (world == null) return Material.LODESTONE;
+        return switch (world.getEnvironment()) {
+            case NETHER -> Material.NETHERRACK;
+            case THE_END -> Material.END_STONE;
+            default -> Material.LODESTONE;
+        };
+    }
+
+    private static boolean isHomeMaterial(Material material) {
+        return material == Material.LODESTONE || material == Material.NETHERRACK || material == Material.END_STONE;
+    }
+
+    private static String worldName(Home home) {
+        World world = home.location().getWorld();
+        return world == null ? "Indisponível" : world.getName();
+    }
+
+    private static String coordinates(Home home) {
+        return home.location().getBlockX() + ", " + home.location().getBlockY() + ", " + home.location().getBlockZ();
     }
 
     private static ItemStack item(Material material, String name, List<String> lore) {
