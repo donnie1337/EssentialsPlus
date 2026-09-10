@@ -48,12 +48,22 @@ public final class VanishListener implements Listener {
             sender.sendMessage("§b§lᴛᴘᴀ §8• §cVocê não pode usar TPA enquanto estiver invisível.");
             return;
         }
+
+        // A regra de alvo invisível só se aplica ao envio de /tpa e /tpaqui.
+        if (!command.equals("tpa") && !command.equals("tpaqui")) return;
         if (parts.length < 2) return;
+
         Player target = Bukkit.getPlayerExact(parts[1]);
-        if (target != null && service.isVanished(target) && !sender.hasPermission("essentialsplus.vanish")) {
+        if (target == null || !service.isVanished(target)) return;
+
+        if (!sender.hasPermission("essentialsplus.vanish")) {
             event.setCancelled(true);
             sender.sendMessage("§b§lᴛᴘᴀ §8• §cJogador não encontrado.");
+            return;
         }
+
+        event.setCancelled(true);
+        sender.sendMessage("§b§lᴛᴘᴀ §8• §cNão foi possível mandar TPA pois " + target.getName() + " está invisível.");
     }
 
     private org.bukkit.plugin.Plugin servicePlugin() {
