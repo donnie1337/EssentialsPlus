@@ -11,15 +11,12 @@ public final class StaffTeleportService {
         this.plugin = plugin;
     }
 
-    public boolean teleport(Player player, Player target) {
-        if (player == null || target == null || !player.isOnline() || !target.isOnline()) return false;
-        return player.teleport(target.getLocation());
-    }
-
-    public boolean teleport(Player player, Player destination, Player target) {
-        if (player == null || destination == null || target == null) return false;
-        if (!destination.isOnline() || !target.isOnline()) return false;
-        return target.teleport(destination.getLocation());
+    /**
+     * Teleports the subject to the destination.
+     */
+    public boolean teleport(Player subject, Player destination) {
+        if (subject == null || destination == null || !subject.isOnline() || !destination.isOnline()) return false;
+        return subject.teleport(destination.getLocation());
     }
 
     public Player findPlayer(String name) {
