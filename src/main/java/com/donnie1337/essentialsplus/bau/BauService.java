@@ -1,0 +1,72 @@
+package com.donnie1337.essentialsplus.bau;
+
+import java.io.File;
+import java.util.UUID;
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public final class BauService {
+    public static final int SIZE = 54;
+    public static final String TITLE = "§8Baú Estendido";
+
+    private final JavaPlugin plugin;
+    private final File file;
+    private final YamlConfiguration data;
+
+    public BauService(JavaPlugin plugin) {
+        this.plugin = plugin;
+        this.file = new File(plugin.getDataFolder(), "bau.yml");
+        this.data = YamlConfiguration.loadConfiguration(file);
+    }
+
+    public Inventory createInventory(Player player) {
+        UUID uuid = player.getUniqueId();
+        BauHolder holder = new BauHolder(uuid);
+        Inventory inventory = Bukkit.createInventory(holder, SIZE, TITLE);
+        holder.setInventory(inventory);
+        load(uuid, inventory);
+        return inventory;
+    }
+
+    public void save(Inventory inventory) {
+        if (!(inventory.getHolder() instanceof BauHolder holder)) return;
+
+        String path = "players." + holder.owner();
+        for (int slot = 0; slot < SIZE; slot++) {
+            ItemStack item = inventory.getItem(slot);
+            data.set(path + ".slots." + slot, item == null || item.getType().isAir() ? null : item);
+        }
+        saveFile();
+    }
+
+    public void saveOpenBaus() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Inventory inventory = player.getOpenInventory().getTopInventory();
+            if (inventory.getHolder() instanceof BauHolder) save(inventory);
+        }
+    }
+
+    private void load(UUID uuid, Inventory inventory) {
+        String path = "players." + uuid + ".slots.";
+        for (int slot = 0; slot < SIZE; slot++) {
+            ItemStack item = data.getItemStack(path + slot);
+            if (item != null) inventory.setItem(slot, item);
+        }
+    }
+
+    private void saveFile() {
+        try {
+            if (!plugin.getDataFolder().exists() && !plugin.getDataFolder().mkdirs()) {
+                plugin.getLogger().warning("Não foi possível criar a pasta de dados do EssentialsPlus.");
+                return;
+            }
+            data.save(file);
+        } catch (Exception exception) {
+            plugin.getLogger().warning("Não foi possível salvar os baús estendidos: " + exception.getMessage());
+        }
+    }
+}
