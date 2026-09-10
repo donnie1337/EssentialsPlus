@@ -1,6 +1,9 @@
 package com.donnie1337.essentialsplus;
 
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
+import com.donnie1337.essentialsplus.bau.BauCommand;
+import com.donnie1337.essentialsplus.bau.BauListener;
+import com.donnie1337.essentialsplus.bau.BauService;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
 import com.donnie1337.essentialsplus.command.EcCommand;
 import com.donnie1337.essentialsplus.command.FlyCommand;
@@ -33,6 +36,7 @@ public final class EssentialsPlus extends JavaPlugin {
     private StaffTeleportService staffTeleportService;
     private HomeService homeService;
     private VanishService vanishService;
+    private BauService bauService;
 
     @Override
     public void onEnable() {
@@ -43,6 +47,10 @@ public final class EssentialsPlus extends JavaPlugin {
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("ec", new EcCommand());
+
+        bauService = new BauService(this);
+        getServer().getPluginManager().registerEvents(new BauListener(bauService), this);
+        register("bau", new BauCommand(bauService));
 
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
@@ -67,11 +75,12 @@ public final class EssentialsPlus extends JavaPlugin {
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
 
-        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly e Ender Chest.");
+        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly, Ender Chest e Bau.");
     }
 
     @Override
     public void onDisable() {
+        if (bauService != null) bauService.saveOpenBaus();
         if (teleportService != null) teleportService.shutdown();
         if (vanishService != null) vanishService.clear();
     }
