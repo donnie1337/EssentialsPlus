@@ -8,8 +8,11 @@ import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
 import com.donnie1337.essentialsplus.home.command.HomeCommand;
 import com.donnie1337.essentialsplus.home.command.HomesCommand;
 import com.donnie1337.essentialsplus.home.command.SetHomeCommand;
+import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.TpaCustomClickListener;
+import com.donnie1337.essentialsplus.teleport.command.TpCommand;
+import com.donnie1337.essentialsplus.teleport.command.TpHereCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCommand;
@@ -25,6 +28,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class EssentialsPlus extends JavaPlugin {
 
     private TeleportService teleportService;
+    private StaffTeleportService staffTeleportService;
     private HomeService homeService;
     private VanishService vanishService;
 
@@ -39,6 +43,10 @@ public final class EssentialsPlus extends JavaPlugin {
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
         new TpaCustomClickListener(this, teleportService).register(getServer().getPluginManager());
+
+        staffTeleportService = new StaffTeleportService(this);
+        register("tp", new TpCommand(staffTeleportService));
+        register("tphere", new TpHereCommand(staffTeleportService));
 
         homeService = new HomeService(this);
         HomeGui homeGui = new HomeGui(homeService);
@@ -55,7 +63,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
 
-        getLogger().info("EssentialsPlus habilitado com TPA, Homes e Vanish.");
+        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes e Vanish.");
     }
 
     @Override
