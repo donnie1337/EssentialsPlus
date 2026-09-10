@@ -123,7 +123,10 @@ public final class VanishService {
 
         Location location = player.getLocation().clone().add(0.0D, TAG_HEIGHT, 0.0D);
         TextDisplay tag = player.getWorld().spawn(location, TextDisplay.class, display -> {
-            display.text(createDisplayText(player));
+            // Use the legacy Bukkit setter for runtime compatibility with servers whose
+            // TextDisplay API does not expose text(Component), while still preserving
+            // the Adventure component's formatting through legacy serialization.
+            display.setText(toLegacyText(createDisplayText(player)));
             display.setBillboard(Display.Billboard.CENTER);
             display.setAlignment(TextDisplay.TextAlignment.CENTER);
             display.setSeeThrough(false);
@@ -146,6 +149,10 @@ public final class VanishService {
         Component name = LegacyComponentSerializer.legacySection().deserialize(legacy);
         Component invisible = MiniMessage.miniMessage().deserialize(VANISH_TAG);
         return name.append(invisible);
+    }
+
+    private String toLegacyText(Component component) {
+        return LegacyComponentSerializer.legacySection().serialize(component);
     }
 
     private String resolveCargoPrefix(UUID uuid) {
@@ -208,7 +215,7 @@ public final class VanishService {
             if (tag == null || tag.isDead()) continue;
 
             tag.teleport(player.getLocation().clone().add(0.0D, TAG_HEIGHT, 0.0D));
-            tag.text(createDisplayText(player));
+            tag.setText(toLegacyText(createDisplayText(player)));
             updateTagVisibility(player);
         }
     }
