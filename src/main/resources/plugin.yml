@@ -14,6 +14,14 @@ commands:
     description: Ativa ou desativa o modo vanish.
     usage: /v
     permission: essentialsplus.vanish
+  tp:
+    description: Teleporta jogadores diretamente. Comando exclusivo para staff.
+    usage: /tp <jogador> [jogador]
+    permission: essentialsplus.teleport
+  tphere:
+    description: Teleporta um jogador até você. Comando exclusivo para staff.
+    usage: /tphere <jogador>
+    permission: essentialsplus.teleport
   tpa:
     description: Solicita teleporte até outro jogador.
     usage: /tpa <jogador>
@@ -60,6 +68,9 @@ permissions:
   essentialsplus.vanish:
     description: Permite usar o /v.
     default: false
+  essentialsplus.teleport:
+    description: Permite usar os comandos de teleporte direto da staff.
+    default: op
   essentialsplus.tpa:
     description: Permite usar todos os comandos do sistema de TPA.
     default: true
@@ -78,7 +89,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpacancelar.
+    description: Permissão interna do comando /tpcancelar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
