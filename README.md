@@ -1,6 +1,6 @@
 # EssentialsPlus
 
-Essentials customizado para **Paper 26.2**, desenvolvido do zero com foco em utilidades de teleporte, homes, integração e uma experiência simples para o jogador.
+Essentials customizado para **Paper 26.2**, desenvolvido do zero com foco em teleporte, TPA, homes, integração entre plugins e uma experiência simples para o jogador.
 
 ## ✨ Funcionalidades
 
@@ -9,38 +9,56 @@ Essentials customizado para **Paper 26.2**, desenvolvido do zero com foco em uti
 - `/tpaqui <jogador>` solicita que outro jogador se teleporte até você.
 - `/tpaceitar [jogador]` aceita uma solicitação.
 - `/tpnegar [jogador]` recusa uma solicitação.
-- `/tpacancelar [jogador]` cancela uma solicitação enviada.
+- `/tpcancelar [jogador]` cancela uma solicitação enviada.
+- As formas internas `/tpaccept`, `/tpdeny` e `/tpacancel` também são suportadas.
 - Solicitações pendentes por jogador.
-- Limite de solicitações simultâneas.
+- Limite de solicitações simultâneas configurável.
 - Expiração automática das solicitações.
-- Mensagens configuráveis.
-- Botões clicáveis de aceitar e recusar no chat.
-- **Nome do jogador no pedido de TPA utiliza a mesma cor definida pelo cargo do jogador no ChatPlus.**
+- Cancelamento da solicitação quando o jogador desconecta.
+- Cancelamento do teleporte após morte.
+- Botões clicáveis de aceitar, recusar e cancelar diretamente no chat.
+- Mensagens configuráveis pelo `config.yml`.
+- Nome do jogador nos pedidos de TPA utiliza a mesma cor definida pelo cargo no ChatPlus.
+
+### 🛡️ Teleporte da Staff
+- `/tp <jogador>` teleporta você até outro jogador.
+- `/tp <jogador> <jogador>` teleporta um jogador até outro.
+- `/tphere <jogador>` teleporta um jogador até você.
+- Sistema protegido por permissão própria para staff.
+
+### 👻 Vanish
+- `/v` ativa ou desativa o modo vanish.
+- Permite ocultar o jogador dos demais jogadores.
+- Possui permissão própria: `essentialsplus.vanish`.
 
 ### 🏠 Sistema de Homes
 - `/sethome <nome>` salva uma home na localização atual.
 - `/home <nome>` teleporta para uma home salva.
 - `/homes` abre a interface gráfica de gerenciamento das homes.
 - `/delhome <nome>` remove uma home.
-- Limite de homes configurável por jogador.
-- Nomes de homes normalizados e validados.
 - Homes persistidas em `homes.yml`.
+- Limite padrão de homes configurável.
+- Estrutura de limites preparada para futura integração por cargo.
+- Nomes de homes normalizados e validados.
+- Suporte a letras, números, `_` e `-` nos nomes.
 
 ### 🖥️ Interface gráfica das Homes
 A interface `/homes` permite:
 
 - Visualizar as homes salvas.
-- **Clique esquerdo:** teleportar.
+- Identificar a home e sua localização.
+- **Clique esquerdo:** teleportar para a home.
 - **Clique direito:** abrir o gerenciamento da home.
-- **Shift + clique direito:** deletar imediatamente, sem confirmação.
-- Alterar o nome da home através do menu de gerenciamento.
-- Retornar entre as interfaces usando o botão de voltar.
-- Interface protegida contra retirada e movimentação dos itens.
+- **Shift + clique direito:** excluir a home imediatamente.
+- Alterar o nome da home pelo menu de gerenciamento.
+- Retornar entre as interfaces pelo botão de voltar.
+- Proteção contra retirada, movimentação e inserção indevida de itens.
+- Proteção contra ações de inventário durante a utilização do menu.
 
-### 🔗 Integração
-- Integração com **LoginPlus** para respeitar o estado de autenticação.
-- Integração com **ChatPlus** para trabalhar dentro do ecossistema de chat do servidor.
-- Sincronização visual dos nomes nos pedidos de TPA com as cores dos cargos do ChatPlus.
+### 🔗 Integrações
+- **LoginPlus:** verifica o estado de autenticação antes de permitir recursos protegidos.
+- **ChatPlus:** integração com o sistema de chat e cores dos cargos.
+- **CargoPlus:** integração para informações visuais de cargo utilizadas no sistema de teleporte.
 
 ## 🎮 Comandos
 
@@ -48,9 +66,12 @@ A interface `/homes` permite:
 |---|---|
 | `/tpa <jogador>` | Solicita teleporte até um jogador. |
 | `/tpaqui <jogador>` | Solicita que um jogador venha até você. |
-| `/tpaceitar [jogador]` | Aceita uma solicitação. |
-| `/tpnegar [jogador]` | Recusa uma solicitação. |
-| `/tpacancelar [jogador]` | Cancela uma solicitação enviada. |
+| `/tpaceitar [jogador]` | Aceita uma solicitação de TPA. |
+| `/tpnegar [jogador]` | Recusa uma solicitação de TPA. |
+| `/tpcancelar [jogador]` | Cancela uma solicitação de TPA enviada. |
+| `/tp <jogador> [jogador]` | Teleporte direto da staff. |
+| `/tphere <jogador>` | Teleporta um jogador até você. |
+| `/v` | Ativa ou desativa o vanish. |
 | `/home <nome>` | Teleporta para uma home. |
 | `/homes` | Abre o menu de gerenciamento das homes. |
 | `/sethome <nome>` | Cria ou atualiza uma home. |
@@ -58,13 +79,25 @@ A interface `/homes` permite:
 
 ## 🔑 Permissões
 
+### TPA
+
 | Permissão | Função | Padrão |
 |---|---|---|
-| `essentialsplus.tpa` | Usar `/tpa` | `true` |
-| `essentialsplus.tpaqui` | Usar `/tpaqui` | `true` |
-| `essentialsplus.tpaceitar` | Usar `/tpaceitar` | `true` |
-| `essentialsplus.tpnegar` | Usar `/tpnegar` | `true` |
-| `essentialsplus.tpacancelar` | Usar `/tpacancelar` | `true` |
+| `essentialsplus.tpa` | Permite usar todo o sistema de TPA | `true` |
+
+A permissão principal `essentialsplus.tpa` possui como filhas as permissões específicas dos comandos de TPA.
+
+### Teleporte e Vanish
+
+| Permissão | Função | Padrão |
+|---|---|---|
+| `essentialsplus.teleport` | Comandos `/tp` e `/tphere` | `op` |
+| `essentialsplus.vanish` | Comando `/v` | `false` |
+
+### Homes
+
+| Permissão | Função | Padrão |
+|---|---|---|
 | `essentialsplus.home` | Usar `/home` | `true` |
 | `essentialsplus.homes` | Usar `/homes` | `true` |
 | `essentialsplus.sethome` | Usar `/sethome` | `true` |
@@ -72,20 +105,46 @@ A interface `/homes` permite:
 
 ## ⚙️ Configuração
 
-O sistema de TPA e homes possui configurações no `config.yml`, incluindo limite de solicitações, tempo de expiração e quantidade padrão de homes.
+O `config.yml` permite configurar, entre outros recursos:
 
-A exibição dos nomes nos pedidos de TPA também utiliza as cores dos cargos fornecidas pelo **ChatPlus**, mantendo a identidade visual do jogador no sistema de teleporte.
+- Ativação do sistema de TPA.
+- Tempo de expiração das solicitações.
+- Limite de solicitações pendentes.
+- Atraso antes do teleporte.
+- Cancelamento do teleporte por movimento.
+- Cancelamento por dano.
+- Cancelamento por morte.
+- Cancelamento por desconexão.
+- Ativação do sistema de Homes.
+- Limite padrão de homes.
+- Teleporte direto da staff.
+- Mensagens do sistema.
+- Botões clicáveis do TPA.
+
+### Configuração atual do teleporte
+
+Por padrão, o atraso do teleporte está configurado em **0 segundos**. O cancelamento por movimento e dano também está desativado, enquanto morte e desconexão cancelam o fluxo quando aplicável.
+
+## 💾 Persistência
+
+As homes dos jogadores são armazenadas em `homes.yml`, permitindo que continuem disponíveis após reinicializações do servidor.
 
 ## 🔗 Dependências
 
+As seguintes integrações são opcionais (`softdepend`):
+
 - LoginPlus
 - ChatPlus
+- CargoPlus
+
+O EssentialsPlus continua funcionando como plugin independente, enquanto utiliza essas integrações quando disponíveis.
 
 ## 🏗️ Plataforma
 
 - Java 26
 - Paper 26.2
 - Maven
+- GitHub Actions para build automatizado
 
 ## 🧪 Build
 
@@ -93,6 +152,8 @@ A exibição dos nomes nos pedidos de TPA também utiliza as cores dos cargos fo
 mvn -B clean package
 ```
 
-O projeto possui workflow de build no GitHub Actions.
+O artefato gerado pelo Maven fica disponível no diretório `target/`.
 
-> **Nota:** recursos de atraso de teleporte, cancelamento por movimento e cancelamento por dano não fazem parte do fluxo atualmente implementado.
+## 📌 Status
+
+O EssentialsPlus está em desenvolvimento ativo. A base atual já contempla TPA, teleporte da staff, vanish, homes persistentes, interfaces gráficas e integrações com os demais plugins do servidor.
