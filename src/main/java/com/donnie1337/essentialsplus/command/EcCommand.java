@@ -1,11 +1,9 @@
 package com.donnie1337.essentialsplus.command;
 
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 
 public final class EcCommand implements CommandExecutor {
 
@@ -21,8 +19,7 @@ public final class EcCommand implements CommandExecutor {
             return true;
         }
 
-        Inventory enderChest = Bukkit.createInventory(player, 54, "§8Ender Chest");
-        player.openInventory(enderChest);
+        player.openInventory(player.getEnderChest());
         return true;
     }
 }
