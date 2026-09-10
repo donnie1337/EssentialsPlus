@@ -48,7 +48,6 @@ public final class VanishService {
                 if (canSeeVanished(viewer)) viewer.showPlayer(plugin, player);
                 else viewer.hidePlayer(plugin, player);
             }
-            setListed(player, false);
         } else {
             vanished.remove(player.getUniqueId());
             removeVanishSuffix(player);
@@ -56,7 +55,6 @@ public final class VanishService {
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (!viewer.equals(player)) viewer.showPlayer(plugin, player);
             }
-            setListed(player, true);
         }
 
         return true;
@@ -72,7 +70,6 @@ public final class VanishService {
                 if (canSeeVanished(viewer)) viewer.showPlayer(plugin, player);
                 else viewer.hidePlayer(plugin, player);
             }
-            setListed(player, false);
         }
 
         for (Player vanishedPlayer : Bukkit.getOnlinePlayers()) {
@@ -86,7 +83,6 @@ public final class VanishService {
         if (player == null) return;
         vanished.remove(player.getUniqueId());
         removeVanishSuffix(player);
-        setListed(player, true);
 
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             if (!viewer.equals(player)) viewer.showPlayer(plugin, player);
@@ -152,14 +148,6 @@ public final class VanishService {
 
     private boolean canSeeVanished(Player viewer) {
         return viewer != null && viewer.hasPermission(VANISH_PERMISSION);
-    }
-
-    private void setListed(Player player, boolean listed) {
-        try {
-            player.setListed(listed);
-        } catch (NoSuchMethodError ignored) {
-            // Compatibility fallback for older Bukkit/Paper APIs.
-        }
     }
 
     private record TeamSuffixState(String teamName, String originalSuffix) {
