@@ -1,6 +1,8 @@
 package com.donnie1337.essentialsplus.vanish;
 
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.Location;
@@ -8,6 +10,7 @@ import org.bukkit.entity.Display;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.lang.reflect.Method;
@@ -120,7 +123,7 @@ public final class VanishService {
 
         Location location = player.getLocation().clone().add(0.0D, TAG_HEIGHT, 0.0D);
         TextDisplay tag = player.getWorld().spawn(location, TextDisplay.class, display -> {
-            display.text(MiniMessage.miniMessage().deserialize(VANISH_TAG));
+            display.text(createDisplayText(player));
             display.setBillboard(Display.Billboard.CENTER);
             display.setAlignment(TextDisplay.TextAlignment.CENTER);
             display.setSeeThrough(false);
@@ -128,12 +131,64 @@ public final class VanishService {
             display.setDefaultBackground(false);
             display.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
             display.setTextOpacity((byte) -1);
-            display.setLineWidth(200);
+            display.setLineWidth(300);
             display.setViewRange(32.0F);
             display.setVisibleByDefault(false);
         });
         vanishTags.put(player.getUniqueId(), tag);
         updateTagVisibility(player);
+    }
+
+    private Component createDisplayText(Player player) {
+        String cargoPrefix = resolveCargoPrefix(player.getUniqueId());
+        String nicknameColor = resolveCargoNicknameColor(player.getUniqueId());
+        String legacy = cargoPrefix + nicknameColor + player.getName() + " ";
+        Component name = LegacyComponentSerializer.legacySection().deserialize(legacy);
+        Component invisible = MiniMessage.miniMessage().deserialize(VANISH_TAG);
+        return name.append(invisible);
+    }
+
+    private String resolveCargoPrefix(UUID uuid) {
+        Object api = resolveCargoApi();
+        if (api == null) return "";
+        try {
+            Method method = api.getClass().getMethod("getPrefix", UUID.class);
+            Object result = method.invoke(api, uuid);
+            return result instanceof String ? (String) result : "";
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return "";
+        }
+    }
+
+    private String resolveCargoNicknameColor(UUID uuid) {
+        Object api = resolveCargoApi();
+        if (api == null) return "§f";
+        try {
+            Method method = api.getClass().getMethod("getNicknameColor", UUID.class);
+            Object result = method.invoke(api, uuid);
+            return result instanceof String && !((String) result).isEmpty() ? (String) result : "§f";
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return "§f";
+        }
+    }
+
+    private Object resolveCargoApi() {
+        Plugin cargo = Bukkit.getPluginManager().getPlugin("CargoPlus");
+        if (cargo == null || !cargo.isEnabled()) return null;
+        try {
+            Method apiMethod = cargo.getClass().getMethod("api");
+            Object api = apiMethod.invoke(cargo);
+            if (api != null) return api;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+        }
+
+        try {
+            Class<?> apiClass = Class.forName("com.cargoplus.api.CargoPlusAPI", false, cargo.getClass().getClassLoader());
+            RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(apiClass);
+            return registration == null ? null : registration.getProvider();
+        } catch (ClassNotFoundException | LinkageError ignored) {
+            return null;
+        }
     }
 
     private void removeTag(Player player) {
@@ -153,6 +208,7 @@ public final class VanishService {
             if (tag == null || tag.isDead()) continue;
 
             tag.teleport(player.getLocation().clone().add(0.0D, TAG_HEIGHT, 0.0D));
+            tag.text(createDisplayText(player));
             updateTagVisibility(player);
         }
     }
