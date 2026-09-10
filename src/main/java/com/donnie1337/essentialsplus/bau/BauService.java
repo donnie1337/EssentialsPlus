@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.bau;
 
+import com.donnie1337.essentialsplus.inspect.InspectHolder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,6 +33,14 @@ public final class BauService {
         UUID uuid = player.getUniqueId();
         BauHolder holder = new BauHolder(uuid);
         Inventory inventory = Bukkit.createInventory(holder, SIZE, TITLE);
+        holder.setInventory(inventory);
+        load(uuid, inventory);
+        return inventory;
+    }
+
+    public Inventory createInspectionInventory(UUID uuid, String targetName) {
+        InspectHolder holder = new InspectHolder(uuid, InspectHolder.Type.BAU);
+        Inventory inventory = Bukkit.createInventory(holder, SIZE, "§8Baú de " + targetName);
         holder.setInventory(inventory);
         load(uuid, inventory);
         return inventory;
