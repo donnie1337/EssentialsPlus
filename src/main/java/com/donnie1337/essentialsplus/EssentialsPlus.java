@@ -19,6 +19,7 @@ import com.donnie1337.essentialsplus.vanish.VanishCommand;
 import com.donnie1337.essentialsplus.vanish.VanishListener;
 import com.donnie1337.essentialsplus.vanish.VanishService;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class EssentialsPlus extends JavaPlugin {
@@ -61,6 +62,13 @@ public final class EssentialsPlus extends JavaPlugin {
     public void onDisable() {
         if (teleportService != null) teleportService.shutdown();
         if (vanishService != null) vanishService.clear();
+    }
+
+    /**
+     * Public bridge used by ChatPlus to determine vanish state without a compile-time dependency.
+     */
+    public boolean isVanished(Player player) {
+        return vanishService != null && vanishService.isVanished(player);
     }
 
     private void register(String name, org.bukkit.command.CommandExecutor executor) {
