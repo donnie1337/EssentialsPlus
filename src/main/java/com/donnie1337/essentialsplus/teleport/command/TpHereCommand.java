@@ -33,7 +33,7 @@ public final class TpHereCommand implements CommandExecutor {
             send(sender, "player-not-found");
             return true;
         }
-        if (!service.teleport(player, player, target)) {
+        if (!service.teleport(target, player)) {
             send(sender, "teleport-failed");
             return true;
         }
