@@ -28,10 +28,19 @@ public final class SetHomeCommand implements CommandExecutor {
             return true;
         }
         if (args.length != 1) {
-            message(player, "usage-sethome");
+            if (args.length > 1) {
+                message(player, "invalid-home-name");
+            } else {
+                message(player, "usage-sethome");
+            }
             return true;
         }
         try {
+            if (!args[0].matches("[a-zA-Z0-9_-]{1,32}")) {
+                message(player, "invalid-home-name");
+                return true;
+            }
+
             if (!service.setHome(player, args[0])) {
                 message(player, "home-limit", "limit", String.valueOf(service.getHomeLimit(player)));
                 return true;
