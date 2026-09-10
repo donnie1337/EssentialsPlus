@@ -45,14 +45,14 @@ public final class VanishListener implements Listener {
         Player sender = event.getPlayer();
         if (service.isVanished(sender)) {
             event.setCancelled(true);
-            sender.sendMessage("§cVocê não pode usar TPA enquanto estiver invisível.");
+            sender.sendMessage("§b§lᴛᴘᴀ §8• §cVocê não pode usar TPA enquanto estiver invisível.");
             return;
         }
         if (parts.length < 2) return;
         Player target = Bukkit.getPlayerExact(parts[1]);
-        if (target != null && service.isVanished(target)) {
+        if (target != null && service.isVanished(target) && !sender.hasPermission("essentialsplus.vanish")) {
             event.setCancelled(true);
-            sender.sendMessage("§cVocê não pode enviar uma solicitação de TPA para este jogador.");
+            sender.sendMessage("§b§lᴛᴘᴀ §8• §cJogador não encontrado.");
         }
     }
 
