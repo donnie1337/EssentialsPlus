@@ -15,6 +15,7 @@ Essentials customizado para **Paper 26.2**, desenvolvido do zero com foco em uti
 - Expiração automática das solicitações.
 - Mensagens configuráveis.
 - Botões clicáveis de aceitar e recusar no chat.
+- **Nome do jogador no pedido de TPA utiliza a mesma cor definida pelo cargo do jogador no ChatPlus.**
 
 ### 🏠 Sistema de Homes
 - `/sethome <nome>` salva uma home na localização atual.
@@ -39,6 +40,7 @@ A interface `/homes` permite:
 ### 🔗 Integração
 - Integração com **LoginPlus** para respeitar o estado de autenticação.
 - Integração com **ChatPlus** para trabalhar dentro do ecossistema de chat do servidor.
+- Sincronização visual dos nomes nos pedidos de TPA com as cores dos cargos do ChatPlus.
 
 ## 🎮 Comandos
 
@@ -71,6 +73,8 @@ A interface `/homes` permite:
 ## ⚙️ Configuração
 
 O sistema de TPA e homes possui configurações no `config.yml`, incluindo limite de solicitações, tempo de expiração e quantidade padrão de homes.
+
+A exibição dos nomes nos pedidos de TPA também utiliza as cores dos cargos fornecidas pelo **ChatPlus**, mantendo a identidade visual do jogador no sistema de teleporte.
 
 ## 🔗 Dependências
 
