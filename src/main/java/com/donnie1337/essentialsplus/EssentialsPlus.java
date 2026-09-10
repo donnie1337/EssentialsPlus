@@ -26,9 +26,11 @@ import com.donnie1337.essentialsplus.teleport.command.TpaHereCommand;
 import com.donnie1337.essentialsplus.vanish.VanishCommand;
 import com.donnie1337.essentialsplus.vanish.VanishListener;
 import com.donnie1337.essentialsplus.vanish.VanishService;
+import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 public final class EssentialsPlus extends JavaPlugin {
 
@@ -37,6 +39,7 @@ public final class EssentialsPlus extends JavaPlugin {
     private HomeService homeService;
     private VanishService vanishService;
     private BauService bauService;
+    private BukkitTask bauAutoSaveTask;
 
     @Override
     public void onEnable() {
@@ -51,6 +54,7 @@ public final class EssentialsPlus extends JavaPlugin {
         bauService = new BauService(this);
         getServer().getPluginManager().registerEvents(new BauListener(bauService), this);
         register("bau", new BauCommand(bauService));
+        startBauAutoSave();
 
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
@@ -80,9 +84,16 @@ public final class EssentialsPlus extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (bauAutoSaveTask != null) bauAutoSaveTask.cancel();
         if (bauService != null) bauService.saveOpenBaus();
         if (teleportService != null) teleportService.shutdown();
         if (vanishService != null) vanishService.clear();
+    }
+
+    private void startBauAutoSave() {
+        bauAutoSaveTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (bauService != null) bauService.saveOpenBaus();
+        }, 100L, 100L);
     }
 
     /**
