@@ -3,6 +3,7 @@ package com.donnie1337.essentialsplus.vanish;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -47,6 +48,7 @@ public final class VanishService {
         if (value) {
             vanished.add(player.getUniqueId());
             applyVanishSuffix(player);
+            scheduleSuffixRefresh(player);
 
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (viewer.equals(player)) continue;
@@ -70,6 +72,7 @@ public final class VanishService {
 
         if (isVanished(player)) {
             applyVanishSuffix(player);
+            scheduleSuffixRefresh(player);
             for (Player viewer : Bukkit.getOnlinePlayers()) {
                 if (viewer.equals(player)) continue;
                 if (canSeeVanished(viewer)) viewer.showPlayer(plugin, player);
@@ -107,10 +110,6 @@ public final class VanishService {
      * TextDisplay nametag. CargoPlus/another nametag system therefore keeps
      * full control over the prefix and nickname, while EssentialsPlus only
      * contributes the vanish suffix.
-     *
-     * Paper's Adventure Team.suffix() methods are accessed through reflection
-     * so EssentialsPlus remains compatible with the Spigot API used at build
-     * time while still preserving the Adventure component and hover on Paper.
      */
     private void applyVanishSuffix(Player player) {
         Team team = findTeam(player);
@@ -118,9 +117,11 @@ public final class VanishService {
 
         UUID uuid = player.getUniqueId();
         TeamSuffixState state = suffixStates.get(uuid);
-        if (state == null) {
-            Component originalSuffix = readPaperSuffix(team);
-            if (originalSuffix == null) originalSuffix = Component.empty();
+
+        // CargoPlus may recreate the team after /v. If the active team changed,
+        // bind the vanish state to the new team instead of keeping a stale name.
+        if (state == null || !state.teamName().equals(team.getName())) {
+            Component originalSuffix = readCurrentSuffix(team);
             state = new TeamSuffixState(team.getName(), originalSuffix);
             suffixStates.put(uuid, state);
         }
@@ -131,9 +132,23 @@ public final class VanishService {
                         .color(NamedTextColor.GRAY)
                         .hoverEvent(HoverEvent.showText(VANISH_HOVER)));
 
-        Component currentSuffix = readPaperSuffix(team);
+        Component currentSuffix = readCurrentSuffix(team);
         if (!expectedSuffix.equals(currentSuffix)) {
-            writePaperSuffix(team, expectedSuffix);
+            writeSuffix(team, expectedSuffix);
+        }
+    }
+
+    /**
+     * CargoPlus creates/recreates the player's scoreboard team. A short delayed
+     * refresh makes vanish resilient to that ordering race during /v and login.
+     */
+    private void scheduleSuffixRefresh(Player player) {
+        UUID uuid = player.getUniqueId();
+        for (long delay : new long[]{1L, 3L, 6L}) {
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                if (!player.isOnline() || !vanished.contains(uuid)) return;
+                applyVanishSuffix(player);
+            }, delay);
         }
     }
 
@@ -142,11 +157,23 @@ public final class VanishService {
         TeamSuffixState state = suffixStates.remove(uuid);
         if (state == null) return;
 
-        Scoreboard scoreboard = getMainScoreboard();
-        Team team = scoreboard.getTeam(state.teamName());
+        Team team = findTeam(player);
+        if (team == null) {
+            Scoreboard scoreboard = getMainScoreboard();
+            team = scoreboard.getTeam(state.teamName());
+        }
         if (team == null) return;
 
-        writePaperSuffix(team, state.originalSuffix());
+        writeSuffix(team, state.originalSuffix());
+    }
+
+    private Component readCurrentSuffix(Team team) {
+        Component paperSuffix = readPaperSuffix(team);
+        if (paperSuffix != null) return paperSuffix;
+
+        String legacySuffix = team.getSuffix();
+        if (legacySuffix == null || legacySuffix.isEmpty()) return Component.empty();
+        return LegacyComponentSerializer.legacySection().deserialize(legacySuffix);
     }
 
     private Component readPaperSuffix(Team team) {
@@ -159,21 +186,41 @@ public final class VanishService {
         }
     }
 
-    private void writePaperSuffix(Team team, Component suffix) {
+    private void writeSuffix(Team team, Component suffix) {
+        if (writePaperSuffix(team, suffix)) return;
+        team.setSuffix(LegacyComponentSerializer.legacySection().serialize(suffix));
+    }
+
+    private boolean writePaperSuffix(Team team, Component suffix) {
         try {
             for (Method method : team.getClass().getMethods()) {
                 if (!method.getName().equals("suffix") || method.getParameterCount() != 1) continue;
                 if (!method.getParameterTypes()[0].isInstance(suffix)) continue;
                 method.invoke(team, suffix);
-                return;
+                return true;
             }
         } catch (ReflectiveOperationException ignored) {
-            // The running server does not expose Paper's Adventure suffix API.
+            // Fall back to the legacy String suffix API below.
         }
+        return false;
     }
 
     private Team findTeam(Player player) {
-        Scoreboard scoreboard = getMainScoreboard();
+        // Prefer the scoreboard actually assigned to the player. This is the
+        // scoreboard CargoPlus normally mutates for the player's nametag.
+        Scoreboard playerScoreboard = player.getScoreboard();
+        Team team = findTeam(playerScoreboard, player);
+        if (team != null) return team;
+
+        Scoreboard main = getMainScoreboard();
+        if (main != playerScoreboard) {
+            team = findTeam(main, player);
+            if (team != null) return team;
+        }
+        return null;
+    }
+
+    private Team findTeam(Scoreboard scoreboard, Player player) {
         for (Team team : scoreboard.getTeams()) {
             if (team.hasEntry(player.getName())) return team;
         }
