@@ -18,6 +18,12 @@ commands:
     description: Ativa ou desativa o modo voo.
     usage: /fly
     permission: essentialsplus.fly
+  ec:
+    description: Abre o Ender Chest pessoal.
+    usage: /ec
+    aliases:
+      - enderchest
+    permission: essentialsplus.ec
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
@@ -85,6 +91,9 @@ permissions:
     default: false
   essentialsplus.fly:
     description: Permite usar o /fly.
+    default: false
+  essentialsplus.ec:
+    description: Permite usar o /ec e o alias /enderchest.
     default: false
   essentialsplus.teleport:
     description: Permite usar os comandos de teleporte direto da staff.
