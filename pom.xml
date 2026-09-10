@@ -15,6 +15,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>26</maven.compiler.release>
+        <adventure.version>5.2.0</adventure.version>
     </properties>
 
     <repositories>
@@ -30,6 +31,11 @@
             <artifactId>paper-api</artifactId>
             <version>26.2.build.121-stable</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-serializer-legacy</artifactId>
+            <version>${adventure.version}</version>
         </dependency>
     </dependencies>
 
