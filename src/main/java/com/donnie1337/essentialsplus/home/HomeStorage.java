@@ -68,43 +68,63 @@ public final class HomeStorage {
         return Collections.unmodifiableMap(homes);
     }
 
-    public void saveHome(UUID playerId, Home home) {
+    public boolean saveHome(UUID playerId, Home home) {
         String path = "players." + playerId + "." + home.name();
         Location location = home.location();
         if (!validLocation(location)) {
-            throw new IllegalArgumentException("A localização da home é inválida.");
+            plugin.getLogger().warning("Não foi possível salvar a home '" + home.name() + "': localização inválida.");
+            return false;
         }
 
+        Object previous = data.get(path);
+        writeLocation(path, location);
+
+        if (save()) return true;
+
+        data.set(path, previous);
+        return false;
+    }
+
+    public boolean deleteHome(UUID playerId, String name) {
+        String path = "players." + playerId + "." + name;
+        Object previous = data.get(path);
+        data.set(path, null);
+
+        if (save()) return true;
+
+        data.set(path, previous);
+        return false;
+    }
+
+    public boolean renameHome(UUID playerId, String oldName, Home renamed) {
+        String oldPath = "players." + playerId + "." + oldName;
+        String newPath = "players." + playerId + "." + renamed.name();
+        Location location = renamed.location();
+        if (!validLocation(location)) {
+            plugin.getLogger().warning("Não foi possível renomear a home '" + oldName + "': localização inválida.");
+            return false;
+        }
+
+        Object previousOld = data.get(oldPath);
+        Object previousNew = data.get(newPath);
+
+        writeLocation(newPath, location);
+        data.set(oldPath, null);
+
+        if (save()) return true;
+
+        data.set(oldPath, previousOld);
+        data.set(newPath, previousNew);
+        return false;
+    }
+
+    private void writeLocation(String path, Location location) {
         data.set(path + ".world", location.getWorld().getName());
         data.set(path + ".x", location.getX());
         data.set(path + ".y", location.getY());
         data.set(path + ".z", location.getZ());
         data.set(path + ".yaw", location.getYaw());
         data.set(path + ".pitch", location.getPitch());
-        save();
-    }
-
-    public void deleteHome(UUID playerId, String name) {
-        data.set("players." + playerId + "." + name, null);
-        save();
-    }
-
-    public void renameHome(UUID playerId, String oldName, Home renamed) {
-        String oldPath = "players." + playerId + "." + oldName;
-        String newPath = "players." + playerId + "." + renamed.name();
-        Location location = renamed.location();
-        if (!validLocation(location)) {
-            throw new IllegalArgumentException("A localização da home é inválida.");
-        }
-
-        data.set(newPath + ".world", location.getWorld().getName());
-        data.set(newPath + ".x", location.getX());
-        data.set(newPath + ".y", location.getY());
-        data.set(newPath + ".z", location.getZ());
-        data.set(newPath + ".yaw", location.getYaw());
-        data.set(newPath + ".pitch", location.getPitch());
-        data.set(oldPath, null);
-        save();
     }
 
     private boolean validLocation(Location location) {
@@ -119,11 +139,13 @@ public final class HomeStorage {
         return Double.isFinite(x) && Double.isFinite(y) && Double.isFinite(z);
     }
 
-    private void save() {
+    private boolean save() {
         try {
             data.save(file);
+            return true;
         } catch (IOException exception) {
             plugin.getLogger().severe("Não foi possível salvar homes.yml: " + exception.getMessage());
+            return false;
         }
     }
 }
