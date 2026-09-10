@@ -31,7 +31,8 @@ public final class VanishCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        boolean enabled = service.toggle(player);
+        service.toggle(player);
+        boolean enabled = service.isVanished(player);
         player.sendMessage(ChatColor.GRAY + "Vanish: " + (enabled ? ChatColor.GREEN + "ativado" : ChatColor.RED + "desativado") + ChatColor.GRAY + ".");
         return true;
     }
