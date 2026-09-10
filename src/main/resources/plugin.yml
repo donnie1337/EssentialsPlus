@@ -22,7 +22,7 @@ commands:
     description: Abre o Ender Chest pessoal ou visualiza o Ender Chest de outro jogador.
     usage: /ec [jogador]
   bau:
-    description: Abre o baú estendido pessoal ou visualiza o baú de outro jogador.
+    description: Abre o baú estendido pessoal ou visualiza o baú estendido de outro jogador.
     usage: /bau [jogador]
   ver:
     description: Visualiza o inventário de outro jogador.
@@ -81,11 +81,6 @@ permissions:
     children:
       essentialsplus.vanish: true
       essentialsplus.teleport: true
-      essentialsplus.tpa: true
-      essentialsplus.home: true
-      essentialsplus.homes: true
-      essentialsplus.sethome: true
-      essentialsplus.delhome: true
   essentialsplus.vanish:
     description: Permite usar o /v.
     default: false
