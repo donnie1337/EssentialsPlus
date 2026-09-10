@@ -1,5 +1,8 @@
 package com.donnie1337.essentialsplus.vanish;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -13,7 +16,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class VanishService {
     private static final String VANISH_PERMISSION = "essentialsplus.vanish";
-    private static final String VANISH_SUFFIX = "§7[ɪɴᴠɪsɪᴠᴇʟ]";
+    private static final String VANISH_SUFFIX_TEXT = "[ɪɴᴠɪsɪᴠᴇʟ]";
+    private static final Component VANISH_HOVER = Component.text("Este jogador está invisível para jogadores.");
 
     private final Plugin plugin;
     private final Set<UUID> vanished = ConcurrentHashMap.newKeySet();
@@ -110,15 +114,19 @@ public final class VanishService {
         UUID uuid = player.getUniqueId();
         TeamSuffixState state = suffixStates.get(uuid);
         if (state == null) {
-            String originalSuffix = team.getSuffix();
-            suffixStates.put(uuid, new TeamSuffixState(team.getName(), originalSuffix));
-            state = suffixStates.get(uuid);
+            Component originalSuffix = team.suffix();
+            state = new TeamSuffixState(team.getName(), originalSuffix);
+            suffixStates.put(uuid, state);
         }
 
-        String originalSuffix = state.originalSuffix();
-        String expectedSuffix = originalSuffix + " " + VANISH_SUFFIX;
-        if (!team.getSuffix().equals(expectedSuffix)) {
-            team.setSuffix(expectedSuffix);
+        Component expectedSuffix = state.originalSuffix()
+                .append(Component.text(" "))
+                .append(Component.text(VANISH_SUFFIX_TEXT)
+                        .color(NamedTextColor.GRAY)
+                        .hoverEvent(HoverEvent.showText(VANISH_HOVER)));
+
+        if (!team.suffix().equals(expectedSuffix)) {
+            team.suffix(expectedSuffix);
         }
     }
 
@@ -131,7 +139,7 @@ public final class VanishService {
         Team team = scoreboard.getTeam(state.teamName());
         if (team == null) return;
 
-        team.setSuffix(state.originalSuffix());
+        team.suffix(state.originalSuffix());
     }
 
     private Team findTeam(Player player) {
@@ -150,6 +158,6 @@ public final class VanishService {
         return viewer != null && viewer.hasPermission(VANISH_PERMISSION);
     }
 
-    private record TeamSuffixState(String teamName, String originalSuffix) {
+    private record TeamSuffixState(String teamName, Component originalSuffix) {
     }
 }
