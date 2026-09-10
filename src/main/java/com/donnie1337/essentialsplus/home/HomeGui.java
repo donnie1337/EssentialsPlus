@@ -134,10 +134,14 @@ public final class HomeGui implements Listener {
         if (!(event.getWhoClicked() instanceof Player player)) return;
         if (!(event.getView().getTopInventory().getHolder() instanceof HomesHolder holder)) return;
 
+        // O inventário do jogador também fica protegido enquanto qualquer menu de Homes estiver aberto.
         event.setCancelled(true);
         event.setResult(Result.DENY);
 
-        if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getView().getTopInventory().getSize()) return;
+        if (event.getRawSlot() < 0 || event.getRawSlot() >= event.getView().getTopInventory().getSize()) {
+            player.updateInventory();
+            return;
+        }
 
         if (holder.type() == HomesHolder.Type.INTRO && event.getRawSlot() == INTRO_SLOT) {
             openHomes(player);
@@ -151,7 +155,10 @@ public final class HomeGui implements Listener {
             }
 
             ItemStack clicked = event.getCurrentItem();
-            if (clicked == null || !isHomeMaterial(clicked.getType()) || clicked.getItemMeta() == null) return;
+            if (clicked == null || !isHomeMaterial(clicked.getType()) || clicked.getItemMeta() == null) {
+                player.updateInventory();
+                return;
+            }
 
             String name = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
             try {
@@ -170,25 +177,35 @@ public final class HomeGui implements Listener {
                     return;
                 }
 
+                // Shift + clique esquerdo nunca deve mover o item para o inventário do jogador.
+                if (event.isShiftClick()) {
+                    player.updateInventory();
+                    return;
+                }
+
                 if (event.isRightClick()) {
                     openManage(player, name);
                     return;
                 }
 
-                if (event.isLeftClick() && !event.isShiftClick()) {
+                if (event.isLeftClick()) {
                     player.closeInventory();
                     player.teleport(home.location());
                     player.sendMessage("§aTeleportado para a home §f" + home.name() + "§a.");
                 }
             } catch (IllegalArgumentException exception) {
                 player.sendMessage("§cNao foi possivel carregar esta home.");
+                player.updateInventory();
             }
             return;
         }
 
         if (holder.type() == HomesHolder.Type.MANAGE) {
             String homeName = holder.homeName();
-            if (homeName == null) return;
+            if (homeName == null) {
+                player.updateInventory();
+                return;
+            }
 
             if (event.getRawSlot() == MANAGE_BACK_SLOT) {
                 openHomes(player);
@@ -229,6 +246,7 @@ public final class HomeGui implements Listener {
         if (event.getView().getTopInventory().getHolder() instanceof HomesHolder) {
             event.setCancelled(true);
             event.setResult(Result.DENY);
+            if (event.getWhoClicked() instanceof Player player) player.updateInventory();
         }
     }
 
@@ -257,7 +275,7 @@ public final class HomeGui implements Listener {
                     openManage(player, oldName);
                 }
             } catch (IllegalArgumentException exception) {
-                player.sendMessage("§cNome invalido. Use apenas letras, numeros, _ ou -, com no maximo 32 caracteres.");
+                player.sendMessage("§cNome invalido. Use apenas letras, numeros, _ ou -, com no maximo 16 caracteres.");
                 openManage(player, oldName);
             }
         });
