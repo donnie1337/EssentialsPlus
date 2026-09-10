@@ -32,10 +32,6 @@ commands:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
     permission: essentialsplus.teleport
-  tphere:
-    description: Teleporta um jogador até você. Comando exclusivo para staff.
-    usage: /tphere <jogador>
-    permission: essentialsplus.teleport
   tpa:
     description: Solicita teleporte até outro jogador.
     usage: /tpa <jogador>
@@ -126,7 +122,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpcancelar.
+    description: Permissão interna do comando /tpacancelar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
