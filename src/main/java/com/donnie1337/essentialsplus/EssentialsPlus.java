@@ -1,8 +1,8 @@
 package com.donnie1337.essentialsplus;
 
-import com.donnie1337.essentialsplus.admin.command.FlyCommand;
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
+import com.donnie1337.essentialsplus.command.FlyCommand;
 import com.donnie1337.essentialsplus.home.HomeGui;
 import com.donnie1337.essentialsplus.home.HomeService;
 import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
