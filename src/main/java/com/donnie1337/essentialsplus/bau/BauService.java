@@ -1,6 +1,9 @@
 package com.donnie1337.essentialsplus.bau;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -15,11 +18,13 @@ public final class BauService {
 
     private final JavaPlugin plugin;
     private final File file;
+    private final File tempFile;
     private final YamlConfiguration data;
 
     public BauService(JavaPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "bau.yml");
+        this.tempFile = new File(plugin.getDataFolder(), "bau.yml.tmp");
         this.data = YamlConfiguration.loadConfiguration(file);
     }
 
@@ -64,7 +69,15 @@ public final class BauService {
                 plugin.getLogger().warning("Não foi possível criar a pasta de dados do EssentialsPlus.");
                 return;
             }
-            data.save(file);
+
+            data.save(tempFile);
+            try {
+                Files.move(tempFile.toPath(), file.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (IOException atomicMoveException) {
+                Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (Exception exception) {
             plugin.getLogger().warning("Não foi possível salvar os baús estendidos: " + exception.getMessage());
         }
