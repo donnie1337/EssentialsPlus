@@ -1,6 +1,5 @@
 package com.donnie1337.essentialsplus.vanish;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,8 +10,6 @@ import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
 
 public final class VanishCommand implements CommandExecutor, TabCompleter {
     private static final String VANISH_PERMISSION = "essentialsplus.vanish";
@@ -51,61 +48,23 @@ public final class VanishCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    /**
+     * Sends the vanish event through ChatPlus so /v uses exactly the same
+     * staff-chat format as /s, including the CargoPlus prefix, nickname color
+     * and the existing hover on the cargo. EssentialsPlus does not construct
+     * another [S] message itself, avoiding duplicated or broken CargoPlus
+     * gradients.
+     */
     private void broadcastStaff(Player player, String message) {
-        String staffMessage = ChatColor.DARK_GRAY + "[S] "
-                + resolveCargoPrefix(player.getUniqueId())
-                + resolveCargoNicknameColor(player.getUniqueId())
-                + player.getName().toUpperCase(Locale.ROOT)
-                + ChatColor.DARK_GRAY + ": "
-                + ChatColor.WHITE + message;
+        Plugin chatPlus = player.getServer().getPluginManager().getPlugin("ChatPlus");
+        if (chatPlus == null || !chatPlus.isEnabled()) return;
 
-        for (Player viewer : Bukkit.getOnlinePlayers()) {
-            if (viewer.hasPermission(VANISH_PERMISSION)) {
-                viewer.sendMessage(staffMessage);
-            }
-        }
-    }
-
-    private String resolveCargoPrefix(UUID uuid) {
-        Object api = resolveCargoApi();
-        if (api == null) return "";
         try {
-            Method method = api.getClass().getMethod("getPrefix", UUID.class);
-            Object result = method.invoke(api, uuid);
-            return result instanceof String ? (String) result : "";
+            Method method = chatPlus.getClass().getMethod("sendStaffSystemMessage", Player.class, String.class);
+            method.invoke(chatPlus, player, message);
         } catch (ReflectiveOperationException | LinkageError ignored) {
-            return "";
-        }
-    }
-
-    private String resolveCargoNicknameColor(UUID uuid) {
-        Object api = resolveCargoApi();
-        if (api == null) return ChatColor.WHITE.toString();
-        try {
-            Method method = api.getClass().getMethod("getNicknameColor", UUID.class);
-            Object result = method.invoke(api, uuid);
-            return result instanceof String && !((String) result).isEmpty() ? (String) result : ChatColor.WHITE.toString();
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            return ChatColor.WHITE.toString();
-        }
-    }
-
-    private Object resolveCargoApi() {
-        Plugin cargo = Bukkit.getPluginManager().getPlugin("CargoPlus");
-        if (cargo == null || !cargo.isEnabled()) return null;
-        try {
-            Method apiMethod = cargo.getClass().getMethod("api");
-            Object api = apiMethod.invoke(cargo);
-            if (api != null) return api;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-        }
-
-        try {
-            Class<?> apiClass = Class.forName("com.cargoplus.api.CargoPlusAPI", false, cargo.getClass().getClassLoader());
-            org.bukkit.plugin.RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(apiClass);
-            return registration == null ? null : registration.getProvider();
-        } catch (ClassNotFoundException | LinkageError ignored) {
-            return null;
+            // ChatPlus is optional; if its integration API is unavailable,
+            // do not fall back to a second, differently formatted staff chat.
         }
     }
 
