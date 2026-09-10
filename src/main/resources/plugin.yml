@@ -24,6 +24,10 @@ commands:
     aliases:
       - enderchest
     permission: essentialsplus.ec
+  bau:
+    description: Abre o baú estendido pessoal.
+    usage: /bau
+    permission: essentialsplus.bau
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
@@ -38,7 +42,7 @@ commands:
     permission: essentialsplus.tpa
   tpaqui:
     description: Solicita que outro jogador se teleporte até você.
-    usage: /tpaqui <jogador>
+    usage: /tpa <jogador>
     permission: essentialsplus.tpa
   tpaccept:
     description: Aceita uma solicitação de teleporte.
@@ -95,6 +99,9 @@ permissions:
   essentialsplus.ec:
     description: Permite usar o /ec e o alias /enderchest.
     default: false
+  essentialsplus.bau:
+    description: Permite usar o /bau e o baú estendido pessoal.
+    default: false
   essentialsplus.teleport:
     description: Permite usar os comandos de teleporte direto da staff.
     default: op
@@ -116,7 +123,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpcancelar.
+    description: Permissão interna do comando /tpacancelar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
