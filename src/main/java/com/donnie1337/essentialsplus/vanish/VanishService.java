@@ -10,6 +10,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class VanishService {
+    private static final String VANISH_PERMISSION = "essentialsplus.vanish";
+
     private final Plugin plugin;
     private final Set<UUID> vanished = ConcurrentHashMap.newKeySet();
 
@@ -37,7 +39,9 @@ public final class VanishService {
 
         if (value) {
             for (Player viewer : Bukkit.getOnlinePlayers()) {
-                if (!viewer.equals(player)) viewer.hidePlayer(plugin, player);
+                if (viewer.equals(player)) continue;
+                if (canSeeVanished(viewer)) viewer.showPlayer(plugin, player);
+                else viewer.hidePlayer(plugin, player);
             }
             setListed(player, false);
         } else {
@@ -51,11 +55,20 @@ public final class VanishService {
 
     public void applyTo(Player player) {
         if (player == null) return;
+
         if (isVanished(player)) {
             for (Player viewer : Bukkit.getOnlinePlayers()) {
-                if (!viewer.equals(player)) viewer.hidePlayer(plugin, player);
+                if (viewer.equals(player)) continue;
+                if (canSeeVanished(viewer)) viewer.showPlayer(plugin, player);
+                else viewer.hidePlayer(plugin, player);
             }
             setListed(player, false);
+        }
+
+        for (Player vanishedPlayer : Bukkit.getOnlinePlayers()) {
+            if (vanishedPlayer.equals(player) || !isVanished(vanishedPlayer)) continue;
+            if (canSeeVanished(player)) player.showPlayer(plugin, vanishedPlayer);
+            else player.hidePlayer(plugin, vanishedPlayer);
         }
     }
 
@@ -71,6 +84,10 @@ public final class VanishService {
     public void clear() {
         for (Player player : Bukkit.getOnlinePlayers()) remove(player);
         vanished.clear();
+    }
+
+    private boolean canSeeVanished(Player viewer) {
+        return viewer != null && viewer.hasPermission(VANISH_PERMISSION);
     }
 
     private void setListed(Player player, boolean listed) {
