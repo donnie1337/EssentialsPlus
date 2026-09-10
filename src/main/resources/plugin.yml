@@ -65,6 +65,17 @@ commands:
     usage: /delhome <nome>
     permission: essentialsplus.delhome
 permissions:
+  essentialsplus.admin:
+    description: Permite usar todos os comandos e recursos administrativos do EssentialsPlus.
+    default: op
+    children:
+      essentialsplus.vanish: true
+      essentialsplus.teleport: true
+      essentialsplus.tpa: true
+      essentialsplus.home: true
+      essentialsplus.homes: true
+      essentialsplus.sethome: true
+      essentialsplus.delhome: true
   essentialsplus.vanish:
     description: Permite usar o /v.
     default: false
