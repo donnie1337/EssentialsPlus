@@ -54,7 +54,6 @@ public final class EssentialsPlus extends JavaPlugin {
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("ec", new EcCommand());
-        register("bau", new BauCommand(bauService));
         register("ver", new VerCommand());
         register("craft", new CraftCommand());
 
