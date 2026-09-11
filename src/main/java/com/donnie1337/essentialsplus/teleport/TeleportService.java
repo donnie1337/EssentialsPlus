@@ -19,6 +19,7 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -65,6 +66,7 @@ public final class TeleportService {
         if (requester.getUniqueId().equals(recipient.getUniqueId())) { message(requester, "cannot-self"); return; }
         if (!authSystemBridge.isAuthenticated(requester)) { message(requester, "auth-required"); return; }
         if (!authSystemBridge.isAuthenticated(recipient)) { message(requester, "target-not-authenticated"); return; }
+        if (!canReceiveTpa(recipient)) { message(requester, "tpa-receiving-disabled", "player", recipient.getName()); return; }
         deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(requester.getUniqueId());
         long now = System.currentTimeMillis();
         long timeout = timeoutMillis();
@@ -157,6 +159,7 @@ public final class TeleportService {
 
     private void completeAccepted(Player recipient, TpaRequest request) {
         removeButtonsForRequest(request);
+        if (!canReceiveTpa(recipient)) { message(recipient, "tpa-receiving-disabled-self"); return; }
         Player requester = Bukkit.getPlayer(request.requesterId());
         if (requester == null || !requester.isOnline()) { message(recipient, "target-offline"); return; }
         if (!authSystemBridge.isAuthenticated(requester) || !authSystemBridge.isAuthenticated(recipient)) { message(recipient, "auth-required"); return; }
@@ -295,6 +298,19 @@ public final class TeleportService {
     private void removeButton(UUID ownerId, UUID targetId, ButtonActionType type) { ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(ownerId); if (actions == null) return; actions.values().removeIf(action -> action.type() == type && action.targetId().equals(targetId)); if (actions.isEmpty()) buttonActions.remove(ownerId, actions); }
     private String coloredPlayer(Player player) { if (player == null) return ""; String cargoColor = cargoNicknameColor(player); return (cargoColor == null ? "§f" : cargoColor) + player.getName(); }
     private String cargoNicknameColor(Player player) { try { RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(Class.forName("com.cargoplus.api.CargoPlusAPI")); if (registration == null) return null; Object api = registration.getProvider(); Object result = api.getClass().getMethod("getNicknameColor", UUID.class).invoke(api, player.getUniqueId()); return result == null ? null : result.toString(); } catch (ReflectiveOperationException | LinkageError ignored) { return null; } }
+
+    private boolean canReceiveTpa(Player player) {
+        Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus");
+        if (utilidades == null || !utilidades.isEnabled()) return true;
+        try {
+            Method method = utilidades.getClass().getMethod("isTpaEnabled", Player.class);
+            Object result = method.invoke(utilidades, player);
+            return !(result instanceof Boolean enabled) || enabled;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return true;
+        }
+    }
+
     private void message(Player player, String key, String... replacements) { if (player == null || !player.isOnline()) return; String raw = plugin.getConfig().getString("messages." + key, ""); for (int i = 0; i + 1 < replacements.length; i += 2) { String replacement = replacements[i + 1]; if ("player".equals(replacements[i])) { Player target = Bukkit.getPlayerExact(replacement); replacement = coloredPlayer(target); } raw = raw.replace("{" + replacements[i] + "}", replacement == null ? "" : replacement); } String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", "")); chatPlusBridge.sendDirect(player, color(prefix + raw)); }
     private String color(String text) { return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text); }
 
