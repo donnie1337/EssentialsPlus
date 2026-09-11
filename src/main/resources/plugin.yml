@@ -28,6 +28,10 @@ commands:
     description: Visualiza o inventário de outro jogador.
     usage: /ver <jogador>
     permission: essentialsplus.inspect
+  craft:
+    description: Abre uma bancada de trabalho virtual.
+    usage: /craft
+    permission: essentialsplus.craft
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
@@ -94,6 +98,9 @@ permissions:
   essentialsplus.bau:
     description: Permite usar o /bau.
     default: false
+  essentialsplus.craft:
+    description: Permite usar o /craft.
+    default: true
   essentialsplus.inspect:
     description: Permite visualizar inventários, Ender Chests e baús estendidos de outros jogadores sem retirar itens.
     default: false
