@@ -96,7 +96,7 @@ public final class EssentialsPlus extends JavaPlugin {
     public void onDisable() {
         if (liveInspectionService != null) liveInspectionService.stop();
         if (bauAutoSaveTask != null) bauAutoSaveTask.cancel();
-        if (bauService != null) bauService.saveOpenBaus();
+        if (bauService != null) bauService.closeAllBaus();
         if (teleportService != null) teleportService.shutdown();
         if (vanishService != null) vanishService.clear();
     }
