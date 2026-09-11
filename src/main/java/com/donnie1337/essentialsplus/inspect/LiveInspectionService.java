@@ -98,25 +98,12 @@ public final class LiveInspectionService {
     }
 
     private void refreshBau(Player target, Inventory inspection) {
-        Inventory source = findOpenBau(target.getUniqueId());
+        Inventory source = bauService.getActiveBau(target.getUniqueId());
         if (source != null) {
             for (int slot = 0; slot < BauService.SIZE; slot++) {
                 setIfChanged(inspection, slot, source.getItem(slot));
             }
-            return;
         }
-
-        bauService.loadSaved(target.getUniqueId(), inspection);
-    }
-
-    private Inventory findOpenBau(UUID target) {
-        Player player = Bukkit.getPlayer(target);
-        if (player == null) return null;
-
-        Inventory top = player.getOpenInventory().getTopInventory();
-        return top.getHolder() instanceof BauHolder holder && holder.owner().equals(target)
-                ? top
-                : null;
     }
 
     private void setIfChanged(Inventory inventory, int slot, ItemStack source) {
