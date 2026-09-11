@@ -35,6 +35,10 @@ commands:
     description: Abre uma bancada de trabalho virtual.
     usage: /craft
     permission: essentialsplus.craft
+  r:
+    description: Responde à última conversa privada.
+    usage: /r <mensagem>
+    permission: essentialsplus.tell
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
@@ -105,7 +109,7 @@ permissions:
     description: Permite usar o /craft.
     default: true
   essentialsplus.tell:
-    description: Permite usar mensagens privadas com /tell, /msg, /w e /whisper.
+    description: Permite usar mensagens privadas com /tell e /r.
     default: true
   essentialsplus.inspect:
     description: Permite visualizar inventários, Ender Chests e baús estendidos de outros jogadores sem retirar itens.
