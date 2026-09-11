@@ -9,6 +9,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 
 public final class InspectListener implements Listener {
@@ -67,6 +68,11 @@ public final class InspectListener implements Listener {
                 && event.getInventory().getHolder() instanceof InspectHolder) {
             liveInspectionService.unregister(player);
         }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        liveInspectionService.unregister(event.getPlayer());
     }
 
     private boolean isInspecting(Player player) {
