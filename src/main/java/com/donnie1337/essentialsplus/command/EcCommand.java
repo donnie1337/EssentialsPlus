@@ -1,6 +1,7 @@
 package com.donnie1337.essentialsplus.command;
 
 import com.donnie1337.essentialsplus.inspect.InspectHolder;
+import com.donnie1337.essentialsplus.inspect.LiveInspectionService;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,6 +13,12 @@ import org.bukkit.inventory.ItemStack;
 public final class EcCommand implements CommandExecutor {
     private static final String PERMISSION = "essentialsplus.ec";
     private static final String INSPECT_PERMISSION = "essentialsplus.inspect";
+
+    private final LiveInspectionService liveInspectionService;
+
+    public EcCommand(LiveInspectionService liveInspectionService) {
+        this.liveInspectionService = liveInspectionService;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -64,6 +71,7 @@ public final class EcCommand implements CommandExecutor {
         }
 
         player.openInventory(inventory);
+        liveInspectionService.register(player, inventory);
         return true;
     }
 }
