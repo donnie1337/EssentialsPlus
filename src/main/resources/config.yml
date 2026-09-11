@@ -76,6 +76,17 @@ messages:
   usage-homes: "Uso: /homes"
   usage-sethome: "Uso: /sethome <nome>"
   usage-delhome: "Uso: /delhome <nome>"
+  tell:
+    unknown-command: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
+    usage: "&e&lᴄʜᴀᴛ &8• &rUse /tell <jogador> <mensagem>."
+    reply-usage: "&e&lᴄʜᴀᴛ &8• &rUse /r <mensagem>."
+    player-not-found: "&e&lᴄʜᴀᴛ &8• &cJogador não encontrado ou offline."
+    cannot-self: "&e&lᴄʜᴀᴛ &8• &cVocê não pode enviar uma mensagem para si mesmo."
+    target-disabled: "&e&lᴄʜᴀᴛ &8• &cO jogador desativou as mensagens privadas."
+    no-recent: "&e&lᴄʜᴀᴛ &8• &cVocê não possui nenhuma conversa privada recente."
+    player-only: "Comando disponível apenas para jogadores."
+    format-sender: "&e&lᴄʜᴀᴛ &8• &7Você → &f{player}&8: &r{message}"
+    format-target: "&e&lᴄʜᴀᴛ &8• &7{player} → &fVocê&8: &r{message}"
 
 buttons:
   spacing: "  "
