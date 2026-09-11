@@ -53,7 +53,7 @@ public final class EssentialsPlus extends JavaPlugin {
 
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
-        getServer().getPluginManager().registerEvents(new TellListener(), this);
+        getServer().getPluginManager().registerEvents(new TellListener(this), this);
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("craft", new CraftCommand());
