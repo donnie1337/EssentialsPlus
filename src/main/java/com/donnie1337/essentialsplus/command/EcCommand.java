@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.command;
 
+import com.donnie1337.essentialsplus.inspect.InspectHolder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -7,7 +8,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import com.donnie1337.essentialsplus.inspect.InspectHolder;
 
 public final class EcCommand implements CommandExecutor {
     private static final String PERMISSION = "essentialsplus.ec";
@@ -36,13 +36,13 @@ public final class EcCommand implements CommandExecutor {
 
         Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            player.sendMessage("§e§lᴄʜᴀᴛ &8• §rJogador não encontrado ou offline.");
+            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rJogador não encontrado ou offline.");
             return true;
         }
 
         if (target.getUniqueId().equals(player.getUniqueId())) {
             if (!player.hasPermission(PERMISSION)) {
-                player.sendMessage("§e§lᴄʜᴀᴛ &8• §rComando não encontrado.");
+                player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
                 return true;
             }
             player.openInventory(player.getEnderChest());
@@ -50,7 +50,7 @@ public final class EcCommand implements CommandExecutor {
         }
 
         if (!player.hasPermission(INSPECT_PERMISSION)) {
-            player.sendMessage("§e§lᴄʜᴀᴛ &8• §rComando não encontrado.");
+            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
             return true;
         }
 
