@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -21,6 +23,7 @@ public final class BauService {
     private final File file;
     private final File tempFile;
     private final YamlConfiguration data;
+    private final Map<UUID, Inventory> activeBaus = new HashMap<>();
 
     public BauService(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -31,11 +34,32 @@ public final class BauService {
 
     public Inventory createInventory(Player player) {
         UUID uuid = player.getUniqueId();
+        Inventory existing = activeBaus.get(uuid);
+        if (existing != null) {
+            return existing;
+        }
+
         BauHolder holder = new BauHolder(uuid);
         Inventory inventory = Bukkit.createInventory(holder, SIZE, TITLE);
         holder.setInventory(inventory);
         load(uuid, inventory);
+        activeBaus.put(uuid, inventory);
         return inventory;
+    }
+
+    public boolean hasActiveBau(UUID uuid) {
+        return activeBaus.containsKey(uuid);
+    }
+
+    public Inventory getActiveBau(UUID uuid) {
+        return activeBaus.get(uuid);
+    }
+
+    public void closeBau(UUID uuid) {
+        Inventory inventory = activeBaus.remove(uuid);
+        if (inventory != null) {
+            save(inventory);
+        }
     }
 
     public Inventory createInspectionInventory(UUID uuid, String targetName) {
@@ -62,10 +86,16 @@ public final class BauService {
     }
 
     public void saveOpenBaus() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            Inventory inventory = player.getOpenInventory().getTopInventory();
-            if (inventory.getHolder() instanceof BauHolder) save(inventory);
+        for (Inventory inventory : activeBaus.values()) {
+            save(inventory);
         }
+    }
+
+    public void closeAllBaus() {
+        for (Inventory inventory : activeBaus.values()) {
+            save(inventory);
+        }
+        activeBaus.clear();
     }
 
     private void load(UUID uuid, Inventory inventory) {
