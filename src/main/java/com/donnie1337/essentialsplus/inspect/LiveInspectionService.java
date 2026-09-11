@@ -1,6 +1,5 @@
 package com.donnie1337.essentialsplus.inspect;
 
-import com.donnie1337.essentialsplus.bau.BauHolder;
 import com.donnie1337.essentialsplus.bau.BauService;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,6 +16,7 @@ public final class LiveInspectionService {
     private final JavaPlugin plugin;
     private final BauService bauService;
     private final Map<UUID, Inventory> activeInspections = new HashMap<>();
+    private final Map<UUID, Inventory> lastBauSources = new HashMap<>();
     private BukkitTask task;
 
     public LiveInspectionService(JavaPlugin plugin, BauService bauService) {
@@ -35,37 +35,46 @@ public final class LiveInspectionService {
             task = null;
         }
         activeInspections.clear();
+        lastBauSources.clear();
     }
 
     public void register(Player viewer, Inventory inventory) {
         if (!(inventory.getHolder() instanceof InspectHolder)) return;
-        activeInspections.put(viewer.getUniqueId(), inventory);
+        UUID viewerId = viewer.getUniqueId();
+        activeInspections.put(viewerId, inventory);
+        lastBauSources.remove(viewerId);
     }
 
     public void unregister(Player viewer) {
-        activeInspections.remove(viewer.getUniqueId());
+        UUID viewerId = viewer.getUniqueId();
+        activeInspections.remove(viewerId);
+        lastBauSources.remove(viewerId);
     }
 
     private void refreshAll() {
         Iterator<Map.Entry<UUID, Inventory>> iterator = activeInspections.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<UUID, Inventory> entry = iterator.next();
-            Player viewer = Bukkit.getPlayer(entry.getKey());
+            UUID viewerId = entry.getKey();
+            Player viewer = Bukkit.getPlayer(viewerId);
             Inventory inspection = entry.getValue();
 
             if (viewer == null || viewer.getOpenInventory().getTopInventory() != inspection) {
                 iterator.remove();
+                lastBauSources.remove(viewerId);
                 continue;
             }
 
             if (!(inspection.getHolder() instanceof InspectHolder holder)) {
                 iterator.remove();
+                lastBauSources.remove(viewerId);
                 continue;
             }
 
             Player target = Bukkit.getPlayer(holder.target());
             if (target == null) {
                 iterator.remove();
+                lastBauSources.remove(viewerId);
                 viewer.closeInventory();
                 continue;
             }
@@ -73,7 +82,7 @@ public final class LiveInspectionService {
             switch (holder.type()) {
                 case PLAYER -> refreshPlayerInventory(target, inspection);
                 case ENDER_CHEST -> refreshEnderChest(target, inspection);
-                case BAU -> refreshBau(target, inspection);
+                case BAU -> refreshBau(viewerId, target, inspection);
             }
         }
     }
@@ -97,12 +106,21 @@ public final class LiveInspectionService {
         }
     }
 
-    private void refreshBau(Player target, Inventory inspection) {
+    private void refreshBau(UUID viewerId, Player target, Inventory inspection) {
         Inventory source = bauService.getActiveBau(target.getUniqueId());
+        Inventory previousSource = lastBauSources.get(viewerId);
+
         if (source != null) {
             for (int slot = 0; slot < BauService.SIZE; slot++) {
                 setIfChanged(inspection, slot, source.getItem(slot));
             }
+            lastBauSources.put(viewerId, source);
+            return;
+        }
+
+        if (previousSource != null) {
+            bauService.loadSaved(target.getUniqueId(), inspection);
+            lastBauSources.remove(viewerId);
         }
     }
 
