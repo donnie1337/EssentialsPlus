@@ -49,22 +49,22 @@ public final class EssentialsPlus extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
 
-        getServer().getPluginManager().registerEvents(new InspectListener(), this);
-
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
-        register("ec", new EcCommand());
-        register("ver", new VerCommand());
         register("craft", new CraftCommand());
 
         bauService = new BauService(this);
-        getServer().getPluginManager().registerEvents(new BauListener(bauService), this);
-        register("bau", new BauCommand(bauService));
-        startBauAutoSave();
-
         liveInspectionService = new LiveInspectionService(this, bauService);
+        getServer().getPluginManager().registerEvents(new InspectListener(liveInspectionService), this);
+        getServer().getPluginManager().registerEvents(new BauListener(bauService), this);
+
+        register("ec", new EcCommand(liveInspectionService));
+        register("ver", new VerCommand(liveInspectionService));
+        register("bau", new BauCommand(bauService, liveInspectionService));
+
+        startBauAutoSave();
         liveInspectionService.start();
 
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
@@ -107,9 +107,6 @@ public final class EssentialsPlus extends JavaPlugin {
         }, 100L, 100L);
     }
 
-    /**
-     * Public bridge used by ChatPlus to determine vanish state without a compile-time dependency.
-     */
     public boolean isVanished(Player player) {
         return vanishService != null && vanishService.isVanished(player);
     }
