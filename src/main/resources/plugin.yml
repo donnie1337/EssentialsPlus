@@ -9,6 +9,7 @@ softdepend:
   - LoginPlus
   - ChatPlus
   - CargoPlus
+  - UtilidadesPlus
 commands:
   v:
     description: Ativa ou desativa o modo vanish.
