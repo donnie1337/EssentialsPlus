@@ -2,6 +2,9 @@ package com.donnie1337.essentialsplus.inspect;
 
 import com.donnie1337.essentialsplus.bau.BauHolder;
 import com.donnie1337.essentialsplus.bau.BauService;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -13,6 +16,7 @@ import org.bukkit.scheduler.BukkitTask;
 public final class LiveInspectionService {
     private final JavaPlugin plugin;
     private final BauService bauService;
+    private final Map<UUID, Inventory> activeInspections = new HashMap<>();
     private BukkitTask task;
 
     public LiveInspectionService(JavaPlugin plugin, BauService bauService) {
@@ -30,15 +34,38 @@ public final class LiveInspectionService {
             task.cancel();
             task = null;
         }
+        activeInspections.clear();
+    }
+
+    public void register(Player viewer, Inventory inventory) {
+        if (!(inventory.getHolder() instanceof InspectHolder)) return;
+        activeInspections.put(viewer.getUniqueId(), inventory);
+    }
+
+    public void unregister(Player viewer) {
+        activeInspections.remove(viewer.getUniqueId());
     }
 
     private void refreshAll() {
-        for (Player viewer : Bukkit.getOnlinePlayers()) {
-            Inventory inspection = viewer.getOpenInventory().getTopInventory();
-            if (!(inspection.getHolder() instanceof InspectHolder holder)) continue;
+        Iterator<Map.Entry<UUID, Inventory>> iterator = activeInspections.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, Inventory> entry = iterator.next();
+            Player viewer = Bukkit.getPlayer(entry.getKey());
+            Inventory inspection = entry.getValue();
+
+            if (viewer == null || viewer.getOpenInventory().getTopInventory() != inspection) {
+                iterator.remove();
+                continue;
+            }
+
+            if (!(inspection.getHolder() instanceof InspectHolder holder)) {
+                iterator.remove();
+                continue;
+            }
 
             Player target = Bukkit.getPlayer(holder.target());
             if (target == null) {
+                iterator.remove();
                 viewer.closeInventory();
                 continue;
             }
