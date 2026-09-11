@@ -11,6 +11,12 @@ import org.bukkit.inventory.ItemStack;
 public final class VerCommand implements CommandExecutor {
     private static final String PERMISSION = "essentialsplus.inspect";
 
+    private final LiveInspectionService liveInspectionService;
+
+    public VerCommand(LiveInspectionService liveInspectionService) {
+        this.liveInspectionService = liveInspectionService;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
@@ -42,13 +48,18 @@ public final class VerCommand implements CommandExecutor {
             ItemStack item = target.getInventory().getItem(slot);
             if (item != null) inventory.setItem(slot, item.clone());
         }
-        inventory.setItem(45, target.getInventory().getHelmet() == null ? null : target.getInventory().getHelmet().clone());
-        inventory.setItem(46, target.getInventory().getChestplate() == null ? null : target.getInventory().getChestplate().clone());
-        inventory.setItem(47, target.getInventory().getLeggings() == null ? null : target.getInventory().getLeggings().clone());
-        inventory.setItem(48, target.getInventory().getBoots() == null ? null : target.getInventory().getBoots().clone());
-        inventory.setItem(49, target.getInventory().getItemInOffHand().clone());
+        inventory.setItem(45, cloneOrNull(target.getInventory().getHelmet()));
+        inventory.setItem(46, cloneOrNull(target.getInventory().getChestplate()));
+        inventory.setItem(47, cloneOrNull(target.getInventory().getLeggings()));
+        inventory.setItem(48, cloneOrNull(target.getInventory().getBoots()));
+        inventory.setItem(49, cloneOrNull(target.getInventory().getItemInOffHand()));
 
         player.openInventory(inventory);
+        liveInspectionService.register(player, inventory);
         return true;
+    }
+
+    private ItemStack cloneOrNull(ItemStack item) {
+        return item == null ? null : item.clone();
     }
 }
