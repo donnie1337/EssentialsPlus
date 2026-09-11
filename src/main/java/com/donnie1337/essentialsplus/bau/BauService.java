@@ -46,6 +46,10 @@ public final class BauService {
         return inventory;
     }
 
+    public void loadSaved(UUID uuid, Inventory inventory) {
+        load(uuid, inventory);
+    }
+
     public void save(Inventory inventory) {
         if (!(inventory.getHolder() instanceof BauHolder holder)) return;
 
