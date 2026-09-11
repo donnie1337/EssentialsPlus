@@ -72,13 +72,14 @@ public final class LiveInspectionService {
 
     private void refreshBau(Player target, Inventory inspection) {
         Inventory source = findOpenBau(target.getUniqueId());
-        if (source == null) {
-            source = bauService.createInventory(target);
+        if (source != null) {
+            for (int slot = 0; slot < BauService.SIZE; slot++) {
+                setIfChanged(inspection, slot, source.getItem(slot));
+            }
+            return;
         }
 
-        for (int slot = 0; slot < BauService.SIZE; slot++) {
-            setIfChanged(inspection, slot, source.getItem(slot));
-        }
+        bauService.loadSaved(target.getUniqueId(), inspection);
     }
 
     private Inventory findOpenBau(UUID target) {
