@@ -5,15 +5,20 @@
 # Cores do Minecraft:
 # &0-9, &a-f, &k-o e &r
 #
-# Placeholders disponíveis nas mensagens são indicados entre {}.
-# Exemplo: {player}, {home}, {seconds}, {message}
+# Placeholders disponíveis nas mensagens:
+# {player}, {target}, {home}, {seconds}, {message}, {limit}
 #
 # Alterações neste arquivo exigem /reload do plugin ou reinício
 # do servidor para serem aplicadas.
 # ============================================================
 
+
+# ============================================================
+# CONFIGURAÇÕES
+# ============================================================
+
 # ------------------------------------------------------------
-# TELEPORTE - TPA
+# TPA
 # ------------------------------------------------------------
 tpa:
   enabled: true
@@ -30,120 +35,195 @@ tpa:
 # ------------------------------------------------------------
 homes:
   enabled: true
+
   # -1 = ilimitado
   limits:
     default: 1
 
 # ------------------------------------------------------------
-# TELEPORTE STAFF
+# TELEPORTE DA EQUIPE
 # ------------------------------------------------------------
 teleport:
   staff:
     enabled: true
 
-# ------------------------------------------------------------
+
+# ============================================================
 # MENSAGENS
-# ------------------------------------------------------------
+# ============================================================
+#
+# As mensagens são separadas pela TAG utilizada no prefixo.
+# Isso mantém todas as mensagens de cada sistema agrupadas.
+# ============================================================
+
 messages:
-  # -------------------------
-  # Geral
-  # -------------------------
-  prefix: "&c&lSERVIDOR &7• &r"
-  unknown-command: "Comando não encontrado."
-  player-only: "&b&lᴛᴘ &8• &cEste comando precisa ser usado por um jogador."
-  player-not-found: "&b&lᴛᴘᴀ &8• &cJogador não encontrado."
-  cannot-self: "&b&lᴛᴘᴀ &8• &cVocê não pode enviar uma solicitação para si mesmo."
-  no-permission: "&b&lᴛᴘᴀ &8• &cVocê não tem permissão para executar este comando."
-  auth-required: "&b&lᴛᴘᴀ &8• &cVocê precisa estar autenticado para executar este comando."
-  target-not-authenticated: "&b&lᴛᴘᴀ &8• &cO jogador ainda não está autenticado."
 
-  # -------------------------
+  # ==========================================================
   # TPA
-  # -------------------------
-  tpa-prefix: ""
-  disabled: "&b&lᴛᴘᴀ &8• &cO sistema de TPA está desativado."
-  tpa-receiving-disabled: "&b&lᴛᴘᴀ &8• &c{player}&f não está recebendo solicitações de TPA no momento."
-  tpa-receiving-disabled-self: "&b&lᴛᴘᴀ &8• &cVocê desativou o recebimento de TPA."
-  request-sent: "&b&lᴛᴘᴀ &8• &rVocê pediu para se teleportar até {player}&f!"
-  request-received: "\n&b&lᴛᴘᴀ &8• &r{player}&f está pedindo para se teleportar até você.\nClique {accept} para aceitar ou {deny} para negar!\n"
-  request-here-received: "\n&b&lᴛᴘᴀ &8• &r{player}&f está pedindo para que você se teleporte até ele.\nClique {accept} para aceitar ou {deny} para negar!\n"
-  request-accepted: "&b&lᴛᴘᴀ &8• &rVocê aceitou o pedido de teleporte de {player}&f!"
-  request-accepted-sender: "&b&lᴛᴘᴀ &8• &r{player}&f aceitou seu pedido de teleporte. Levando você até lá..."
-  request-denied: "&b&lᴛᴘᴀ &8• &rVocê recusou o pedido de teleporte de {player}&f."
-  request-denied-sender: "&b&lᴛᴘᴀ &8• &r{player}&f recusou seu pedido de teleporte."
-  request-expired: "&b&lᴛᴘᴀ &8• &rO pedido de teleporte de {player}&f expirou."
-  request-already-accepted: "&b&lᴛᴘᴀ &8• &cVocê já aceitou este pedido de teleporte."
-  request-already-denied: "&b&lᴛᴘᴀ &8• &cNão foi possível aceitar o TPA pois você recusou esta solicitação."
-  request-expired-cannot-respond: "&b&lᴛᴘᴀ &8• &cVocê não pode aceitar ou recusar porque o convite expirou."
-  request-already-cancelled: "&b&lᴛᴘᴀ &8• &cVocê já cancelou este pedido de teleporte."
-  request-cannot-cancel-accepted: "&b&lᴛᴘᴀ &8• &cNão é possível cancelar porque {player}&f já aceitou o pedido."
-  request-cannot-cancel-denied: "&b&lᴛᴘᴀ &8• &cNão é possível cancelar porque {player}&f recusou o pedido."
-  request-cannot-cancel-expired: "&b&lᴛᴘᴀ &8• &cNão é possível cancelar porque o pedido expirou."
-  no-request: "&b&lᴛᴘᴀ &8• &cVocê não possui solicitações de TPA pendentes."
-  request-cancelled: "&b&lᴛᴘᴀ &8• &cSolicitação de TPA cancelada pois o {player}&c cancelou."
-  request-cancelled-sender: "&b&lᴛᴘᴀ &8• &cSolicitação de TPA cancelada."
-  pending-request: "&b&lᴛᴘᴀ &8• &cVocê já possui uma solicitação de TPA pendente. Aguarde ela expirar ou ser respondida."
-  teleporting: "&b&lᴛᴘᴀ &8• &rTeleportando em {seconds}s. Não se mova."
-  teleport-cancelled: "&b&lᴛᴘᴀ &8• &cTeleporte cancelado porque você se moveu."
-  target-offline: "&b&lᴛᴘᴀ &8• &cO jogador não está mais online."
-  teleport-failed: "&b&lᴛᴘᴀ &8• &cNão foi possível realizar o teleporte."
-  too-many-requests: "&b&lᴛᴘᴀ &8• &cEste jogador já possui muitas solicitações pendentes."
+  # ==========================================================
+  tpa:
+    prefix: "&b&lᴛᴘᴀ &8• &r"
 
-  # -------------------------
-  # Teleporte Staff
-  # -------------------------
-  teleported-to: "&b&lᴛᴘ &8• &rTeleportado até {player}&f."
-  player-teleported-to: "&b&lᴛᴘ &8• &r{player}&f foi teleportado até {target}&f."
-  player-teleported-here: "&b&lᴛᴘ &8• &r{player}&f foi teleportado até você."
-  teleported-by-staff: "&b&lᴛᴘ &8• &rVocê foi teleportado por {player}&f."
-  usage-tp: "&b&lᴛᴘ &8• &fUso: /tp <jogador> [jogador]"
+    sistema-desativado: "O sistema de TPA está desativado."
+    jogador-nao-encontrado: "Jogador não encontrado."
+    nao-pode-ser-voce: "Você não pode enviar uma solicitação para si mesmo."
+    precisa-estar-autenticado: "Você precisa estar autenticado para executar este comando."
+    jogador-nao-autenticado: "O jogador ainda não está autenticado."
 
-  # -------------------------
-  # Homes
-  # -------------------------
-  home-saved: "Home {home} salva com sucesso."
-  home-teleported: "Teleportado para a home {home}."
-  home-deleted: "Home {home} removida com sucesso."
-  homes-empty: "Você ainda não possui nenhuma home."
-  homes-list: "Suas homes: {homes}"
-  homes-disabled: "O sistema de Homes está desativado."
-  home-limit: "Você atingiu o limite de {limit} home(s)."
-  invalid-home-name: "Nome de home inválido. Use apenas letras, números, _ ou - (até 32 caracteres)."
-  home-world-unavailable: "Não foi possível carregar o mundo desta home."
-  home-location-invalid: "A localização desta home não é mais válida."
-  usage-home: "Uso: /home <nome>"
-  usage-homes: "Uso: /homes"
-  usage-sethome: "Uso: /sethome <nome>"
-  usage-delhome: "Uso: /delhome <nome>"
+    recebimento-desativado:
+      jogador: "{player}&f não está recebendo solicitações de TPA no momento."
+      proprio: "Você desativou o recebimento de TPA."
 
-  # -------------------------
-  # Mensagens privadas - /tell e /r
-  # -------------------------
-  tell:
-    unknown-command: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
-    usage: "&e&lᴄʜᴀᴛ &8• &rUse /tell <jogador> <mensagem>."
-    reply-usage: "&e&lᴄʜᴀᴛ &8• &rUse /r <mensagem>."
-    player-not-found: "&e&lᴄʜᴀᴛ &8• &cJogador não encontrado ou offline."
-    cannot-self: "&e&lᴄʜᴀᴛ &8• &cVocê não pode enviar uma mensagem para si mesmo."
-    target-disabled: "&e&lᴄʜᴀᴛ &8• &cO jogador desativou as mensagens privadas."
-    no-recent: "&e&lᴄʜᴀᴛ &8• &cVocê não possui nenhuma conversa privada recente."
-    player-only: "Comando disponível apenas para jogadores."
-    format-sender: "&e&lᴄʜᴀᴛ &8• &7Você → &f{player}&8: &r{message}"
-    format-target: "&e&lᴄʜᴀᴛ &8• &7{player} → &fVocê&8: &r{message}"
+    solicitacao:
+      enviada: "Você pediu para se teleportar até {player}&f!"
+      recebida: "{player}&f está pedindo para se teleportar até você."
+      recebida-aqui: "{player}&f está pedindo para que você se teleporte até ele."
 
-# ------------------------------------------------------------
+    resposta:
+      aceita: "Você aceitou o pedido de teleporte de {player}&f!"
+      aceita-remetente: "{player}&f aceitou seu pedido de teleporte. Levando você até lá..."
+      recusada: "Você recusou o pedido de teleporte de {player}&f."
+      recusada-remetente: "{player}&f recusou seu pedido de teleporte."
+
+    expiracao:
+      expirada: "O pedido de teleporte de {player}&f expirou."
+      nao-pode-responder: "Você não pode aceitar ou recusar porque o convite expirou."
+
+    cancelamento:
+      ja-cancelada: "Você já cancelou este pedido de teleporte."
+      cancelada: "Solicitação de TPA cancelada."
+      cancelada-pelo-jogador: "Solicitação de TPA cancelada pois {player}&f cancelou."
+      jogador-ja-aceitou: "Não é possível cancelar porque {player}&f já aceitou o pedido."
+      jogador-recusou: "Não é possível cancelar porque {player}&f recusou o pedido."
+      solicitacao-expirada: "Não é possível cancelar porque o pedido expirou."
+
+    pendencia:
+      nenhuma: "Você não possui solicitações de TPA pendentes."
+      ja-existe: "Você já possui uma solicitação de TPA pendente. Aguarde ela expirar ou ser respondida."
+      limite-atingido: "Este jogador já possui muitas solicitações pendentes."
+
+    teleporte:
+      iniciando: "Teleportando em {seconds}s. Não se mova."
+      cancelado-movimento: "Teleporte cancelado porque você se moveu."
+      jogador-offline: "O jogador não está mais online."
+      falhou: "Não foi possível realizar o teleporte."
+
+    uso:
+      tpa: "Use /tpa <jogador>."
+
+
+  # ==========================================================
+  # TP
+  # ==========================================================
+  tp:
+    prefix: "&c&lᴛᴘ &8• &r"
+
+    jogador-apenas: "Este comando precisa ser usado por um jogador."
+    teleportado-ate: "Teleportado até {player}&f."
+    jogador-teleportado-ate: "{player}&f foi teleportado até {target}&f."
+    jogador-teleportado-aqui: "{player}&f foi teleportado até você."
+    teleportado-pela-equipe: "Você foi teleportado por {player}&f."
+
+    uso:
+      tp: "Uso: /tp <jogador> [jogador]"
+
+
+  # ==========================================================
+  # HOME
+  # ==========================================================
+  home:
+    prefix: "&a&lʜᴏᴍᴇ &8• &r"
+
+    salva: "Home {home} salva com sucesso."
+    teleportado: "Teleportado para a home {home}."
+    removida: "Home {home} removida com sucesso."
+    nenhuma: "Você ainda não possui nenhuma home."
+    lista: "Suas homes: {homes}"
+    sistema-desativado: "O sistema de Homes está desativado."
+    limite-atingido: "Você atingiu o limite de {limit} home(s)."
+    nome-invalido: "Nome de home inválido. Use apenas letras, números, _ ou - (até 32 caracteres)."
+    mundo-indisponivel: "Não foi possível carregar o mundo desta home."
+    localizacao-invalida: "A localização desta home não é mais válida."
+
+    uso:
+      home: "Uso: /home <nome>"
+      homes: "Uso: /homes"
+      sethome: "Uso: /sethome <nome>"
+      delhome: "Uso: /delhome <nome>"
+
+
+  # ==========================================================
+  # CHAT / MENSAGENS PRIVADAS
+  # ==========================================================
+  chat:
+    prefix: "&e&lᴄʜᴀᴛ &8• &r"
+
+    comando-nao-encontrado: "Comando não encontrado."
+    jogador-nao-encontrado: "Jogador não encontrado ou offline."
+    nao-pode-ser-voce: "Você não pode enviar uma mensagem para si mesmo."
+    mensagens-desativadas: "O jogador desativou as mensagens privadas."
+    nenhuma-conversa: "Você não possui nenhuma conversa privada recente."
+
+    tell:
+      uso: "Use /tell <jogador> <mensagem>."
+
+    resposta:
+      uso: "Use /r <mensagem>."
+
+    formato:
+      remetente: "Você → &f{player}&8: &r{message}"
+      destinatario: "{player} → &fVocê&8: &r{message}"
+
+
+  # ==========================================================
+  # UTILIDADES
+  # ==========================================================
+  utilidades:
+    prefix: "&7&lᴜᴛɪʟɪᴅᴀᴅᴇs &8• &r"
+
+
+  # ==========================================================
+  # INVISIBILIDADE
+  # ==========================================================
+  invisibilidade:
+    prefix: "&5&lɪɴᴠɪsɪʙɪʟɪᴅᴀᴅᴇ &8• &r"
+
+
+  # ==========================================================
+  # CARGOS
+  # ==========================================================
+  cargo:
+    prefix: "&6&lᴄᴀʀɢᴏ &8• &r"
+
+
+  # ==========================================================
+  # GERAL
+  # ==========================================================
+  geral:
+    comando-nao-encontrado: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
+    jogador-apenas: "Este comando precisa ser usado por um jogador."
+    jogador-nao-encontrado: "Jogador não encontrado."
+    sem-permissao: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
+    precisa-estar-autenticado: "Você precisa estar autenticado para executar este comando."
+    jogador-nao-autenticado: "O jogador ainda não está autenticado."
+
+
+# ============================================================
 # BOTÕES DE INTERAÇÃO DO TPA
-# ------------------------------------------------------------
+# ============================================================
 buttons:
   spacing: "  "
+
   accept:
     enabled: true
     text: "&a&lAQUI"
     hover: "&7Clique para aceitar a solicitação."
+
   deny:
     enabled: true
     text: "&c&lAQUI"
     hover: "&7Clique para negar a solicitação."
+
   cancel:
     enabled: true
     text: "&fClique &c&lAQUI&f para cancelar"
