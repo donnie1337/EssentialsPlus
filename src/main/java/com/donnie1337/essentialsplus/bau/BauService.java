@@ -71,8 +71,9 @@ public final class BauService {
     private void load(UUID uuid, Inventory inventory) {
         String path = "players." + uuid + ".slots.";
         for (int slot = 0; slot < SIZE; slot++) {
+            inventory.setItem(slot, null);
             ItemStack item = data.getItemStack(path + slot);
-            if (item != null) inventory.setItem(slot, item);
+            if (item != null) inventory.setItem(slot, item.clone());
         }
     }
 
