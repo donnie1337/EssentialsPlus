@@ -35,9 +35,7 @@ public final class BauService {
     public Inventory createInventory(Player player) {
         UUID uuid = player.getUniqueId();
         Inventory existing = activeBaus.get(uuid);
-        if (existing != null) {
-            return existing;
-        }
+        if (existing != null) return existing;
 
         BauHolder holder = new BauHolder(uuid);
         Inventory inventory = Bukkit.createInventory(holder, SIZE, TITLE);
@@ -57,9 +55,14 @@ public final class BauService {
 
     public void closeBau(UUID uuid) {
         Inventory inventory = activeBaus.remove(uuid);
-        if (inventory != null) {
-            save(inventory);
-        }
+        if (inventory != null) save(inventory);
+    }
+
+    public void closeBauIfMatches(UUID uuid, Inventory inventory) {
+        Inventory active = activeBaus.get(uuid);
+        if (active != inventory) return;
+        activeBaus.remove(uuid);
+        save(inventory);
     }
 
     public Inventory createInspectionInventory(UUID uuid, String targetName) {
@@ -86,15 +89,11 @@ public final class BauService {
     }
 
     public void saveOpenBaus() {
-        for (Inventory inventory : activeBaus.values()) {
-            save(inventory);
-        }
+        for (Inventory inventory : activeBaus.values()) save(inventory);
     }
 
     public void closeAllBaus() {
-        for (Inventory inventory : activeBaus.values()) {
-            save(inventory);
-        }
+        for (Inventory inventory : activeBaus.values()) save(inventory);
         activeBaus.clear();
     }
 
