@@ -15,6 +15,7 @@ import com.donnie1337.essentialsplus.home.command.HomeCommand;
 import com.donnie1337.essentialsplus.home.command.HomesCommand;
 import com.donnie1337.essentialsplus.home.command.SetHomeCommand;
 import com.donnie1337.essentialsplus.inspect.InspectListener;
+import com.donnie1337.essentialsplus.inspect.LiveInspectionService;
 import com.donnie1337.essentialsplus.inspect.VerCommand;
 import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
@@ -41,6 +42,7 @@ public final class EssentialsPlus extends JavaPlugin {
     private HomeService homeService;
     private VanishService vanishService;
     private BauService bauService;
+    private LiveInspectionService liveInspectionService;
     private BukkitTask bauAutoSaveTask;
 
     @Override
@@ -61,6 +63,9 @@ public final class EssentialsPlus extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BauListener(bauService), this);
         register("bau", new BauCommand(bauService));
         startBauAutoSave();
+
+        liveInspectionService = new LiveInspectionService(this, bauService);
+        liveInspectionService.start();
 
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
@@ -89,6 +94,7 @@ public final class EssentialsPlus extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (liveInspectionService != null) liveInspectionService.stop();
         if (bauAutoSaveTask != null) bauAutoSaveTask.cancel();
         if (bauService != null) bauService.saveOpenBaus();
         if (teleportService != null) teleportService.shutdown();
