@@ -1,3 +1,20 @@
+# ============================================================
+# EssentialsPlus - Configuração principal
+# ============================================================
+#
+# Cores do Minecraft:
+# &0-9, &a-f, &k-o e &r
+#
+# Placeholders disponíveis nas mensagens são indicados entre {}.
+# Exemplo: {player}, {home}, {seconds}, {message}
+#
+# Alterações neste arquivo exigem /reload do plugin ou reinício
+# do servidor para serem aplicadas.
+# ============================================================
+
+# ------------------------------------------------------------
+# TELEPORTE - TPA
+# ------------------------------------------------------------
 tpa:
   enabled: true
   request-timeout-seconds: 20
@@ -8,27 +25,43 @@ tpa:
   cancel-on-death: true
   cancel-on-disconnect: true
 
+# ------------------------------------------------------------
+# HOMES
+# ------------------------------------------------------------
 homes:
   enabled: true
-  # A estrutura de limites já fica preparada para a futura integração por cargo.
-  # -1 significa ilimitado.
+  # -1 = ilimitado
   limits:
     default: 1
 
+# ------------------------------------------------------------
+# TELEPORTE STAFF
+# ------------------------------------------------------------
 teleport:
   staff:
     enabled: true
 
+# ------------------------------------------------------------
+# MENSAGENS
+# ------------------------------------------------------------
 messages:
+  # -------------------------
+  # Geral
+  # -------------------------
   prefix: "&c&lSERVIDOR &7• &r"
-  tpa-prefix: ""
   unknown-command: "Comando não encontrado."
+  player-only: "&b&lᴛᴘ &8• &cEste comando precisa ser usado por um jogador."
   player-not-found: "&b&lᴛᴘᴀ &8• &cJogador não encontrado."
   cannot-self: "&b&lᴛᴘᴀ &8• &cVocê não pode enviar uma solicitação para si mesmo."
-  disabled: "&b&lᴛᴘᴀ &8• &cO sistema de TPA está desativado."
   no-permission: "&b&lᴛᴘᴀ &8• &cVocê não tem permissão para executar este comando."
   auth-required: "&b&lᴛᴘᴀ &8• &cVocê precisa estar autenticado para executar este comando."
   target-not-authenticated: "&b&lᴛᴘᴀ &8• &cO jogador ainda não está autenticado."
+
+  # -------------------------
+  # TPA
+  # -------------------------
+  tpa-prefix: ""
+  disabled: "&b&lᴛᴘᴀ &8• &cO sistema de TPA está desativado."
   tpa-receiving-disabled: "&b&lᴛᴘᴀ &8• &c{player}&f não está recebendo solicitações de TPA no momento."
   tpa-receiving-disabled-self: "&b&lᴛᴘᴀ &8• &cVocê desativou o recebimento de TPA."
   request-sent: "&b&lᴛᴘᴀ &8• &rVocê pediu para se teleportar até {player}&f!"
@@ -55,13 +88,19 @@ messages:
   target-offline: "&b&lᴛᴘᴀ &8• &cO jogador não está mais online."
   teleport-failed: "&b&lᴛᴘᴀ &8• &cNão foi possível realizar o teleporte."
   too-many-requests: "&b&lᴛᴘᴀ &8• &cEste jogador já possui muitas solicitações pendentes."
+
+  # -------------------------
+  # Teleporte Staff
+  # -------------------------
   teleported-to: "&b&lᴛᴘ &8• &rTeleportado até {player}&f."
   player-teleported-to: "&b&lᴛᴘ &8• &r{player}&f foi teleportado até {target}&f."
   player-teleported-here: "&b&lᴛᴘ &8• &r{player}&f foi teleportado até você."
   teleported-by-staff: "&b&lᴛᴘ &8• &rVocê foi teleportado por {player}&f."
-  player-only: "&b&lᴛᴘ &8• &cEste comando precisa ser usado por um jogador."
   usage-tp: "&b&lᴛᴘ &8• &fUso: /tp <jogador> [jogador]"
-  usage-tphere: "&b&lᴛᴘ &8• &fUso: /tphere <jogador>"
+
+  # -------------------------
+  # Homes
+  # -------------------------
   home-saved: "Home {home} salva com sucesso."
   home-teleported: "Teleportado para a home {home}."
   home-deleted: "Home {home} removida com sucesso."
@@ -76,6 +115,10 @@ messages:
   usage-homes: "Uso: /homes"
   usage-sethome: "Uso: /sethome <nome>"
   usage-delhome: "Uso: /delhome <nome>"
+
+  # -------------------------
+  # Mensagens privadas - /tell e /r
+  # -------------------------
   tell:
     unknown-command: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
     usage: "&e&lᴄʜᴀᴛ &8• &rUse /tell <jogador> <mensagem>."
@@ -88,6 +131,9 @@ messages:
     format-sender: "&e&lᴄʜᴀᴛ &8• &7Você → &f{player}&8: &r{message}"
     format-target: "&e&lᴄʜᴀᴛ &8• &7{player} → &fVocê&8: &r{message}"
 
+# ------------------------------------------------------------
+# BOTÕES DE INTERAÇÃO DO TPA
+# ------------------------------------------------------------
 buttons:
   spacing: "  "
   accept:
