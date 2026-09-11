@@ -89,6 +89,17 @@ public final class TellListener implements Listener {
         return receivesTellStatic(player);
     }
 
+    public static String message(String path, String... replacements) {
+        String value = plugin == null ? "" : plugin.getConfig().getString(path, "");
+        if (value.isEmpty()) value = defaultMessage(path);
+
+        for (int i = 0; i + 1 < replacements.length; i += 2) {
+            value = value.replace("{" + replacements[i] + "}", replacements[i + 1]);
+        }
+
+        return ChatColor.translateAlternateColorCodes('&', value);
+    }
+
     private boolean receivesTell(Player player) {
         return receivesTellStatic(player);
     }
@@ -106,21 +117,11 @@ public final class TellListener implements Listener {
         }
     }
 
-    private static String message(String path, String... replacements) {
-        String value = plugin == null ? "" : plugin.getConfig().getString(path, "");
-        if (value.isEmpty()) value = defaultMessage(path);
-
-        for (int i = 0; i + 1 < replacements.length; i += 2) {
-            value = value.replace("{" + replacements[i] + "}", replacements[i + 1]);
-        }
-
-        return ChatColor.translateAlternateColorCodes('&', value);
-    }
-
     private static String defaultMessage(String path) {
         return switch (path) {
             case "messages.tell.unknown-command" -> "&e&lᴄʜᴀᴛ &8• &rComando não encontrado.";
             case "messages.tell.usage" -> "&e&lᴄʜᴀᴛ &8• &rUse /tell <jogador> <mensagem>.";
+            case "messages.tell.reply-usage" -> "&e&lᴄʜᴀᴛ &8• &rUse /r <mensagem>.";
             case "messages.tell.player-not-found" -> "&e&lᴄʜᴀᴛ &8• &cJogador não encontrado ou offline.";
             case "messages.tell.cannot-self" -> "&e&lᴄʜᴀᴛ &8• &cVocê não pode enviar uma mensagem para si mesmo.";
             case "messages.tell.target-disabled" -> "&e&lᴄʜᴀᴛ &8• &cO jogador desativou as mensagens privadas.";
