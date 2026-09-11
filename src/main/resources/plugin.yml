@@ -21,9 +21,11 @@ commands:
   ec:
     description: Abre o Ender Chest pessoal ou visualiza o Ender Chest de outro jogador.
     usage: /ec [jogador]
+    permission: essentialsplus.ec
   bau:
     description: Abre o baú estendido pessoal ou visualiza o baú estendido de outro jogador.
     usage: /bau [jogador]
+    permission: essentialsplus.bau
   ver:
     description: Visualiza o inventário de outro jogador.
     usage: /ver <jogador>
@@ -125,7 +127,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpacancelar.
+    description: Permissão interna do comando /tpcancelar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
