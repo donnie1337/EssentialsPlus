@@ -5,10 +5,10 @@ import com.donnie1337.essentialsplus.bau.BauCommand;
 import com.donnie1337.essentialsplus.bau.BauListener;
 import com.donnie1337.essentialsplus.bau.BauService;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
+import com.donnie1337.essentialsplus.chat.TellListener;
 import com.donnie1337.essentialsplus.command.CraftCommand;
 import com.donnie1337.essentialsplus.command.EcCommand;
 import com.donnie1337.essentialsplus.command.FlyCommand;
-import com.donnie1337.essentialsplus.command.TellCommand;
 import com.donnie1337.essentialsplus.home.HomeGui;
 import com.donnie1337.essentialsplus.home.HomeService;
 import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
@@ -52,10 +52,10 @@ public final class EssentialsPlus extends JavaPlugin {
 
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
+        getServer().getPluginManager().registerEvents(new TellListener(), this);
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("craft", new CraftCommand());
-        register("tell", new TellCommand());
 
         bauService = new BauService(this);
         liveInspectionService = new LiveInspectionService(this, bauService);
