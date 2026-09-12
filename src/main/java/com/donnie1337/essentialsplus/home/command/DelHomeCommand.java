@@ -50,7 +50,7 @@ public final class DelHomeCommand implements CommandExecutor {
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
         }
         String colored = (prefix + raw).replace('&', '§');
-        if (!chatPlus.sendSystemMessage(player, colored)) {
+        if (!chatPlus.sendDirect(player, colored)) {
             player.sendMessage(colored);
         }
     }
