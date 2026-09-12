@@ -109,6 +109,7 @@ public final class EssentialsPlus extends JavaPlugin {
         if (bauService != null) bauService.closeAllBaus();
         if (teleportService != null) teleportService.shutdown();
         if (vanishService != null) vanishService.clear();
+        TellListener.shutdown();
         if (adventure != null) {
             adventure.close();
             adventure = null;
