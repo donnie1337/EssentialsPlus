@@ -16,6 +16,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.UUID;
@@ -115,13 +116,46 @@ public final class TellListener implements Listener {
         PENDING_TARGETS.remove(sender.getUniqueId());
         LAST_TARGETS.put(sender.getUniqueId(), target.getUniqueId());
         LAST_TARGETS.put(target.getUniqueId(), sender.getUniqueId());
-        sender.sendMessage(message("messages.tell.format-sender", "player", target.getName(), "message", privateMessage));
-        target.sendMessage(message("messages.tell.format-target", "player", sender.getName(), "message", privateMessage));
+
+        String targetName = coloredCargoName(target);
+        String senderName = coloredCargoName(sender);
+        sender.sendMessage(message("messages.tell.format-sender", "player", targetName, "message", privateMessage));
+        target.sendMessage(message("messages.tell.format-target", "player", senderName, "message", privateMessage));
     }
 
     public static boolean cancelPendingTell(Player player) {
         if (player == null) return false;
         return PENDING_TARGETS.remove(player.getUniqueId()) != null;
+    }
+
+    private static String coloredCargoName(Player player) {
+        if (player == null) return "";
+
+        String color = cargoColor(player);
+        return color + player.getName() + ChatColor.RESET;
+    }
+
+    private static String cargoColor(Player player) {
+        Plugin cargoPlus = Bukkit.getPluginManager().getPlugin("CargoPlus");
+        if (cargoPlus == null || !cargoPlus.isEnabled()) return ChatColor.WHITE.toString();
+
+        try {
+            Method permissionsMethod = cargoPlus.getClass().getMethod("permissions");
+            Object permissions = permissionsMethod.invoke(cargoPlus);
+            if (permissions == null) return ChatColor.WHITE.toString();
+
+            Method getGroupMethod = permissions.getClass().getMethod("getGroup", UUID.class);
+            Object group = getGroupMethod.invoke(permissions, player.getUniqueId());
+            if (!(group instanceof String groupName) || groupName.isBlank()) return ChatColor.WHITE.toString();
+
+            Method colorMethod = cargoPlus.getClass().getMethod("getCargoColor", String.class);
+            Object color = colorMethod.invoke(cargoPlus, groupName);
+            if (color instanceof String colorValue && !colorValue.isBlank()) return colorValue;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            // CargoPlus is optional; /tell continues to work with the default white name.
+        }
+
+        return ChatColor.WHITE.toString();
     }
 
     private static void sendPendingMessage(Player sender, Player target) {
