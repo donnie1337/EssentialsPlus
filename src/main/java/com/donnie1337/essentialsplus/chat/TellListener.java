@@ -1,6 +1,6 @@
 package com.donnie1337.essentialsplus.chat;
 
-import net.kyori.adventure.audience.Audience;
+import io.github.toxicity188.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -30,6 +30,7 @@ public final class TellListener implements Listener {
     private static final ConcurrentHashMap<UUID, TellState> TELL_STATES = new ConcurrentHashMap<>();
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
     private static JavaPlugin plugin;
+    private static BukkitAudiences adventure;
 
     private enum TellState {
         PENDING,
@@ -37,7 +38,10 @@ public final class TellListener implements Listener {
         CANCELLED
     }
 
-    public TellListener(JavaPlugin plugin) { TellListener.plugin = plugin; }
+    public TellListener(JavaPlugin plugin, BukkitAudiences adventure) {
+        TellListener.plugin = plugin;
+        TellListener.adventure = adventure;
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCommand(PlayerCommandPreprocessEvent event) {
@@ -207,7 +211,7 @@ public final class TellListener implements Listener {
         String cancelHover = plugin.getConfig().getString("messages.tell.cancel-hover", "&7Clique para cancelar o envio.");
         String[] parts = raw.split("\\{cancel}", -1);
         if (parts.length != 2) {
-            sender.sendMessage(LEGACY.deserialize(raw));
+            adventure.player(sender).sendMessage(LEGACY.deserialize(raw));
             return;
         }
 
@@ -216,7 +220,7 @@ public final class TellListener implements Listener {
                         .clickEvent(ClickEvent.custom(Key.key(CANCEL_BUTTON_ID)))
                         .hoverEvent(LEGACY.deserialize(cancelHover)))
                 .append(LEGACY.deserialize(parts[1]));
-        ((Audience) sender).sendMessage(message);
+        adventure.player(sender).sendMessage(message);
     }
 
     public static String message(String path, String... replacements) {
@@ -257,7 +261,7 @@ public final class TellListener implements Listener {
             case "messages.tell.cancel-hover" -> "&7Clique para cancelar o envio.";
             case "messages.tell.cancelled" -> "&d&lᴛᴇʟʟ &8• &rEnvio cancelado.";
             case "messages.tell.already-cancelled" -> "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio.";
-            case "messages.tell.already-sent" -> "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
+            case "messages.tell.already-sent" -> "&d&lᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
             default -> "";
         };
     }
