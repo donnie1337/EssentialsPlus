@@ -32,6 +32,7 @@ import com.donnie1337.essentialsplus.teleport.command.TpaHereCommand;
 import com.donnie1337.essentialsplus.vanish.VanishCommand;
 import com.donnie1337.essentialsplus.vanish.VanishListener;
 import com.donnie1337.essentialsplus.vanish.VanishService;
+import io.github.toxicity188.adventure.platform.bukkit.BukkitAudiences;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -46,14 +47,16 @@ public final class EssentialsPlus extends JavaPlugin {
     private BauService bauService;
     private LiveInspectionService liveInspectionService;
     private BukkitTask bauAutoSaveTask;
+    private BukkitAudiences adventure;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        adventure = BukkitAudiences.create(this);
 
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
-        getServer().getPluginManager().registerEvents(new TellListener(this), this);
+        getServer().getPluginManager().registerEvents(new TellListener(this, adventure), this);
         new TellCustomClickListener(this).register(getServer().getPluginManager());
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
@@ -105,6 +108,10 @@ public final class EssentialsPlus extends JavaPlugin {
         if (bauService != null) bauService.closeAllBaus();
         if (teleportService != null) teleportService.shutdown();
         if (vanishService != null) vanishService.clear();
+        if (adventure != null) {
+            adventure.close();
+            adventure = null;
+        }
     }
 
     private void startBauAutoSave() {
