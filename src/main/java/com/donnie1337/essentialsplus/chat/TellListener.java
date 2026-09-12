@@ -132,6 +132,16 @@ public final class TellListener implements Listener {
         TELL_STATES.remove(playerId);
     }
 
+    public static void shutdown() {
+        PENDING_TIMEOUTS.values().forEach(BukkitTask::cancel);
+        PENDING_TIMEOUTS.clear();
+        PENDING_TARGETS.clear();
+        LAST_TARGETS.clear();
+        TELL_STATES.clear();
+        plugin = null;
+        adventure = null;
+    }
+
     public static Player getLastTarget(Player player) {
         UUID targetId = player == null ? null : LAST_TARGETS.get(player.getUniqueId());
         return targetId == null ? null : Bukkit.getPlayer(targetId);
@@ -296,7 +306,7 @@ public final class TellListener implements Listener {
             case "messages.tell.cancelled" -> "&d&lᴛᴇʟʟ &8• &rEnvio cancelado.";
             case "messages.tell.already-cancelled" -> "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio.";
             case "messages.tell.already-sent" -> "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
-            case "messages.tell.empty-message" -> "&d&lᴛᴇʟʟ &8• &rA mensagem não pode estar vazia. Digite novamente ou clique {cancel} para cancelar.";
+            case "messages.tell.empty-message" -> "&d&lᴛᴇʟʟ &8• &rA mensagem não pode estar vazia. Digite novamente para enviar ou aguarde o cancelamento automático.";
             case "messages.tell.expired" -> "&d&lᴛᴇʟʟ &8• &rO envio expirou por falta de resposta.";
             default -> "";
         };
