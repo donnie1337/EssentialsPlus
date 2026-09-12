@@ -206,7 +206,7 @@ messages:
     no-recent: "&d&lᴛᴇʟʟ &8• &cVocê não possui nenhuma conversa privada recente."
     format-sender: "&d&lᴛᴇʟʟ &8• &7Você → &f{player}&8: &r{message}"
     format-target: "&d&lᴛᴇʟʟ &8• &7{player} → &fVocê&8: &r{message}"
-    awaiting-message: "&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio."
+    awaiting-message: "\n&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.\n"
     cancel-text: "&c&lAQUI"
     cancel-hover: "&7Clique para cancelar o envio."
     cancelled: "&d&lᴛᴇʟʟ &8• &rEnvio cancelado."
@@ -220,8 +220,4 @@ buttons:
   deny:
     enabled: true
     text: "&c&lAQUI"
-    hover: "&7Clique para negar a solicitação."
-  cancel:
-    enabled: true
-    text: "&fClique &c&lAQUI&f para cancelar"
-    hover: "&7Clique para cancelar sua solicitação de TPA."
+    hover: "&7Clique para recusar a solicitação."
