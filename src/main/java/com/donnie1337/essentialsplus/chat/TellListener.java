@@ -128,6 +128,10 @@ public final class TellListener implements Listener {
         return PENDING_TARGETS.remove(player.getUniqueId()) != null;
     }
 
+    public static boolean canReceiveTell(Player player) {
+        return receivesTellStatic(player);
+    }
+
     private static String coloredCargoName(Player player) {
         if (player == null) return "";
 
@@ -170,7 +174,7 @@ public final class TellListener implements Listener {
         }
         java.util.List<BaseComponent> components = new java.util.ArrayList<>();
         components.addAll(Arrays.asList(TextComponent.fromLegacyText(parts[0])));
-        components.addAll(cancelButton(cancelText, cancelHover));
+        components.addAll(Arrays.asList(cancelButton(cancelText, cancelHover)));
         components.addAll(Arrays.asList(TextComponent.fromLegacyText(parts[1])));
         sender.spigot().sendMessage(components.toArray(BaseComponent[]::new));
     }
