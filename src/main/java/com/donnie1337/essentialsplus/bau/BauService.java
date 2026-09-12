@@ -22,6 +22,7 @@ public final class BauService {
     private final JavaPlugin plugin;
     private final File file;
     private final File tempFile;
+    private final File backupFile;
     private final YamlConfiguration data;
     private final Map<UUID, Inventory> activeBaus = new HashMap<>();
 
@@ -29,6 +30,7 @@ public final class BauService {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "bau.yml");
         this.tempFile = new File(plugin.getDataFolder(), "bau.yml.tmp");
+        this.backupFile = new File(plugin.getDataFolder(), "bau.yml.bak");
         this.data = YamlConfiguration.loadConfiguration(file);
     }
 
@@ -79,22 +81,41 @@ public final class BauService {
 
     public void save(Inventory inventory) {
         if (!(inventory.getHolder() instanceof BauHolder holder)) return;
+        writeInventory(holder.owner(), inventory);
+        saveFile();
+    }
 
-        String path = "players." + holder.owner();
-        for (int slot = 0; slot < SIZE; slot++) {
-            ItemStack item = inventory.getItem(slot);
-            data.set(path + ".slots." + slot, item == null || item.getType().isAir() ? null : item);
+    /**
+     * Atualiza todos os baús abertos na memória e grava o YAML apenas uma vez.
+     * Isso evita reescrever bau.yml dezenas de vezes no mesmo autosave.
+     */
+    public void saveOpenBaus() {
+        if (activeBaus.isEmpty()) return;
+        for (Inventory inventory : activeBaus.values()) {
+            if (inventory.getHolder() instanceof BauHolder holder) {
+                writeInventory(holder.owner(), inventory);
+            }
         }
         saveFile();
     }
 
-    public void saveOpenBaus() {
-        for (Inventory inventory : activeBaus.values()) save(inventory);
+    public void closeAllBaus() {
+        if (activeBaus.isEmpty()) return;
+        for (Inventory inventory : activeBaus.values()) {
+            if (inventory.getHolder() instanceof BauHolder holder) {
+                writeInventory(holder.owner(), inventory);
+            }
+        }
+        saveFile();
+        activeBaus.clear();
     }
 
-    public void closeAllBaus() {
-        for (Inventory inventory : activeBaus.values()) save(inventory);
-        activeBaus.clear();
+    private void writeInventory(UUID owner, Inventory inventory) {
+        String path = "players." + owner + ".slots";
+        for (int slot = 0; slot < SIZE; slot++) {
+            ItemStack item = inventory.getItem(slot);
+            data.set(path + "." + slot, item == null || item.getType().isAir() ? null : item.clone());
+        }
     }
 
     private void load(UUID uuid, Inventory inventory) {
@@ -114,6 +135,15 @@ public final class BauService {
             }
 
             data.save(tempFile);
+
+            if (file.exists()) {
+                try {
+                    Files.copy(file.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException backupException) {
+                    plugin.getLogger().warning("Não foi possível criar o backup dos baús estendidos: " + backupException.getMessage());
+                }
+            }
+
             try {
                 Files.move(tempFile.toPath(), file.toPath(),
                         StandardCopyOption.REPLACE_EXISTING,
