@@ -79,13 +79,16 @@ public final class TellListener implements Listener {
         sendPrivateMessage(sender, target, String.join(" ", Arrays.copyOfRange(args, 2, args.length)));
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
     public void onChat(AsyncPlayerChatEvent event) {
         Player sender = event.getPlayer();
-        UUID targetId = PENDING_TARGETS.remove(sender.getUniqueId());
+        UUID targetId = PENDING_TARGETS.get(sender.getUniqueId());
         if (targetId == null) return;
 
+        // Capture the next chat message before ChatPlus or another chat listener can cancel/format it.
         event.setCancelled(true);
+        PENDING_TARGETS.remove(sender.getUniqueId(), targetId);
+
         String privateMessage = event.getMessage();
         if (privateMessage == null || privateMessage.isBlank()) return;
 
@@ -134,13 +137,30 @@ public final class TellListener implements Listener {
 
     private static String coloredCargoName(Player player) {
         if (player == null) return "";
-        String color = cargoColor(player);
-        return color + player.getName() + ChatColor.RESET;
+        return cargoColor(player) + player.getName() + ChatColor.RESET;
     }
 
     private static String cargoColor(Player player) {
         Plugin cargoPlus = Bukkit.getPluginManager().getPlugin("CargoPlus");
         if (cargoPlus == null || !cargoPlus.isEnabled()) return ChatColor.WHITE.toString();
+
+        // Prefer the registered CargoPlus API. This uses the exact nickname color
+        // calculated by CargoPlus, including any future changes to its color system.
+        try {
+            Class<?> apiClass = Class.forName("com.cargoplus.api.CargoPlusAPI");
+            Object registration = Bukkit.getServicesManager().getRegistration(apiClass);
+            if (registration != null) {
+                Method getProvider = registration.getClass().getMethod("getProvider");
+                Object api = getProvider.invoke(registration);
+                if (api != null) {
+                    Method getNicknameColor = apiClass.getMethod("getNicknameColor", UUID.class);
+                    Object color = getNicknameColor.invoke(api, player.getUniqueId());
+                    if (color instanceof String colorValue && !colorValue.isBlank()) return colorValue;
+                }
+            }
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            // Fall back to the plugin methods below.
+        }
 
         try {
             Method permissionsMethod = cargoPlus.getClass().getMethod("permissions");
