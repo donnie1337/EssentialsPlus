@@ -15,7 +15,6 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Locale;
@@ -25,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class TellListener implements Listener {
     public static final String CANCEL_BUTTON_ID = "essentialsplus:tell_cancel";
     private static final String PERMISSION = "essentialsplus.tell";
+    private static final String CANCEL_COMMAND = "tell cancel";
     private static final ConcurrentHashMap<UUID, UUID> LAST_TARGETS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, UUID> PENDING_TARGETS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, TellState> TELL_STATES = new ConcurrentHashMap<>();
@@ -59,6 +59,17 @@ public final class TellListener implements Listener {
             sender.sendMessage(message("messages.tell.unknown-command"));
             return;
         }
+
+        if (args.length >= 2 && args[1].equalsIgnoreCase("cancel") && args.length == 2) {
+            CancelResult result = cancelPendingTell(sender);
+            switch (result) {
+                case CANCELLED -> sender.sendMessage(message("messages.tell.cancelled"));
+                case ALREADY_SENT -> sender.sendMessage(message("messages.tell.already-sent"));
+                case ALREADY_CANCELLED -> sender.sendMessage(message("messages.tell.already-cancelled"));
+            }
+            return;
+        }
+
         if (args.length < 2) {
             sender.sendMessage(message("messages.tell.usage"));
             return;
@@ -99,8 +110,6 @@ public final class TellListener implements Listener {
         String privateMessage = event.getMessage();
         if (privateMessage == null || privateMessage.isBlank()) return;
 
-        // A mensagem já foi digitada/enviada; qualquer clique posterior no AQUI
-        // deve informar que o cancelamento não é mais possível.
         TELL_STATES.put(sender.getUniqueId(), TellState.SENT);
 
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -225,23 +234,13 @@ public final class TellListener implements Listener {
 
     private static BaseComponent[] cancelButton(String text, String hover) {
         BaseComponent[] components = legacyComponents(text);
-        ClickEvent click = createCustomClick();
+        ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tell cancel");
         HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, legacyComponents(hover));
         for (BaseComponent component : components) {
-            if (click != null) component.setClickEvent(click);
+            component.setClickEvent(click);
             component.setHoverEvent(hoverEvent);
         }
         return components;
-    }
-
-    private static ClickEvent createCustomClick() {
-        try {
-            Class<?> type = Class.forName("net.md_5.bungee.api.chat.ClickEventCustom");
-            Constructor<?> constructor = type.getConstructor(String.class, String.class);
-            return (ClickEvent) constructor.newInstance(CANCEL_BUTTON_ID, "cancel");
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            return null;
-        }
     }
 
     public static String message(String path, String... replacements) {
