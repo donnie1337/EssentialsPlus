@@ -160,6 +160,59 @@ messages:
     precisa-estar-autenticado: "Você precisa estar autenticado para executar este comando."
     jogador-nao-autenticado: "O jogador ainda não está autenticado."
 
+  # ==========================================================
+  # COMPATIBILIDADE
+  # ==========================================================
+  # Mantém as mensagens antigas funcionando enquanto os comandos
+  # terminam de migrar para a nova organização por TAG.
+  prefix: "&b&lᴛᴘᴀ &8• &r"
+  tpa-prefix: "&b&lᴛᴘᴀ &8• &r"
+
+  no-permission: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
+  player-only: "Este comando precisa ser usado por um jogador."
+  player-not-found: "Jogador não encontrado ou offline."
+  teleport-failed: "Não foi possível realizar o teleporte."
+  teleported-to: "Teleportado até {player}&f."
+  player-teleported-to: "{player}&f foi teleportado até {target}&f."
+  player-teleported-here: "{player}&f foi teleportado até você."
+  usage-tp: "Uso: /tp <jogador> [jogador]"
+
+  homes-disabled: "O sistema de Homes está desativado."
+  usage-homes: "Uso: /homes"
+
+  cannot-self: "Você não pode enviar uma solicitação para si mesmo."
+  auth-required: "Você precisa estar autenticado para executar este comando."
+  target-not-authenticated: "O jogador ainda não está autenticado."
+  tpa-receiving-disabled: "{player}&f não está recebendo solicitações de TPA no momento."
+  tpa-receiving-disabled-self: "Você desativou o recebimento de TPA."
+  too-many-requests: "Este jogador já possui muitas solicitações pendentes."
+  request-sent: "Você pediu para se teleportar até {player}&f!"
+  request-received: "{player}&f está pedindo para se teleportar até você. Clique {accept} para aceitar ou {deny} para negar!"
+  request-here-received: "{player}&f está pedindo para que você se teleporte até ele. Clique {accept} para aceitar ou {deny} para negar!"
+  request-denied: "Você recusou o pedido de teleporte de {player}&f."
+  request-denied-sender: "{player}&f recusou seu pedido de teleporte."
+  request-cancelled: "Solicitação de TPA cancelada pois {player}&f cancelou."
+  request-cancelled-sender: "Solicitação de TPA cancelada."
+  request-accepted: "Você aceitou o pedido de teleporte de {player}&f!"
+  request-accepted-sender: "{player}&f aceitou seu pedido de teleporte. Levando você até lá..."
+  request-expired: "O pedido de teleporte de {player}&f expirou."
+  no-request: "Você não possui solicitações de TPA pendentes."
+  request-already-denied: "Você não pode aceitar este pedido porque ele já foi recusado."
+  target-offline: "O jogador não está mais online."
+
+  # Compatibilidade da estrutura antiga do /tell e /r.
+  tell:
+    player-only: "Comando disponível apenas para jogadores."
+    unknown-command: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
+    usage: "&e&lᴄʜᴀᴛ &8• &rUse /tell <jogador> <mensagem>."
+    reply-usage: "&e&lᴄʜᴀᴛ &8• &rUse /r <mensagem>."
+    player-not-found: "&e&lᴄʜᴀᴛ &8• &cJogador não encontrado ou offline."
+    cannot-self: "&e&lᴄʜᴀᴛ &8• &cVocê não pode enviar uma mensagem para si mesmo."
+    target-disabled: "&e&lᴄʜᴀᴛ &8• &cO jogador desativou as mensagens privadas."
+    no-recent: "&e&lᴄʜᴀᴛ &8• &cVocê não possui nenhuma conversa privada recente."
+    format-sender: "&e&lᴄʜᴀᴛ &8• &7Você → &f{player}&8: &r{message}"
+    format-target: "&e&lᴄʜᴀᴛ &8• &7{player} → &fVocê&8: &r{message}"
+
 buttons:
   spacing: "  "
   accept:
