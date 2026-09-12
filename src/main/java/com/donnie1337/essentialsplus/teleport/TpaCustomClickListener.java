@@ -1,6 +1,5 @@
 package com.donnie1337.essentialsplus.teleport;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
@@ -14,6 +13,7 @@ import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/** Processa os botões de TPA usando a API custom click do Spigot. */
 public final class TpaCustomClickListener implements Listener {
     private static final String PERMISSION = "essentialsplus.tpa";
 
@@ -27,32 +27,31 @@ public final class TpaCustomClickListener implements Listener {
     }
 
     public void register(PluginManager pluginManager) {
-        registerEventType(pluginManager, "org.bukkit.event.player.PlayerCustomClickEvent");
-        registerEventType(pluginManager, "io.papermc.paper.event.player.PlayerCustomClickEvent");
-        plugin.getLogger().info("Botões de TPA registrados usando custom click, sem execução de comando.");
+        registerSpigotEvent(pluginManager);
+        plugin.getLogger().info("Botões de TPA registrados usando custom click do Spigot.");
     }
 
     @SuppressWarnings("unchecked")
-    private void registerEventType(PluginManager pluginManager, String className) {
+    private void registerSpigotEvent(PluginManager pluginManager) {
         try {
-            Class<?> rawType = Class.forName(className);
+            Class<?> rawType = Class.forName("org.bukkit.event.player.PlayerCustomClickEvent");
             if (!Event.class.isAssignableFrom(rawType)) return;
             Class<? extends Event> eventType = (Class<? extends Event>) rawType;
             EventExecutor executor = (listener, event) -> handleCustomClick(event);
             pluginManager.registerEvent(eventType, this, EventPriority.NORMAL, executor, plugin, true);
         } catch (ReflectiveOperationException | LinkageError ignored) {
-            // This server does not expose this custom-click API variant.
+            plugin.getLogger().warning("A API PlayerCustomClickEvent não está disponível neste servidor; botões de TPA ficarão sem ação.");
         }
     }
 
     private void handleCustomClick(Event event) {
         try {
-            String id = invokeIdentifier(event);
+            String id = event.getClass().getMethod("getId").invoke(event).toString();
             if (!TeleportService.TPA_BUTTON_KEY.asString().equalsIgnoreCase(id)) return;
 
-            String payload = invokePayload(event);
-            if (payload == null) return;
-            String digits = payload.replaceAll("[^0-9-]", "");
+            Object data = event.getClass().getMethod("getData").invoke(event);
+            if (data == null) return;
+            String digits = data.toString().replaceAll("[^0-9-]", "");
             if (digits.isEmpty()) return;
 
             int token;
@@ -62,7 +61,7 @@ public final class TpaCustomClickListener implements Listener {
                 return;
             }
 
-            Player player = invokePlayer(event);
+            Player player = (Player) event.getClass().getMethod("getPlayer").invoke(event);
             if (player == null || !player.hasPermission(PERMISSION)) return;
 
             ButtonAction action = ButtonAction.find(token);
@@ -81,23 +80,8 @@ public final class TpaCustomClickListener implements Listener {
                         : ButtonResult.EXPIRED;
                 results.put(token, expiredResult);
                 sendResultMessage(player, expiredResult, action);
+                ButtonAction.remove(token);
                 return;
-            }
-
-            if (action.type() == ButtonActionType.CANCEL) {
-                ButtonAction accept = ButtonAction.findRelated(token, ButtonActionType.ACCEPT, player.getUniqueId());
-                ButtonAction deny = ButtonAction.findRelated(token, ButtonActionType.DENY, player.getUniqueId());
-
-                if (accept != null && results.get(accept.token()) == ButtonResult.ACCEPTED) {
-                    results.put(token, ButtonResult.CANCEL_BLOCKED_ACCEPTED);
-                    sendResultMessage(player, ButtonResult.CANCEL_BLOCKED_ACCEPTED, action);
-                    return;
-                }
-                if (deny != null && results.get(deny.token()) == ButtonResult.DENIED) {
-                    results.put(token, ButtonResult.CANCEL_BLOCKED_DENIED);
-                    sendResultMessage(player, ButtonResult.CANCEL_BLOCKED_DENIED, action);
-                    return;
-                }
             }
 
             boolean handled = teleportService.handleButton(player, token);
@@ -109,8 +93,9 @@ public final class TpaCustomClickListener implements Listener {
                 case CANCEL -> ButtonResult.CANCELLED;
             };
             results.put(token, result);
+            ButtonAction.remove(token);
         } catch (ReflectiveOperationException | RuntimeException ignored) {
-            // Ignore unsupported event representation without breaking chat processing.
+            // Ignora representações incompatíveis sem interromper o processamento do servidor.
         }
     }
 
@@ -120,53 +105,17 @@ public final class TpaCustomClickListener implements Listener {
             case DENIED -> "request-already-denied";
             case EXPIRED -> "request-expired-cannot-respond";
             case CANCELLED -> "request-already-cancelled";
-            case CANCEL_BLOCKED_ACCEPTED -> "request-cannot-cancel-accepted";
-            case CANCEL_BLOCKED_DENIED -> "request-cannot-cancel-denied";
             case CANCEL_BLOCKED_EXPIRED -> "request-cannot-cancel-expired";
         };
         String raw = plugin.getConfig().getString("messages." + key, "");
-        if (result == ButtonResult.CANCEL_BLOCKED_ACCEPTED || result == ButtonResult.CANCEL_BLOCKED_DENIED) {
-            Player target = Bukkit.getPlayer(action.targetId());
-            String name = target != null ? target.getDisplayName() : "";
-            raw = raw.replace("{player}", name);
-        }
+        Player target = org.bukkit.Bukkit.getPlayer(action.targetId());
+        if (target != null) raw = raw.replace("{player}", target.getName());
         String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", ""));
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + raw));
     }
 
-    private String invokeIdentifier(Event event) throws ReflectiveOperationException {
-        Object identifier;
-        try {
-            identifier = event.getClass().getMethod("getId").invoke(event);
-        } catch (NoSuchMethodException ignored) {
-            identifier = event.getClass().getMethod("getIdentifier").invoke(event);
-        }
-        return identifier == null ? "" : identifier.toString();
-    }
-
-    private String invokePayload(Event event) throws ReflectiveOperationException {
-        try {
-            Object data = event.getClass().getMethod("getData").invoke(event);
-            return data == null ? null : data.toString();
-        } catch (NoSuchMethodException ignored) {
-            Object tag = event.getClass().getMethod("getTag").invoke(event);
-            return tag == null ? null : tag.toString();
-        }
-    }
-
-    private Player invokePlayer(Event event) throws ReflectiveOperationException {
-        try {
-            Method getPlayer = event.getClass().getMethod("getPlayer");
-            Object player = getPlayer.invoke(event);
-            return player instanceof Player ? (Player) player : null;
-        } catch (NoSuchMethodException ignored) {
-            Method commonConnection = event.getClass().getMethod("getCommonConnection");
-            Object connection = commonConnection.invoke(event);
-            if (connection == null) return null;
-            Method getPlayer = connection.getClass().getMethod("getPlayer");
-            Object player = getPlayer.invoke(connection);
-            return player instanceof Player ? (Player) player : null;
-        }
+    public void clear() {
+        results.clear();
     }
 
     private enum ButtonResult {
@@ -174,8 +123,6 @@ public final class TpaCustomClickListener implements Listener {
         DENIED,
         EXPIRED,
         CANCELLED,
-        CANCEL_BLOCKED_ACCEPTED,
-        CANCEL_BLOCKED_DENIED,
         CANCEL_BLOCKED_EXPIRED
     }
 }
