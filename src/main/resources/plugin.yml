@@ -49,7 +49,7 @@ commands:
     permission: essentialsplus.teleport
   tpa:
     description: Solicita teleporte até outro jogador.
-    usage: "&b&lᴛᴘᴀ &8• &rUse /tpa <jogador>."
+    usage: /tpa <jogador>
     permission: essentialsplus.tpa
   tpaqui:
     description: Solicita que outro jogador se teleporte até você.
@@ -115,6 +115,8 @@ permissions:
   essentialsplus.tell:
     description: Permite usar mensagens privadas com /tell e /r.
     default: true
+    children:
+      minecraft.command.tell: true
   essentialsplus.inspect:
     description: Permite visualizar inventários, Ender Chests e baús estendidos de outros jogadores sem retirar itens.
     default: false
@@ -139,7 +141,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpcancelar.
+    description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
