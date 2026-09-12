@@ -134,7 +134,6 @@ public final class TellListener implements Listener {
 
     private static String coloredCargoName(Player player) {
         if (player == null) return "";
-
         String color = cargoColor(player);
         return color + player.getName() + ChatColor.RESET;
     }
@@ -176,7 +175,7 @@ public final class TellListener implements Listener {
         components.addAll(Arrays.asList(TextComponent.fromLegacyText(parts[0])));
         components.addAll(Arrays.asList(cancelButton(cancelText, cancelHover)));
         components.addAll(Arrays.asList(TextComponent.fromLegacyText(parts[1])));
-        sender.spigot().sendMessage(components.toArray(BaseComponent[]::new));
+        sender.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
 
     private static BaseComponent[] cancelButton(String text, String hover) {
