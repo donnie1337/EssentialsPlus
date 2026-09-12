@@ -127,8 +127,6 @@ permissions:
     children:
       essentialsplus.tpaqui: true
       essentialsplus.tpaceitar: true
-      essentialsplus.tpaqui: true
-      essentialsplus.tpaceitar: true
       essentialsplus.tpnegar: true
       essentialsplus.tpacancelar: true
   essentialsplus.tpaqui:
