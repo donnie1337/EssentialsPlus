@@ -33,8 +33,8 @@ import com.donnie1337.essentialsplus.teleport.command.TpaHereCommand;
 import com.donnie1337.essentialsplus.vanish.VanishCommand;
 import com.donnie1337.essentialsplus.vanish.VanishListener;
 import com.donnie1337.essentialsplus.vanish.VanishService;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -60,7 +60,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("craft", new CraftCommand());
-        register("tell", new TellCommand());
+        registerPaperTellCommand();
         register("r", new ReplyCommand());
 
         bauService = new BauService(this);
@@ -100,6 +100,11 @@ public final class EssentialsPlus extends JavaPlugin {
         getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly, Ender Chest, Bau, Ver, Craft, Tell e Reply.");
     }
 
+    private void registerPaperTellCommand() {
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands ->
+                commands.registrar().register("tell", new TellCommand(), "Envia uma mensagem privada para outro jogador."));
+    }
+
     @Override
     public void onDisable() {
         if (liveInspectionService != null) liveInspectionService.stop();
@@ -120,7 +125,7 @@ public final class EssentialsPlus extends JavaPlugin {
     }
 
     private void register(String name, org.bukkit.command.CommandExecutor executor) {
-        final PluginCommand command = getCommand(name);
+        final org.bukkit.command.PluginCommand command = getCommand(name);
         if (command == null) throw new IllegalStateException("Comando não encontrado no plugin.yml: " + name);
         command.setExecutor(executor);
         if (executor instanceof org.bukkit.command.TabCompleter completer) command.setTabCompleter(completer);
