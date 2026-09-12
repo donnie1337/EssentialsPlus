@@ -19,7 +19,6 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,11 +34,7 @@ public final class TellListener implements Listener {
     private static JavaPlugin plugin;
     private static BukkitAudiences adventure;
 
-    private enum TellState {
-        PENDING,
-        SENT,
-        CANCELLED
-    }
+    private enum TellState { PENDING, SENT, CANCELLED }
 
     public TellListener(JavaPlugin plugin, BukkitAudiences adventure) {
         TellListener.plugin = plugin;
@@ -160,15 +155,10 @@ public final class TellListener implements Listener {
         target.sendMessage(message("messages.tell.format-target", "player", senderName, "message", privateMessage));
     }
 
-    public enum CancelResult {
-        CANCELLED,
-        ALREADY_CANCELLED,
-        ALREADY_SENT
-    }
+    public enum CancelResult { CANCELLED, ALREADY_CANCELLED, ALREADY_SENT }
 
     public static CancelResult cancelPendingTell(Player player) {
         if (player == null) return CancelResult.ALREADY_CANCELLED;
-
         UUID playerId = player.getUniqueId();
         UUID pending = PENDING_TARGETS.remove(playerId);
         if (pending != null) {
@@ -176,27 +166,20 @@ public final class TellListener implements Listener {
             TELL_STATES.put(playerId, TellState.CANCELLED);
             return CancelResult.CANCELLED;
         }
-
-        TellState state = TELL_STATES.get(playerId);
-        if (state == TellState.SENT) return CancelResult.ALREADY_SENT;
+        if (TELL_STATES.get(playerId) == TellState.SENT) return CancelResult.ALREADY_SENT;
         return CancelResult.ALREADY_CANCELLED;
     }
 
-    public static boolean canReceiveTell(Player player) {
-        return receivesTellStatic(player);
-    }
+    public static boolean canReceiveTell(Player player) { return receivesTellStatic(player); }
 
     private static void schedulePendingTimeout(UUID playerId) {
         cancelPendingTimeout(playerId);
         if (plugin == null) return;
         BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            UUID target = PENDING_TARGETS.remove(playerId);
-            if (target != null) {
+            if (PENDING_TARGETS.remove(playerId) != null) {
                 TELL_STATES.put(playerId, TellState.CANCELLED);
                 Player player = Bukkit.getPlayer(playerId);
-                if (player != null && player.isOnline()) {
-                    player.sendMessage(message("messages.tell.expired"));
-                }
+                if (player != null && player.isOnline()) player.sendMessage(message("messages.tell.expired"));
             }
             PENDING_TIMEOUTS.remove(playerId);
         }, PENDING_TIMEOUT_TICKS);
@@ -233,8 +216,7 @@ public final class TellListener implements Listener {
                     if (color instanceof String colorValue && !colorValue.isBlank()) return colorValue;
                 }
             }
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-        }
+        } catch (ReflectiveOperationException | LinkageError ignored) { }
         try {
             Method permissionsMethod = cargoPlus.getClass().getMethod("permissions");
             Object permissions = permissionsMethod.invoke(cargoPlus);
@@ -245,8 +227,7 @@ public final class TellListener implements Listener {
             Method colorMethod = cargoPlus.getClass().getMethod("getCargoColor", String.class);
             Object color = colorMethod.invoke(cargoPlus, groupName);
             if (color instanceof String colorValue && !colorValue.isBlank()) return colorValue;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-        }
+        } catch (ReflectiveOperationException | LinkageError ignored) { }
         return ChatColor.WHITE.toString();
     }
 
@@ -260,7 +241,6 @@ public final class TellListener implements Listener {
             adventure.player(sender).sendMessage(LEGACY.deserialize(raw));
             return;
         }
-
         Component message = LEGACY.deserialize(parts[0])
                 .append(LEGACY.deserialize(cancelText)
                         .clickEvent(ClickEvent.custom(Key.key(CANCEL_BUTTON_ID)))
@@ -283,9 +263,7 @@ public final class TellListener implements Listener {
             Method method = utilidades.getClass().getMethod("receivesTell", Player.class);
             Object result = method.invoke(utilidades, player);
             return result instanceof Boolean value ? value : true;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            return true;
-        }
+        } catch (ReflectiveOperationException | LinkageError ignored) { return true; }
     }
 
     private static String defaultMessage(String path) {
