@@ -163,11 +163,8 @@ messages:
   # ==========================================================
   # COMPATIBILIDADE
   # ==========================================================
-  # Mantém as mensagens antigas funcionando enquanto os comandos
-  # terminam de migrar para a nova organização por TAG.
   prefix: "&b&lᴛᴘᴀ &8• &r"
   tpa-prefix: "&b&lᴛᴘᴀ &8• &r"
-
   no-permission: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
   player-only: "Este comando precisa ser usado por um jogador."
   player-not-found: "Jogador não encontrado ou offline."
@@ -176,10 +173,8 @@ messages:
   player-teleported-to: "{player}&f foi teleportado até {target}&f."
   player-teleported-here: "{player}&f foi teleportado até você."
   usage-tp: "Uso: /tp <jogador> [jogador]"
-
   homes-disabled: "O sistema de Homes está desativado."
   usage-homes: "Uso: /homes"
-
   cannot-self: "Você não pode enviar uma solicitação para si mesmo."
   auth-required: "Você precisa estar autenticado para executar este comando."
   target-not-authenticated: "O jogador ainda não está autenticado."
@@ -200,18 +195,21 @@ messages:
   request-already-denied: "Você não pode aceitar este pedido porque ele já foi recusado."
   target-offline: "O jogador não está mais online."
 
-  # Compatibilidade da estrutura antiga do /tell e /r.
   tell:
     player-only: "Comando disponível apenas para jogadores."
     unknown-command: "&d&lᴛᴇʟʟ &8• &rComando não encontrado."
-    usage: "&d&lᴛᴇʟʟ &8• &rUse /tell <jogador> <mensagem>."
+    usage: "&d&lᴛᴇʟʟ &8• &rUse /tell <jogador> [mensagem]."
     reply-usage: "&d&lᴛᴇʟʟ &8• &rUse /r <mensagem>."
-    player-not-found: "&d&lᴛᴇʟʟ &8• &cJogador não encontrado ou offline."
+    player-not-found: "&d&lᴛᴇʟʟ &8• &cJogador não encontrado."
     cannot-self: "&d&lᴛᴇʟʟ &8• &cVocê não pode enviar uma mensagem para si mesmo."
     target-disabled: "&d&lᴛᴇʟʟ &8• &cO jogador desativou as mensagens privadas."
     no-recent: "&d&lᴛᴇʟʟ &8• &cVocê não possui nenhuma conversa privada recente."
     format-sender: "&d&lᴛᴇʟʟ &8• &7Você → &f{player}&8: &r{message}"
     format-target: "&d&lᴛᴇʟʟ &8• &7{player} → &fVocê&8: &r{message}"
+    awaiting-message: "&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio."
+    cancel-text: "&c&lAQUI"
+    cancel-hover: "&7Clique para cancelar o envio."
+    cancelled: "&d&lᴛᴇʟʟ &8• &rEnvio cancelado."
 
 buttons:
   spacing: "  "
