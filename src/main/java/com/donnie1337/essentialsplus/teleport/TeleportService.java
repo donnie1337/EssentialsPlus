@@ -59,6 +59,7 @@ public final class TeleportService {
         incoming.clear();
         buttonActions.clear();
         deniedRequests.clear();
+        ButtonAction.clear();
     }
 
     public void request(Player requester, Player recipient, boolean here) {
@@ -118,9 +119,8 @@ public final class TeleportService {
         for (var entry : incoming.entrySet()) {
             List<TpaRequest> requests = entry.getValue();
             synchronized (requests) {
-                for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId()) && (recipientName == null || request.recipientName().equalsIgnoreCase(recipientName))) { found = request; ownerId = entry.getKey(); break; }
+                for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId()) && (recipientName == null || request.recipientName().equalsIgnoreCase(recipientName))) { if (found == null || request.createdAt() > found.createdAt()) { found = request; ownerId = entry.getKey(); } }
             }
-            if (found != null) break;
         }
         if (found == null) { message(requester, "no-request"); return; }
         List<TpaRequest> requests = incoming.get(ownerId);
@@ -134,12 +134,23 @@ public final class TeleportService {
     public List<String> pendingRequesterNames(Player recipient) {
         List<TpaRequest> requests = incoming.get(recipient.getUniqueId());
         if (requests == null) return List.of();
-        synchronized (requests) { return requests.stream().map(TpaRequest::requesterName).toList(); }
+        synchronized (requests) {
+            removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis());
+            return requests.stream().map(TpaRequest::requesterName).toList();
+        }
     }
 
     public List<String> pendingRecipientNames(Player requester) {
         List<String> names = new ArrayList<>();
-        for (List<TpaRequest> requests : incoming.values()) synchronized (requests) { for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId())) names.add(request.recipientName()); }
+        long now = System.currentTimeMillis(), timeout = timeoutMillis();
+        for (var entry : incoming.entrySet()) {
+            List<TpaRequest> requests = entry.getValue();
+            synchronized (requests) {
+                requests.removeIf(request -> request.isExpired(now, timeout));
+                for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId())) names.add(request.recipientName());
+                if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
+            }
+        }
         return names;
     }
 
@@ -165,6 +176,7 @@ public final class TeleportService {
         if (!authSystemBridge.isAuthenticated(requester) || !authSystemBridge.isAuthenticated(recipient)) { message(recipient, "auth-required"); return; }
         Player teleported = request.here() ? recipient : requester;
         Player destination = request.here() ? requester : recipient;
+        if (teleported.getUniqueId().equals(destination.getUniqueId())) { message(recipient, "cannot-self"); return; }
         if (!teleported.teleport(destination.getLocation())) { message(recipient, "teleport-failed"); message(requester, "teleport-failed"); return; }
         message(recipient, "request-accepted", "player", requester.getName());
         message(requester, "request-accepted-sender", "player", recipient.getName());
@@ -176,7 +188,6 @@ public final class TeleportService {
         raw = raw.replace("{player}", coloredPlayer(requester));
         String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", ""));
         raw = color(prefix + raw);
-
         int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
         int deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
         boolean acceptEnabled = plugin.getConfig().getBoolean("buttons.accept.enabled", true);
@@ -185,26 +196,18 @@ public final class TeleportService {
         String denyText = color(plugin.getConfig().getString("buttons.deny.text", "&c&lAQUI"));
         String acceptHover = plugin.getConfig().getString("buttons.accept.hover", "&7Clique para aceitar a solicitação.");
         String denyHover = plugin.getConfig().getString("buttons.deny.hover", "&7Clique para negar a solicitação.");
-
         List<BaseComponent> message = new ArrayList<>();
         int cursor = 0;
         while (cursor < raw.length()) {
             int acceptPos = raw.indexOf("{accept}", cursor);
             int denyPos = raw.indexOf("{deny}", cursor);
-            int nextPos = -1;
-            boolean isAccept = false;
+            int nextPos = -1; boolean isAccept = false;
             if (acceptPos >= 0 && (denyPos < 0 || acceptPos < denyPos)) { nextPos = acceptPos; isAccept = true; }
             else if (denyPos >= 0) nextPos = denyPos;
-            if (nextPos < 0) {
-                message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor))));
-                break;
-            }
+            if (nextPos < 0) { message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor)))); break; }
             if (nextPos > cursor) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor, nextPos))));
-            if (isAccept) {
-                if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover)));
-            } else if (denyEnabled) {
-                message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover)));
-            }
+            if (isAccept) { if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover))); }
+            else if (denyEnabled) message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover)));
             cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
         }
         if (raw.isEmpty()) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw)));
@@ -229,10 +232,7 @@ public final class TeleportService {
         BaseComponent[] components = TextComponent.fromLegacyText(label);
         ClickEvent click = createCustomClick(token);
         HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover)));
-        for (BaseComponent component : components) {
-            if (click != null) component.setClickEvent(click);
-            component.setHoverEvent(hoverEvent);
-        }
+        for (BaseComponent component : components) { if (click != null) component.setClickEvent(click); component.setHoverEvent(hoverEvent); }
         return components;
     }
 
@@ -263,22 +263,54 @@ public final class TeleportService {
 
     private void acceptById(Player recipient, UUID requesterId) {
         TpaRequest request = removeRequestById(recipient, requesterId);
-        if (request == null) {
-            Set<UUID> denied = deniedRequests.get(recipient.getUniqueId());
-            if (denied != null && denied.contains(requesterId)) message(recipient, "request-already-denied");
-            else message(recipient, "no-request");
-            return;
-        }
+        if (request == null) { Set<UUID> denied = deniedRequests.get(recipient.getUniqueId()); if (denied != null && denied.contains(requesterId)) message(recipient, "request-already-denied"); else message(recipient, "no-request"); return; }
         deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(requesterId);
         completeAccepted(recipient, request);
     }
 
-    private void denyById(Player recipient, UUID requesterId) { TpaRequest request = removeRequestById(recipient, requesterId); if (request == null) { message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId()); removeButton(recipient.getUniqueId(), requesterId, ButtonActionType.DENY); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName()); message(recipient, "request-denied", "player", request.requesterName()); }
-    private void cancelById(Player requester, UUID recipientId) { List<TpaRequest> requests = incoming.get(recipientId); if (requests == null) { message(requester, "no-request"); return; } TpaRequest found = null; synchronized (requests) { for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId())) { found = request; break; } if (found != null) requests.remove(found); } if (found == null) { message(requester, "no-request"); return; } if (requests.isEmpty()) incoming.remove(recipientId, requests); removeButtonsForRequest(found); Player recipient = Bukkit.getPlayer(recipientId); if (recipient != null && recipient.isOnline()) message(recipient, "request-cancelled", "player", requester.getName()); message(requester, "request-cancelled-sender", "player", found.recipientName()); }
-    private TpaRequest removeRequestById(Player recipient, UUID requesterId) { List<TpaRequest> requests = incoming.get(recipient.getUniqueId()); if (requests == null) return null; synchronized (requests) { TpaRequest found = null; for (TpaRequest request : requests) if (request.requesterId().equals(requesterId)) { found = request; break; } if (found != null) requests.remove(found); if (requests.isEmpty()) incoming.remove(recipient.getUniqueId(), requests); return found; } }
+    private void denyById(Player recipient, UUID requesterId) {
+        TpaRequest request = removeRequestById(recipient, requesterId);
+        if (request == null) { message(recipient, "no-request"); return; }
+        deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId());
+        removeButton(recipient.getUniqueId(), requesterId, ButtonActionType.DENY);
+        Player requester = Bukkit.getPlayer(request.requesterId());
+        if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName());
+        message(recipient, "request-denied", "player", request.requesterName());
+    }
+
+    private void cancelById(Player requester, UUID recipientId) {
+        List<TpaRequest> requests = incoming.get(recipientId);
+        if (requests == null) { message(requester, "no-request"); return; }
+        TpaRequest found = null;
+        synchronized (requests) {
+            for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId()) && (found == null || request.createdAt() > found.createdAt())) found = request;
+            if (found != null) requests.remove(found);
+        }
+        if (found == null) { message(requester, "no-request"); return; }
+        if (requests.isEmpty()) incoming.remove(recipientId, requests);
+        removeButtonsForRequest(found);
+        Player recipient = Bukkit.getPlayer(recipientId);
+        if (recipient != null && recipient.isOnline()) message(recipient, "request-cancelled", "player", requester.getName());
+        message(requester, "request-cancelled-sender", "player", found.recipientName());
+    }
+
+    private TpaRequest removeRequestById(Player recipient, UUID requesterId) {
+        List<TpaRequest> requests = incoming.get(recipient.getUniqueId());
+        if (requests == null) return null;
+        synchronized (requests) {
+            removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis());
+            TpaRequest found = null;
+            for (TpaRequest request : requests) if (request.requesterId().equals(requesterId)) { found = request; break; }
+            if (found != null) requests.remove(found);
+            if (requests.isEmpty()) incoming.remove(recipient.getUniqueId(), requests);
+            return found;
+        }
+    }
 
     private void expireRequests() {
-        long now = System.currentTimeMillis(), timeout = timeoutMillis(); if (timeout <= 0) return;
+        long now = System.currentTimeMillis(), timeout = timeoutMillis();
+        ButtonAction.removeIfExpired(now, timeout);
+        if (timeout <= 0) return;
         for (var entry : incoming.entrySet()) {
             List<TpaRequest> requests = entry.getValue(); List<TpaRequest> expired = new ArrayList<>();
             synchronized (requests) { requests.removeIf(request -> { boolean exp = request.isExpired(now, timeout); if (exp) expired.add(request); return exp; }); }
@@ -288,7 +320,8 @@ public final class TeleportService {
     }
 
     private void removeExpiredLocked(Player recipient, List<TpaRequest> requests, long now, long timeout) {
-        if (timeout <= 0) return; List<TpaRequest> expired = new ArrayList<>();
+        if (timeout <= 0) return;
+        List<TpaRequest> expired = new ArrayList<>();
         requests.removeIf(request -> { boolean exp = request.isExpired(now, timeout); if (exp) expired.add(request); return exp; });
         for (TpaRequest request : expired) { removeButtonsForRequest(request); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-expired", "player", recipient.getName()); }
     }
@@ -298,78 +331,11 @@ public final class TeleportService {
     private void removeButton(UUID ownerId, UUID targetId, ButtonActionType type) { ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(ownerId); if (actions == null) return; actions.values().removeIf(action -> action.type() == type && action.targetId().equals(targetId)); if (actions.isEmpty()) buttonActions.remove(ownerId, actions); }
     private String coloredPlayer(Player player) { if (player == null) return ""; String cargoColor = cargoNicknameColor(player); return (cargoColor == null ? "§f" : cargoColor) + player.getName(); }
     private String cargoNicknameColor(Player player) { try { RegisteredServiceProvider<?> registration = Bukkit.getServicesManager().getRegistration(Class.forName("com.cargoplus.api.CargoPlusAPI")); if (registration == null) return null; Object api = registration.getProvider(); Object result = api.getClass().getMethod("getNicknameColor", UUID.class).invoke(api, player.getUniqueId()); return result == null ? null : result.toString(); } catch (ReflectiveOperationException | LinkageError ignored) { return null; } }
-
-    private boolean canReceiveTpa(Player player) {
-        Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus");
-        if (utilidades == null || !utilidades.isEnabled()) return true;
-        try {
-            Method method = utilidades.getClass().getMethod("isTpaEnabled", Player.class);
-            Object result = method.invoke(utilidades, player);
-            return !(result instanceof Boolean enabled) || enabled;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            return true;
-        }
-    }
-
+    private boolean canReceiveTpa(Player player) { Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus"); if (utilidades == null || !utilidades.isEnabled()) return true; try { Method method = utilidades.getClass().getMethod("isTpaEnabled", Player.class); Object result = method.invoke(utilidades, player); return !(result instanceof Boolean enabled) || enabled; } catch (ReflectiveOperationException | LinkageError ignored) { return true; } }
     private void message(Player player, String key, String... replacements) { if (player == null || !player.isOnline()) return; String raw = plugin.getConfig().getString("messages." + key, ""); for (int i = 0; i + 1 < replacements.length; i += 2) { String replacement = replacements[i + 1]; if ("player".equals(replacements[i])) { Player target = Bukkit.getPlayerExact(replacement); replacement = coloredPlayer(target); } raw = raw.replace("{" + replacements[i] + "}", replacement == null ? "" : replacement); } String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", "")); chatPlusBridge.sendDirect(player, color(prefix + raw)); }
     private String color(String text) { return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text); }
 
-    private Component legacy(String text) {
-        if (text == null || text.isEmpty()) return Component.empty();
-        Component result = Component.empty();
-        StringBuilder segment = new StringBuilder();
-        TextColor currentColor = NamedTextColor.WHITE;
-        boolean bold = false, italic = false, underlined = false, strikethrough = false, obfuscated = false;
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == ChatColor.COLOR_CHAR && i + 1 < text.length()) {
-                if (!segment.isEmpty()) { result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated)); segment.setLength(0); }
-                ChatColor code = ChatColor.getByChar(text.charAt(++i));
-                if (code == null) { segment.append(ChatColor.COLOR_CHAR).append(text.charAt(i)); continue; }
-                if (code == ChatColor.RESET) { currentColor = NamedTextColor.WHITE; bold = italic = underlined = strikethrough = obfuscated = false; }
-                else if (code.isColor()) { currentColor = adventureColor(code); bold = italic = underlined = strikethrough = obfuscated = false; }
-                else if (code == ChatColor.BOLD) bold = true;
-                else if (code == ChatColor.ITALIC) italic = true;
-                else if (code == ChatColor.UNDERLINE) underlined = true;
-                else if (code == ChatColor.STRIKETHROUGH) strikethrough = true;
-                else if (code == ChatColor.MAGIC) obfuscated = true;
-                continue;
-            }
-            segment.append(c);
-        }
-        if (!segment.isEmpty()) result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated));
-        return result;
-    }
-
-    private Component styled(String text, TextColor color, boolean bold, boolean italic, boolean underlined, boolean strikethrough, boolean obfuscated) {
-        Component component = Component.text(text).color(color);
-        if (bold) component = component.decorate(TextDecoration.BOLD);
-        if (italic) component = component.decorate(TextDecoration.ITALIC);
-        if (underlined) component = component.decorate(TextDecoration.UNDERLINED);
-        if (strikethrough) component = component.decorate(TextDecoration.STRIKETHROUGH);
-        if (obfuscated) component = component.decorate(TextDecoration.OBFUSCATED);
-        return component;
-    }
-
-    private TextColor adventureColor(ChatColor color) {
-        return switch (color) {
-            case BLACK -> NamedTextColor.BLACK;
-            case DARK_BLUE -> NamedTextColor.DARK_BLUE;
-            case DARK_GREEN -> NamedTextColor.DARK_GREEN;
-            case DARK_AQUA -> NamedTextColor.DARK_AQUA;
-            case DARK_RED -> NamedTextColor.DARK_RED;
-            case DARK_PURPLE -> NamedTextColor.DARK_PURPLE;
-            case GOLD -> NamedTextColor.GOLD;
-            case GRAY -> NamedTextColor.GRAY;
-            case DARK_GRAY -> NamedTextColor.DARK_GRAY;
-            case BLUE -> NamedTextColor.BLUE;
-            case GREEN -> NamedTextColor.GREEN;
-            case AQUA -> NamedTextColor.AQUA;
-            case RED -> NamedTextColor.RED;
-            case LIGHT_PURPLE -> NamedTextColor.LIGHT_PURPLE;
-            case YELLOW -> NamedTextColor.YELLOW;
-            case WHITE -> NamedTextColor.WHITE;
-            default -> NamedTextColor.WHITE;
-        };
-    }
+    private Component legacy(String text) { if (text == null || text.isEmpty()) return Component.empty(); Component result = Component.empty(); StringBuilder segment = new StringBuilder(); TextColor currentColor = NamedTextColor.WHITE; boolean bold = false, italic = false, underlined = false, strikethrough = false, obfuscated = false; for (int i = 0; i < text.length(); i++) { char c = text.charAt(i); if (c == ChatColor.COLOR_CHAR && i + 1 < text.length()) { if (!segment.isEmpty()) { result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated)); segment.setLength(0); } ChatColor code = ChatColor.getByChar(text.charAt(++i)); if (code == null) { segment.append(ChatColor.COLOR_CHAR).append(text.charAt(i)); continue; } if (code == ChatColor.RESET) { currentColor = NamedTextColor.WHITE; bold = italic = underlined = strikethrough = obfuscated = false; } else if (code.isColor()) { currentColor = adventureColor(code); bold = italic = underlined = strikethrough = obfuscated = false; } else if (code == ChatColor.BOLD) bold = true; else if (code == ChatColor.ITALIC) italic = true; else if (code == ChatColor.UNDERLINE) underlined = true; else if (code == ChatColor.STRIKETHROUGH) strikethrough = true; else if (code == ChatColor.MAGIC) obfuscated = true; continue; } segment.append(c); } if (!segment.isEmpty()) result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated)); return result; }
+    private Component styled(String text, TextColor color, boolean bold, boolean italic, boolean underlined, boolean strikethrough, boolean obfuscated) { Component component = Component.text(text).color(color); if (bold) component = component.decorate(TextDecoration.BOLD); if (italic) component = component.decorate(TextDecoration.ITALIC); if (underlined) component = component.decorate(TextDecoration.UNDERLINED); if (strikethrough) component = component.decorate(TextDecoration.STRIKETHROUGH); if (obfuscated) component = component.decorate(TextDecoration.OBFUSCATED); return component; }
+    private TextColor adventureColor(ChatColor color) { return switch (color) { case BLACK -> NamedTextColor.BLACK; case DARK_BLUE -> NamedTextColor.DARK_BLUE; case DARK_GREEN -> NamedTextColor.DARK_GREEN; case DARK_AQUA -> NamedTextColor.DARK_AQUA; case DARK_RED -> NamedTextColor.DARK_RED; case DARK_PURPLE -> NamedTextColor.DARK_PURPLE; case GOLD -> NamedTextColor.GOLD; case GRAY -> NamedTextColor.GRAY; case DARK_GRAY -> NamedTextColor.DARK_GRAY; case BLUE -> NamedTextColor.BLUE; case GREEN -> NamedTextColor.GREEN; case AQUA -> NamedTextColor.AQUA; case RED -> NamedTextColor.RED; case LIGHT_PURPLE -> NamedTextColor.LIGHT_PURPLE; case YELLOW -> NamedTextColor.YELLOW; case WHITE -> NamedTextColor.WHITE; default -> NamedTextColor.WHITE; }; }
 }
