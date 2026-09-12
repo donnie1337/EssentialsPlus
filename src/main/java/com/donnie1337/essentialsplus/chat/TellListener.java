@@ -12,6 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -19,6 +20,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,6 +41,25 @@ public final class TellListener implements Listener {
     public TellListener(JavaPlugin plugin, BukkitAudiences adventure) {
         TellListener.plugin = plugin;
         TellListener.adventure = adventure;
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+    public void onTellCommand(PlayerCommandPreprocessEvent event) {
+        String raw = event.getMessage();
+        if (raw == null || raw.length() < 2 || raw.charAt(0) != '/') return;
+
+        String commandLine = raw.substring(1).trim();
+        if (commandLine.isEmpty()) return;
+
+        int separator = commandLine.indexOf(' ');
+        String commandName = (separator < 0 ? commandLine : commandLine.substring(0, separator)).toLowerCase(Locale.ROOT);
+        if (!commandName.equals("tell")) return;
+
+        String argumentLine = separator < 0 ? "" : commandLine.substring(separator + 1).trim();
+        String[] args = argumentLine.isEmpty() ? new String[0] : argumentLine.split("\\s+");
+
+        event.setCancelled(true);
+        handleTellCommand(event.getPlayer(), args);
     }
 
     public static boolean handleTellCommand(Player sender, String[] args) {
