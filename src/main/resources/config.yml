@@ -13,10 +13,6 @@
 # ============================================================
 
 
-# ============================================================
-# CONFIGURAÇÕES
-# ============================================================
-
 tpa:
   enabled: true
   request-timeout-seconds: 20
@@ -36,18 +32,7 @@ teleport:
   staff:
     enabled: true
 
-
-# ============================================================
-# MENSAGENS
-# ============================================================
-# As mensagens são separadas pela TAG utilizada no prefixo.
-# ============================================================
-
 messages:
-
-  # ==========================================================
-  # TPA
-  # ==========================================================
   tpa:
     prefix: "&b&lᴛᴘᴀ &8• &r"
     sistema-desativado: "O sistema de TPA está desativado."
@@ -89,9 +74,6 @@ messages:
     uso:
       tpa: "Use /tpa <jogador>."
 
-  # ==========================================================
-  # TP
-  # ==========================================================
   tp:
     prefix: "&c&lᴛᴘ &8• &r"
     jogador-apenas: "Este comando precisa ser usado por um jogador."
@@ -102,9 +84,6 @@ messages:
     uso:
       tp: "Uso: /tp <jogador> [jogador]"
 
-  # ==========================================================
-  # HOME
-  # ==========================================================
   home:
     prefix: "&a&lʜᴏᴍᴇ &8• &r"
     salva: "Home {home} salva com sucesso."
@@ -125,9 +104,6 @@ messages:
       sethome: "Uso: /sethome <nome>"
       delhome: "Uso: /delhome <nome>"
 
-  # ==========================================================
-  # CHAT / MENSAGENS PRIVADAS
-  # ==========================================================
   chat:
     prefix: "&e&lᴄʜᴀᴛ &8• &r"
     comando-nao-encontrado: "Comando não encontrado."
@@ -145,13 +121,10 @@ messages:
 
   utilidades:
     prefix: "&7&lᴜᴛɪʟɪᴅᴀᴅᴇs &8• &r"
-
   invisibilidade:
     prefix: "&5&lɪɴᴠɪsɪʙɪʟɪᴅᴀᴅᴇ &8• &r"
-
   cargo:
     prefix: "&6&lᴄᴀʀɢᴏ &8• &r"
-
   geral:
     comando-nao-encontrado: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
     jogador-apenas: "Este comando precisa ser usado por um jogador."
@@ -160,9 +133,6 @@ messages:
     precisa-estar-autenticado: "Você precisa estar autenticado para executar este comando."
     jogador-nao-autenticado: "O jogador ainda não está autenticado."
 
-  # ==========================================================
-  # COMPATIBILIDADE
-  # ==========================================================
   prefix: "&b&lᴛᴘᴀ &8• &r"
   tpa-prefix: "&b&lᴛᴘᴀ &8• &r"
   no-permission: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
@@ -210,6 +180,7 @@ messages:
     cancel-text: "&c&lAQUI"
     cancel-hover: "&7Clique para cancelar o envio."
     cancelled: "&d&lᴛᴇʟʟ &8• &rEnvio cancelado."
+    already-cancelled: "&d&lᴛᴇʟʟ &8• &rVocê já cancelou o envio."
 
 buttons:
   spacing: "  "
