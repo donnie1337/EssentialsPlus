@@ -4,7 +4,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/** Representa uma ação registrada para um botão de interação do TPA. */
+/** Representa uma ação temporária registrada para um botão de TPA. */
 public record ButtonAction(
         int token,
         ButtonActionType type,
@@ -38,5 +38,21 @@ public record ButtonAction(
             if (best == null || action.createdAt() < best.createdAt()) best = action;
         }
         return best;
+    }
+
+    public static void remove(int token) {
+        HISTORY.remove(token);
+    }
+
+    public static void removeIfExpired(long now, long timeoutMillis) {
+        if (timeoutMillis <= 0) {
+            HISTORY.clear();
+            return;
+        }
+        HISTORY.entrySet().removeIf(entry -> now - entry.getValue().createdAt() >= timeoutMillis);
+    }
+
+    public static void clear() {
+        HISTORY.clear();
     }
 }
