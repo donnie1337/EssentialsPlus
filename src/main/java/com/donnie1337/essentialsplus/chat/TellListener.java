@@ -85,7 +85,6 @@ public final class TellListener implements Listener {
         UUID targetId = PENDING_TARGETS.get(sender.getUniqueId());
         if (targetId == null) return;
 
-        // Capture the next chat message before ChatPlus or another chat listener can cancel/format it.
         event.setCancelled(true);
         PENDING_TARGETS.remove(sender.getUniqueId(), targetId);
 
@@ -143,9 +142,6 @@ public final class TellListener implements Listener {
     private static String cargoColor(Player player) {
         Plugin cargoPlus = Bukkit.getPluginManager().getPlugin("CargoPlus");
         if (cargoPlus == null || !cargoPlus.isEnabled()) return ChatColor.WHITE.toString();
-
-        // Prefer the registered CargoPlus API. This uses the exact nickname color
-        // calculated by CargoPlus, including any future changes to its color system.
         try {
             Class<?> apiClass = Class.forName("com.cargoplus.api.CargoPlusAPI");
             Object registration = Bukkit.getServicesManager().getRegistration(apiClass);
@@ -159,25 +155,19 @@ public final class TellListener implements Listener {
                 }
             }
         } catch (ReflectiveOperationException | LinkageError ignored) {
-            // Fall back to the plugin methods below.
         }
-
         try {
             Method permissionsMethod = cargoPlus.getClass().getMethod("permissions");
             Object permissions = permissionsMethod.invoke(cargoPlus);
             if (permissions == null) return ChatColor.WHITE.toString();
-
             Method getGroupMethod = permissions.getClass().getMethod("getGroup", UUID.class);
             Object group = getGroupMethod.invoke(permissions, player.getUniqueId());
             if (!(group instanceof String groupName) || groupName.isBlank()) return ChatColor.WHITE.toString();
-
             Method colorMethod = cargoPlus.getClass().getMethod("getCargoColor", String.class);
             Object color = colorMethod.invoke(cargoPlus, groupName);
             if (color instanceof String colorValue && !colorValue.isBlank()) return colorValue;
         } catch (ReflectiveOperationException | LinkageError ignored) {
-            // CargoPlus is optional; /tell continues to work with the default white name.
         }
-
         return ChatColor.WHITE.toString();
     }
 
@@ -191,17 +181,26 @@ public final class TellListener implements Listener {
             sender.sendMessage(ChatColor.translateAlternateColorCodes('&', raw));
             return;
         }
+
+        // O prompt é enviado como componentes, então a cor precisa ser aplicada
+        // explicitamente aos componentes. Assim o legado &d/&l/&8 não chega literal
+        // ao cliente mesmo quando outro plugin altera o pipeline de chat.
         java.util.List<BaseComponent> components = new java.util.ArrayList<>();
-        components.addAll(Arrays.asList(TextComponent.fromLegacyText(parts[0])));
+        components.addAll(Arrays.asList(legacyComponents(parts[0])));
         components.addAll(Arrays.asList(cancelButton(cancelText, cancelHover)));
-        components.addAll(Arrays.asList(TextComponent.fromLegacyText(parts[1])));
+        components.addAll(Arrays.asList(legacyComponents(parts[1])));
         sender.spigot().sendMessage(components.toArray(new BaseComponent[0]));
     }
 
+    private static BaseComponent[] legacyComponents(String text) {
+        String translated = ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
+        return TextComponent.fromLegacyText(translated);
+    }
+
     private static BaseComponent[] cancelButton(String text, String hover) {
-        BaseComponent[] components = TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', text));
+        BaseComponent[] components = legacyComponents(text);
         ClickEvent click = createCustomClick();
-        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(ChatColor.translateAlternateColorCodes('&', hover)));
+        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, legacyComponents(hover));
         for (BaseComponent component : components) {
             if (click != null) component.setClickEvent(click);
             component.setHoverEvent(hoverEvent);
@@ -232,7 +231,7 @@ public final class TellListener implements Listener {
         Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus");
         if (utilidades == null || !utilidades.isEnabled()) return true;
         try {
-            java.lang.reflect.Method method = utilidades.getClass().getMethod("receivesTell", Player.class);
+            Method method = utilidades.getClass().getMethod("receivesTell", Player.class);
             Object result = method.invoke(utilidades, player);
             return result instanceof Boolean value ? value : true;
         } catch (ReflectiveOperationException | LinkageError ignored) {
