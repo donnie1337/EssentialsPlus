@@ -1,7 +1,6 @@
 package com.donnie1337.essentialsplus.chat;
 
 import java.lang.reflect.Method;
-import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -32,7 +31,7 @@ public final class TellCustomClickListener implements Listener {
             if (identifier == null || !CANCEL_BUTTON_ID.equals(identifier.toString())) return;
 
             Player player = event.getPlayer();
-            TellListener.CancelResult result = TellListener.cancelPendingMessage(player.getUniqueId());
+            TellListener.CancelResult result = TellListener.cancelPendingTell(player);
 
             switch (result) {
                 case CANCELLED -> player.sendMessage(TellListener.message("messages.tell.cancelled"));
