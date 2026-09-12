@@ -1,33 +1,32 @@
 package com.donnie1337.essentialsplus.chat;
 
-import io.papermc.paper.connection.PlayerGameConnection;
-import io.papermc.paper.event.player.PlayerCustomClickEvent;
-import net.kyori.adventure.key.Key;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCustomClickEvent;
 import org.bukkit.plugin.PluginManager;
 
 public final class TellCustomClickListener implements Listener {
 
-    private static final Key CANCEL_BUTTON_ID = Key.key(TellListener.CANCEL_BUTTON_ID);
-    private final Object plugin;
+    private static final String CANCEL_BUTTON_ID = TellListener.CANCEL_BUTTON_ID;
+    private final org.bukkit.plugin.Plugin plugin;
 
-    public TellCustomClickListener(Object plugin) {
+    public TellCustomClickListener(org.bukkit.plugin.Plugin plugin) {
         this.plugin = plugin;
     }
 
     public void register(PluginManager pluginManager) {
-        pluginManager.registerEvents(this, (org.bukkit.plugin.Plugin) plugin);
+        pluginManager.registerEvents(this, plugin);
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onCustomClick(PlayerCustomClickEvent event) {
-        if (!CANCEL_BUTTON_ID.equals(event.getIdentifier())) return;
-        if (!(event.getCommonConnection() instanceof PlayerGameConnection connection)) return;
+        NamespacedKey identifier = event.getId();
+        if (identifier == null || !CANCEL_BUTTON_ID.equals(identifier.toString())) return;
 
-        Player player = connection.getPlayer();
+        Player player = event.getPlayer();
         TellListener.CancelResult result = TellListener.cancelPendingTell(player);
 
         switch (result) {
