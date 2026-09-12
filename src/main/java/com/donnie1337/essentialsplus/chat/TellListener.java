@@ -261,7 +261,7 @@ public final class TellListener implements Listener {
             case "messages.tell.cancel-hover" -> "&7Clique para cancelar o envio.";
             case "messages.tell.cancelled" -> "&d&lᴛᴇʟʟ &8• &rEnvio cancelado.";
             case "messages.tell.already-cancelled" -> "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio.";
-            case "messages.tell.already-sent" -> "&d&lᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
+            case "messages.tell.already-sent" -> "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
             default -> "";
         };
     }
