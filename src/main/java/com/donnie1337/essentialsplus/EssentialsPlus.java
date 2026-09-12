@@ -40,7 +40,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class EssentialsPlus extends JavaPlugin {
-
     private TeleportService teleportService;
     private StaffTeleportService staffTeleportService;
     private HomeService homeService;
@@ -54,7 +53,6 @@ public final class EssentialsPlus extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         adventure = BukkitAudiences.create(this);
-
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
         getServer().getPluginManager().registerEvents(new TellListener(this, adventure), this);
@@ -64,41 +62,32 @@ public final class EssentialsPlus extends JavaPlugin {
         register("craft", new CraftCommand());
         register("tell", new TellCommand());
         register("r", new ReplyCommand());
-
         bauService = new BauService(this);
         liveInspectionService = new LiveInspectionService(this, bauService);
         getServer().getPluginManager().registerEvents(new InspectListener(liveInspectionService), this);
         getServer().getPluginManager().registerEvents(new BauListener(bauService), this);
-
         register("ec", new EcCommand(liveInspectionService));
         register("ver", new VerCommand(liveInspectionService));
         register("bau", new BauCommand(bauService, liveInspectionService));
-
         startBauAutoSave();
         liveInspectionService.start();
-
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
         new TpaCustomClickListener(this, teleportService).register(getServer().getPluginManager());
-
         staffTeleportService = new StaffTeleportService(this);
         register("tp", new TpCommand(staffTeleportService));
-
         homeService = new HomeService(this);
         HomeGui homeGui = new HomeGui(homeService);
         getServer().getPluginManager().registerEvents(homeGui, this);
-
         register("tpa", new TpaCommand(teleportService));
         register("tpaqui", new TpaHereCommand(teleportService));
         register("tpaccept", new TpaAcceptCommand(teleportService));
         register("tpdeny", new TpaDenyCommand(teleportService));
         register("tpacancel", new TpaCancelCommand(teleportService));
-
         register("home", new HomeCommand(homeService));
         register("homes", new HomesCommand(homeService, homeGui));
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
-
         getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly, Ender Chest, Bau, Ver, Craft, Tell e Reply.");
     }
 
