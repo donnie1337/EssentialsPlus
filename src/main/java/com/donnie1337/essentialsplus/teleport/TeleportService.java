@@ -17,7 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class TeleportService {
     public static final Key TPA_BUTTON_KEY = Key.key("essentialsplus:tpa_action");
     public static final String TPA_BUTTON_COMMAND = "tpaaction";
-
     private final Plugin plugin;
     private final ChatPlusBridge chatPlusBridge;
     private final AuthSystemBridge authSystemBridge;
@@ -43,24 +41,9 @@ public final class TeleportService {
     private final AtomicInteger buttonToken = new AtomicInteger(1000);
     private BukkitTask expirationTask;
 
-    public TeleportService(Plugin plugin, ChatPlusBridge chatPlusBridge, AuthSystemBridge authSystemBridge) {
-        this.plugin = plugin;
-        this.chatPlusBridge = chatPlusBridge;
-        this.authSystemBridge = authSystemBridge;
-    }
-
-    public void start() {
-        if (expirationTask != null) expirationTask.cancel();
-        expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, this::expireRequests, 20L, 20L);
-    }
-
-    public void shutdown() {
-        if (expirationTask != null) { expirationTask.cancel(); expirationTask = null; }
-        incoming.clear();
-        buttonActions.clear();
-        deniedRequests.clear();
-        ButtonAction.clear();
-    }
+    public TeleportService(Plugin plugin, ChatPlusBridge chatPlusBridge, AuthSystemBridge authSystemBridge) { this.plugin = plugin; this.chatPlusBridge = chatPlusBridge; this.authSystemBridge = authSystemBridge; }
+    public void start() { if (expirationTask != null) expirationTask.cancel(); expirationTask = Bukkit.getScheduler().runTaskTimer(plugin, this::expireRequests, 20L, 20L); }
+    public void shutdown() { if (expirationTask != null) { expirationTask.cancel(); expirationTask = null; } incoming.clear(); buttonActions.clear(); deniedRequests.clear(); ButtonAction.clear(); }
 
     public void request(Player requester, Player recipient, boolean here) {
         if (requester == null || recipient == null || !requester.isOnline() || !recipient.isOnline()) return;
@@ -69,8 +52,7 @@ public final class TeleportService {
         if (!authSystemBridge.isAuthenticated(recipient)) { message(requester, "target-not-authenticated"); return; }
         if (!canReceiveTpa(recipient)) { message(requester, "tpa-receiving-disabled", "player", recipient.getName()); return; }
         deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(requester.getUniqueId());
-        long now = System.currentTimeMillis();
-        long timeout = timeoutMillis();
+        long now = System.currentTimeMillis(), timeout = timeoutMillis();
         List<TpaRequest> requests = incoming.computeIfAbsent(recipient.getUniqueId(), ignored -> new ArrayList<>());
         synchronized (requests) {
             removeExpiredLocked(recipient, requests, now, timeout);
@@ -78,254 +60,62 @@ public final class TeleportService {
             for (TpaRequest existing : requests) if (existing.requesterId().equals(requester.getUniqueId())) { replacement = existing; break; }
             if (replacement != null) { requests.remove(replacement); removeButtonsForRequest(replacement); }
             int max = Math.max(1, plugin.getConfig().getInt("tpa.max-pending-requests", 5));
-            while (requests.size() >= max) {
-                TpaRequest oldest = requests.stream().min(Comparator.comparingLong(TpaRequest::createdAt)).orElse(null);
-                if (oldest == null) break;
-                requests.remove(oldest); removeButtonsForRequest(oldest);
-                Player oldRequester = Bukkit.getPlayer(oldest.requesterId());
-                if (oldRequester != null && oldRequester.isOnline()) message(oldRequester, "too-many-requests", "player", recipient.getName());
-            }
+            while (requests.size() >= max) { TpaRequest oldest = requests.stream().min(Comparator.comparingLong(TpaRequest::createdAt)).orElse(null); if (oldest == null) break; requests.remove(oldest); removeButtonsForRequest(oldest); Player oldRequester = Bukkit.getPlayer(oldest.requesterId()); if (oldRequester != null && oldRequester.isOnline()) message(oldRequester, "too-many-requests", "player", recipient.getName()); }
             TpaRequest request = new TpaRequest(requester.getUniqueId(), requester.getName(), recipient.getUniqueId(), recipient.getName(), here, now);
-            requests.add(request);
-            message(requester, "request-sent", "player", recipient.getName());
-            sendCancelButton(requester, recipient);
-            sendRequestMessage(recipient, requester, here);
+            requests.add(request); message(requester, "request-sent", "player", recipient.getName()); sendCancelButton(requester, recipient); sendRequestMessage(recipient, requester, here);
         }
     }
-
     public void accept(Player recipient) { accept(recipient, null); }
-    public void accept(Player recipient, String requesterName) {
-        TpaRequest request = takeRequest(recipient, requesterName);
-        if (request == null) { message(recipient, "no-request"); return; }
-        deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(request.requesterId());
-        completeAccepted(recipient, request);
-    }
-
+    public void accept(Player recipient, String requesterName) { TpaRequest request = takeRequest(recipient, requesterName); if (request == null) { message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(request.requesterId()); completeAccepted(recipient, request); }
     public void deny(Player recipient) { deny(recipient, null); }
-    public void deny(Player recipient, String requesterName) {
-        TpaRequest request = takeRequest(recipient, requesterName);
-        if (request == null) { message(recipient, "no-request"); return; }
-        deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId());
-        removeButton(recipient.getUniqueId(), request.requesterId(), ButtonActionType.DENY);
-        Player requester = Bukkit.getPlayer(request.requesterId());
-        if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName());
-        message(recipient, "request-denied", "player", request.requesterName());
-    }
+    public void deny(Player recipient, String requesterName) { TpaRequest request = takeRequest(recipient, requesterName); if (request == null) { message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId()); removeButton(recipient.getUniqueId(), request.requesterId(), ButtonActionType.DENY); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName()); message(recipient, "request-denied", "player", request.requesterName()); }
 
     public void cancel(Player requester) { cancel(requester, null); }
     public void cancel(Player requester, String recipientName) {
         if (requester == null) return;
         TpaRequest found = null; UUID ownerId = null;
-        for (var entry : incoming.entrySet()) {
-            List<TpaRequest> requests = entry.getValue();
-            synchronized (requests) {
-                for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId()) && (recipientName == null || request.recipientName().equalsIgnoreCase(recipientName))) { if (found == null || request.createdAt() > found.createdAt()) { found = request; ownerId = entry.getKey(); } }
-            }
-        }
+        for (var entry : incoming.entrySet()) { List<TpaRequest> requests = entry.getValue(); synchronized (requests) { for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId()) && (recipientName == null || request.recipientName().equalsIgnoreCase(recipientName)) && (found == null || request.createdAt() > found.createdAt())) { found = request; ownerId = entry.getKey(); } } }
         if (found == null) { message(requester, "no-request"); return; }
-        List<TpaRequest> requests = incoming.get(ownerId);
-        if (requests != null) { synchronized (requests) { requests.remove(found); } if (requests.isEmpty()) incoming.remove(ownerId, requests); }
-        removeButtonsForRequest(found);
-        Player recipient = Bukkit.getPlayer(found.recipientId());
-        if (recipient != null && recipient.isOnline()) message(recipient, "request-cancelled", "player", requester.getName());
-        message(requester, "request-cancelled-sender", "player", found.recipientName());
+        List<TpaRequest> requests = incoming.get(ownerId); if (requests != null) { synchronized (requests) { requests.remove(found); } if (requests.isEmpty()) incoming.remove(ownerId, requests); }
+        removeButtonsForRequest(found); Player recipient = Bukkit.getPlayer(found.recipientId()); if (recipient != null && recipient.isOnline()) message(recipient, "request-cancelled", "player", requester.getName()); message(requester, "request-cancelled-sender", "player", found.recipientName());
     }
 
-    public List<String> pendingRequesterNames(Player recipient) {
-        List<TpaRequest> requests = incoming.get(recipient.getUniqueId());
-        if (requests == null) return List.of();
-        synchronized (requests) {
-            removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis());
-            return requests.stream().map(TpaRequest::requesterName).toList();
-        }
-    }
+    public List<String> pendingRequesterNames(Player recipient) { List<TpaRequest> requests = incoming.get(recipient.getUniqueId()); if (requests == null) return List.of(); synchronized (requests) { removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis()); return requests.stream().map(TpaRequest::requesterName).toList(); } }
+    public List<String> pendingRecipientNames(Player requester) { List<String> names = new ArrayList<>(); long now = System.currentTimeMillis(), timeout = timeoutMillis(); for (var entry : incoming.entrySet()) { List<TpaRequest> requests = entry.getValue(); synchronized (requests) { requests.removeIf(request -> request.isExpired(now, timeout)); for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId())) names.add(request.recipientName()); if (requests.isEmpty()) incoming.remove(entry.getKey(), requests); } } return names; }
 
-    public List<String> pendingRecipientNames(Player requester) {
-        List<String> names = new ArrayList<>();
-        long now = System.currentTimeMillis(), timeout = timeoutMillis();
-        for (var entry : incoming.entrySet()) {
-            List<TpaRequest> requests = entry.getValue();
-            synchronized (requests) {
-                requests.removeIf(request -> request.isExpired(now, timeout));
-                for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId())) names.add(request.recipientName());
-                if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
-            }
-        }
-        return names;
-    }
-
-    private TpaRequest takeRequest(Player recipient, String requesterName) {
-        if (recipient == null) return null;
-        List<TpaRequest> requests = incoming.get(recipient.getUniqueId());
-        if (requests == null) return null;
-        synchronized (requests) {
-            removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis());
-            TpaRequest selected = null;
-            for (TpaRequest request : requests) if (requesterName == null || request.requesterName().equalsIgnoreCase(requesterName)) if (selected == null || request.createdAt() > selected.createdAt()) selected = request;
-            if (selected != null) requests.remove(selected);
-            if (requests.isEmpty()) incoming.remove(recipient.getUniqueId(), requests);
-            return selected;
-        }
-    }
+    private TpaRequest takeRequest(Player recipient, String requesterName) { if (recipient == null) return null; List<TpaRequest> requests = incoming.get(recipient.getUniqueId()); if (requests == null) return null; synchronized (requests) { removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis()); TpaRequest selected = null; for (TpaRequest request : requests) if (requesterName == null || request.requesterName().equalsIgnoreCase(requesterName)) if (selected == null || request.createdAt() > selected.createdAt()) selected = request; if (selected != null) requests.remove(selected); if (requests.isEmpty()) incoming.remove(recipient.getUniqueId(), requests); return selected; } }
 
     private void completeAccepted(Player recipient, TpaRequest request) {
         removeButtonsForRequest(request);
-        if (!canReceiveTpa(recipient)) { message(recipient, "tpa-receiving-disabled-self"); return; }
+        if (!canReceiveTpa(recipient)) { restoreRequest(request); message(recipient, "tpa-receiving-disabled-self"); return; }
         Player requester = Bukkit.getPlayer(request.requesterId());
         if (requester == null || !requester.isOnline()) { message(recipient, "target-offline"); return; }
-        if (!authSystemBridge.isAuthenticated(requester) || !authSystemBridge.isAuthenticated(recipient)) { message(recipient, "auth-required"); return; }
-        Player teleported = request.here() ? recipient : requester;
-        Player destination = request.here() ? requester : recipient;
-        if (teleported.getUniqueId().equals(destination.getUniqueId())) { message(recipient, "cannot-self"); return; }
-        if (!teleported.teleport(destination.getLocation())) { message(recipient, "teleport-failed"); message(requester, "teleport-failed"); return; }
-        message(recipient, "request-accepted", "player", requester.getName());
-        message(requester, "request-accepted-sender", "player", recipient.getName());
+        if (!authSystemBridge.isAuthenticated(requester) || !authSystemBridge.isAuthenticated(recipient)) { restoreRequest(request); message(recipient, "auth-required"); return; }
+        Player teleported = request.here() ? recipient : requester, destination = request.here() ? requester : recipient;
+        if (teleported.getUniqueId().equals(destination.getUniqueId())) { restoreRequest(request); message(recipient, "cannot-self"); return; }
+        if (!teleported.teleport(destination.getLocation())) { restoreRequest(request); message(recipient, "teleport-failed"); message(requester, "teleport-failed"); return; }
+        message(recipient, "request-accepted", "player", requester.getName()); message(requester, "request-accepted-sender", "player", recipient.getName());
     }
 
-    private void sendRequestMessage(Player recipient, Player requester, boolean here) {
-        String key = here ? "messages.request-here-received" : "messages.request-received";
-        String raw = plugin.getConfig().getString(key, "{player}&f está pedindo para se teleportar até você. Clique {accept} para aceitar ou {deny} para negar!");
-        raw = raw.replace("{player}", coloredPlayer(requester));
-        String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", ""));
-        raw = color(prefix + raw);
-        int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
-        int deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
-        boolean acceptEnabled = plugin.getConfig().getBoolean("buttons.accept.enabled", true);
-        boolean denyEnabled = plugin.getConfig().getBoolean("buttons.deny.enabled", true);
-        String acceptText = color(plugin.getConfig().getString("buttons.accept.text", "&a&lAQUI"));
-        String denyText = color(plugin.getConfig().getString("buttons.deny.text", "&c&lAQUI"));
-        String acceptHover = plugin.getConfig().getString("buttons.accept.hover", "&7Clique para aceitar a solicitação.");
-        String denyHover = plugin.getConfig().getString("buttons.deny.hover", "&7Clique para negar a solicitação.");
-        List<BaseComponent> message = new ArrayList<>();
-        int cursor = 0;
-        while (cursor < raw.length()) {
-            int acceptPos = raw.indexOf("{accept}", cursor);
-            int denyPos = raw.indexOf("{deny}", cursor);
-            int nextPos = -1; boolean isAccept = false;
-            if (acceptPos >= 0 && (denyPos < 0 || acceptPos < denyPos)) { nextPos = acceptPos; isAccept = true; }
-            else if (denyPos >= 0) nextPos = denyPos;
-            if (nextPos < 0) { message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor)))); break; }
-            if (nextPos > cursor) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor, nextPos))));
-            if (isAccept) { if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover))); }
-            else if (denyEnabled) message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover)));
-            cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
-        }
-        if (raw.isEmpty()) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw)));
-        if (!message.isEmpty()) recipient.spigot().sendMessage(message.toArray(BaseComponent[]::new));
+    private void restoreRequest(TpaRequest request) {
+        if (request == null || request.isExpired(System.currentTimeMillis(), timeoutMillis())) return;
+        Player recipient = Bukkit.getPlayer(request.recipientId()); if (recipient == null || !recipient.isOnline()) return;
+        List<TpaRequest> requests = incoming.computeIfAbsent(request.recipientId(), ignored -> new ArrayList<>());
+        synchronized (requests) { boolean exists = requests.stream().anyMatch(existing -> existing.requesterId().equals(request.requesterId()) && existing.createdAt() == request.createdAt()); if (!exists) requests.add(request); }
     }
 
-    private void sendCancelButton(Player requester, Player recipient) {
-        if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
-        int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
-        String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar"));
-        String hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA.");
-        requester.spigot().sendMessage(buttonComponent(text, token, hover));
-    }
-
-    private int registerButton(Player player, ButtonActionType type, UUID targetId) {
-        int token = buttonToken.incrementAndGet();
-        buttonActions.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>()).put(token, new ButtonAction(token, type, targetId));
-        return token;
-    }
-
-    private BaseComponent[] buttonComponent(String label, int token, String hover) {
-        BaseComponent[] components = TextComponent.fromLegacyText(label);
-        ClickEvent click = createCustomClick(token);
-        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover)));
-        for (BaseComponent component : components) { if (click != null) component.setClickEvent(click); component.setHoverEvent(hoverEvent); }
-        return components;
-    }
-
-    private ClickEvent createCustomClick(int token) {
-        try {
-            Class<?> type = Class.forName("net.md_5.bungee.api.chat.ClickEventCustom");
-            Constructor<?> constructor = type.getConstructor(String.class, String.class);
-            return (ClickEvent) constructor.newInstance(TPA_BUTTON_KEY.asString(), Integer.toString(token));
-        } catch (ReflectiveOperationException | LinkageError ignored) {
-            plugin.getLogger().warning("ClickEventCustom não está disponível neste servidor; botão de TPA sem ação.");
-            return null;
-        }
-    }
-
-    public boolean handleButton(Player player, int token) {
-        if (player == null || !player.hasPermission("essentialsplus.tpa")) return false;
-        ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(player.getUniqueId());
-        if (actions == null) return false;
-        ButtonAction action = actions.remove(token);
-        if (action == null) return false;
-        switch (action.type()) {
-            case ACCEPT -> acceptById(player, action.targetId());
-            case DENY -> denyById(player, action.targetId());
-            case CANCEL -> cancelById(player, action.targetId());
-        }
-        return true;
-    }
-
-    private void acceptById(Player recipient, UUID requesterId) {
-        TpaRequest request = removeRequestById(recipient, requesterId);
-        if (request == null) { Set<UUID> denied = deniedRequests.get(recipient.getUniqueId()); if (denied != null && denied.contains(requesterId)) message(recipient, "request-already-denied"); else message(recipient, "no-request"); return; }
-        deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(requesterId);
-        completeAccepted(recipient, request);
-    }
-
-    private void denyById(Player recipient, UUID requesterId) {
-        TpaRequest request = removeRequestById(recipient, requesterId);
-        if (request == null) { message(recipient, "no-request"); return; }
-        deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId());
-        removeButton(recipient.getUniqueId(), requesterId, ButtonActionType.DENY);
-        Player requester = Bukkit.getPlayer(request.requesterId());
-        if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName());
-        message(recipient, "request-denied", "player", request.requesterName());
-    }
-
-    private void cancelById(Player requester, UUID recipientId) {
-        List<TpaRequest> requests = incoming.get(recipientId);
-        if (requests == null) { message(requester, "no-request"); return; }
-        TpaRequest found = null;
-        synchronized (requests) {
-            for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId()) && (found == null || request.createdAt() > found.createdAt())) found = request;
-            if (found != null) requests.remove(found);
-        }
-        if (found == null) { message(requester, "no-request"); return; }
-        if (requests.isEmpty()) incoming.remove(recipientId, requests);
-        removeButtonsForRequest(found);
-        Player recipient = Bukkit.getPlayer(recipientId);
-        if (recipient != null && recipient.isOnline()) message(recipient, "request-cancelled", "player", requester.getName());
-        message(requester, "request-cancelled-sender", "player", found.recipientName());
-    }
-
-    private TpaRequest removeRequestById(Player recipient, UUID requesterId) {
-        List<TpaRequest> requests = incoming.get(recipient.getUniqueId());
-        if (requests == null) return null;
-        synchronized (requests) {
-            removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis());
-            TpaRequest found = null;
-            for (TpaRequest request : requests) if (request.requesterId().equals(requesterId)) { found = request; break; }
-            if (found != null) requests.remove(found);
-            if (requests.isEmpty()) incoming.remove(recipient.getUniqueId(), requests);
-            return found;
-        }
-    }
-
-    private void expireRequests() {
-        long now = System.currentTimeMillis(), timeout = timeoutMillis();
-        ButtonAction.removeIfExpired(now, timeout);
-        if (timeout <= 0) return;
-        for (var entry : incoming.entrySet()) {
-            List<TpaRequest> requests = entry.getValue(); List<TpaRequest> expired = new ArrayList<>();
-            synchronized (requests) { requests.removeIf(request -> { boolean exp = request.isExpired(now, timeout); if (exp) expired.add(request); return exp; }); }
-            if (requests.isEmpty()) incoming.remove(entry.getKey(), requests);
-            for (TpaRequest request : expired) { removeButtonsForRequest(request); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-expired", "player", request.recipientName()); Player target = Bukkit.getPlayer(request.recipientId()); if (target != null && target.isOnline()) message(target, "request-expired", "player", request.requesterName()); }
-        }
-    }
-
-    private void removeExpiredLocked(Player recipient, List<TpaRequest> requests, long now, long timeout) {
-        if (timeout <= 0) return;
-        List<TpaRequest> expired = new ArrayList<>();
-        requests.removeIf(request -> { boolean exp = request.isExpired(now, timeout); if (exp) expired.add(request); return exp; });
-        for (TpaRequest request : expired) { removeButtonsForRequest(request); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-expired", "player", recipient.getName()); }
-    }
-
+    private void sendRequestMessage(Player recipient, Player requester, boolean here) { String key = here ? "messages.request-here-received" : "messages.request-received"; String raw = plugin.getConfig().getString(key, "{player}&f está pedindo para se teleportar até você. Clique {accept} para aceitar ou {deny} para negar!"); raw = raw.replace("{player}", coloredPlayer(requester)); String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", "")); raw = color(prefix + raw); int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId()), deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId()); boolean acceptEnabled = plugin.getConfig().getBoolean("buttons.accept.enabled", true), denyEnabled = plugin.getConfig().getBoolean("buttons.deny.enabled", true); String acceptText = color(plugin.getConfig().getString("buttons.accept.text", "&a&lAQUI")), denyText = color(plugin.getConfig().getString("buttons.deny.text", "&c&lAQUI")), acceptHover = plugin.getConfig().getString("buttons.accept.hover", "&7Clique para aceitar a solicitação."), denyHover = plugin.getConfig().getString("buttons.deny.hover", "&7Clique para negar a solicitação."); List<BaseComponent> message = new ArrayList<>(); int cursor = 0; while (cursor < raw.length()) { int acceptPos = raw.indexOf("{accept}", cursor), denyPos = raw.indexOf("{deny}", cursor), nextPos = -1; boolean isAccept = false; if (acceptPos >= 0 && (denyPos < 0 || acceptPos < denyPos)) { nextPos = acceptPos; isAccept = true; } else if (denyPos >= 0) nextPos = denyPos; if (nextPos < 0) { message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor)))); break; } if (nextPos > cursor) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor, nextPos)))); if (isAccept) { if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover))); } else if (denyEnabled) message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover))); cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length()); } if (raw.isEmpty()) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw))); if (!message.isEmpty()) recipient.spigot().sendMessage(message.toArray(BaseComponent[]::new)); }
+    private void sendCancelButton(Player requester, Player recipient) { if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return; int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId()); String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar")), hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA."); requester.spigot().sendMessage(buttonComponent(text, token, hover)); }
+    private int registerButton(Player player, ButtonActionType type, UUID targetId) { int token = buttonToken.incrementAndGet(); buttonActions.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>()).put(token, new ButtonAction(token, type, targetId)); return token; }
+    private BaseComponent[] buttonComponent(String label, int token, String hover) { BaseComponent[] components = TextComponent.fromLegacyText(label); ClickEvent click = createCustomClick(token); HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover))); for (BaseComponent component : components) { if (click != null) component.setClickEvent(click); component.setHoverEvent(hoverEvent); } return components; }
+    private ClickEvent createCustomClick(int token) { try { Class<?> type = Class.forName("net.md_5.bungee.api.chat.ClickEventCustom"); Constructor<?> constructor = type.getConstructor(String.class, String.class); return (ClickEvent) constructor.newInstance(TPA_BUTTON_KEY.asString(), Integer.toString(token)); } catch (ReflectiveOperationException | LinkageError ignored) { plugin.getLogger().warning("ClickEventCustom não está disponível neste servidor; botão de TPA sem ação."); return null; } }
+    public boolean handleButton(Player player, int token) { if (player == null || !player.hasPermission("essentialsplus.tpa")) return false; ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(player.getUniqueId()); if (actions == null) return false; ButtonAction action = actions.remove(token); if (action == null) return false; switch (action.type()) { case ACCEPT -> acceptById(player, action.targetId()); case DENY -> denyById(player, action.targetId()); case CANCEL -> cancelById(player, action.targetId()); } return true; }
+    private void acceptById(Player recipient, UUID requesterId) { TpaRequest request = removeRequestById(recipient, requesterId); if (request == null) { Set<UUID> denied = deniedRequests.get(recipient.getUniqueId()); if (denied != null && denied.contains(requesterId)) message(recipient, "request-already-denied"); else message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(requesterId); completeAccepted(recipient, request); }
+    private void denyById(Player recipient, UUID requesterId) { TpaRequest request = removeRequestById(recipient, requesterId); if (request == null) { message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId()); removeButton(recipient.getUniqueId(), requesterId, ButtonActionType.DENY); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName()); message(recipient, "request-denied", "player", request.requesterName()); }
+    private void cancelById(Player requester, UUID recipientId) { List<TpaRequest> requests = incoming.get(recipientId); if (requests == null) { message(requester, "no-request"); return; } TpaRequest found = null; synchronized (requests) { for (TpaRequest request : requests) if (request.requesterId().equals(requester.getUniqueId()) && (found == null || request.createdAt() > found.createdAt())) found = request; if (found != null) requests.remove(found); } if (found == null) { message(requester, "no-request"); return; } if (requests.isEmpty()) incoming.remove(recipientId, requests); removeButtonsForRequest(found); Player recipient = Bukkit.getPlayer(recipientId); if (recipient != null && recipient.isOnline()) message(recipient, "request-cancelled", "player", requester.getName()); message(requester, "request-cancelled-sender", "player", found.recipientName()); }
+    private TpaRequest removeRequestById(Player recipient, UUID requesterId) { List<TpaRequest> requests = incoming.get(recipient.getUniqueId()); if (requests == null) return null; synchronized (requests) { removeExpiredLocked(recipient, requests, System.currentTimeMillis(), timeoutMillis()); TpaRequest found = null; for (TpaRequest request : requests) if (request.requesterId().equals(requesterId)) { found = request; break; } if (found != null) requests.remove(found); if (requests.isEmpty()) incoming.remove(recipient.getUniqueId(), requests); return found; } }
+    private void expireRequests() { long now = System.currentTimeMillis(), timeout = timeoutMillis(); ButtonAction.removeIfExpired(now, timeout); if (timeout <= 0) return; for (var entry : incoming.entrySet()) { List<TpaRequest> requests = entry.getValue(); List<TpaRequest> expired = new ArrayList<>(); synchronized (requests) { requests.removeIf(request -> { boolean exp = request.isExpired(now, timeout); if (exp) expired.add(request); return exp; }); } if (requests.isEmpty()) incoming.remove(entry.getKey(), requests); for (TpaRequest request : expired) { removeButtonsForRequest(request); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-expired", "player", request.recipientName()); Player target = Bukkit.getPlayer(request.recipientId()); if (target != null && target.isOnline()) message(target, "request-expired", "player", request.requesterName()); } } }
+    private void removeExpiredLocked(Player recipient, List<TpaRequest> requests, long now, long timeout) { if (timeout <= 0) return; List<TpaRequest> expired = new ArrayList<>(); requests.removeIf(request -> { boolean exp = request.isExpired(now, timeout); if (exp) expired.add(request); return exp; }); for (TpaRequest request : expired) { removeButtonsForRequest(request); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-expired", "player", recipient.getName()); } }
     private long timeoutMillis() { long seconds = plugin.getConfig().getLong("tpa.request-timeout-seconds", 20L); return seconds <= 0 ? 0 : seconds * 1000L; }
     private void removeButtonsForRequest(TpaRequest request) { removeButton(request.recipientId(), request.requesterId(), ButtonActionType.ACCEPT); removeButton(request.recipientId(), request.requesterId(), ButtonActionType.DENY); removeButton(request.requesterId(), request.recipientId(), ButtonActionType.CANCEL); }
     private void removeButton(UUID ownerId, UUID targetId, ButtonActionType type) { ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(ownerId); if (actions == null) return; actions.values().removeIf(action -> action.type() == type && action.targetId().equals(targetId)); if (actions.isEmpty()) buttonActions.remove(ownerId, actions); }
@@ -334,8 +124,7 @@ public final class TeleportService {
     private boolean canReceiveTpa(Player player) { Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus"); if (utilidades == null || !utilidades.isEnabled()) return true; try { Method method = utilidades.getClass().getMethod("isTpaEnabled", Player.class); Object result = method.invoke(utilidades, player); return !(result instanceof Boolean enabled) || enabled; } catch (ReflectiveOperationException | LinkageError ignored) { return true; } }
     private void message(Player player, String key, String... replacements) { if (player == null || !player.isOnline()) return; String raw = plugin.getConfig().getString("messages." + key, ""); for (int i = 0; i + 1 < replacements.length; i += 2) { String replacement = replacements[i + 1]; if ("player".equals(replacements[i])) { Player target = Bukkit.getPlayerExact(replacement); replacement = coloredPlayer(target); } raw = raw.replace("{" + replacements[i] + "}", replacement == null ? "" : replacement); } String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", "")); chatPlusBridge.sendDirect(player, color(prefix + raw)); }
     private String color(String text) { return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text); }
-
-    private Component legacy(String text) { if (text == null || text.isEmpty()) return Component.empty(); Component result = Component.empty(); StringBuilder segment = new StringBuilder(); TextColor currentColor = NamedTextColor.WHITE; boolean bold = false, italic = false, underlined = false, strikethrough = false, obfuscated = false; for (int i = 0; i < text.length(); i++) { char c = text.charAt(i); if (c == ChatColor.COLOR_CHAR && i + 1 < text.length()) { if (!segment.isEmpty()) { result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated)); segment.setLength(0); } ChatColor code = ChatColor.getByChar(text.charAt(++i)); if (code == null) { segment.append(ChatColor.COLOR_CHAR).append(text.charAt(i)); continue; } if (code == ChatColor.RESET) { currentColor = NamedTextColor.WHITE; bold = italic = underlined = strikethrough = obfuscated = false; } else if (code.isColor()) { currentColor = adventureColor(code); bold = italic = underlined = strikethrough = obfuscated = false; } else if (code == ChatColor.BOLD) bold = true; else if (code == ChatColor.ITALIC) italic = true; else if (code == ChatColor.UNDERLINE) underlined = true; else if (code == ChatColor.STRIKETHROUGH) strikethrough = true; else if (code == ChatColor.MAGIC) obfuscated = true; continue; } segment.append(c); } if (!segment.isEmpty()) result = result.append(styled(segment.toString(), currentColor, bold, italic, underlined, strikethrough, obfuscated)); return result; }
-    private Component styled(String text, TextColor color, boolean bold, boolean italic, boolean underlined, boolean strikethrough, boolean obfuscated) { Component component = Component.text(text).color(color); if (bold) component = component.decorate(TextDecoration.BOLD); if (italic) component = component.decorate(TextDecoration.ITALIC); if (underlined) component = component.decorate(TextDecoration.UNDERLINED); if (strikethrough) component = component.decorate(TextDecoration.STRIKETHROUGH); if (obfuscated) component = component.decorate(TextDecoration.OBFUSCATED); return component; }
-    private TextColor adventureColor(ChatColor color) { return switch (color) { case BLACK -> NamedTextColor.BLACK; case DARK_BLUE -> NamedTextColor.DARK_BLUE; case DARK_GREEN -> NamedTextColor.DARK_GREEN; case DARK_AQUA -> NamedTextColor.DARK_AQUA; case DARK_RED -> NamedTextColor.DARK_RED; case DARK_PURPLE -> NamedTextColor.DARK_PURPLE; case GOLD -> NamedTextColor.GOLD; case GRAY -> NamedTextColor.GRAY; case DARK_GRAY -> NamedTextColor.DARK_GRAY; case BLUE -> NamedTextColor.BLUE; case GREEN -> NamedTextColor.GREEN; case AQUA -> NamedTextColor.AQUA; case RED -> NamedTextColor.RED; case LIGHT_PURPLE -> NamedTextColor.LIGHT_PURPLE; case YELLOW -> NamedTextColor.YELLOW; case WHITE -> NamedTextColor.WHITE; default -> NamedTextColor.WHITE; }; }
+    private Component legacy(String text) { if (text == null || text.isEmpty()) return Component.empty(); Component result = Component.empty(); StringBuilder segment = new StringBuilder(); TextColor currentColor = NamedTextColor.WHITE; boolean bold=false, italic=false, underlined=false, strikethrough=false, obfuscated=false; for(int i=0;i<text.length();i++){char c=text.charAt(i);if(c==ChatColor.COLOR_CHAR&&i+1<text.length()){if(!segment.isEmpty()){result=result.append(styled(segment.toString(),currentColor,bold,italic,underlined,strikethrough,obfuscated));segment.setLength(0);} ChatColor code=ChatColor.getByChar(text.charAt(++i));if(code==null){segment.append(ChatColor.COLOR_CHAR).append(text.charAt(i));continue;} if(code==ChatColor.RESET){currentColor=NamedTextColor.WHITE;bold=italic=underlined=strikethrough=obfuscated=false;}else if(code.isColor()){currentColor=adventureColor(code);bold=italic=underlined=strikethrough=obfuscated=false;}else if(code==ChatColor.BOLD)bold=true;else if(code==ChatColor.ITALIC)italic=true;else if(code==ChatColor.UNDERLINE)underlined=true;else if(code==ChatColor.STRIKETHROUGH)strikethrough=true;else if(code==ChatColor.MAGIC)obfuscated=true;continue;}segment.append(c);}if(!segment.isEmpty())result=result.append(styled(segment.toString(),currentColor,bold,italic,underlined,strikethrough,obfuscated));return result; }
+    private Component styled(String text, TextColor color, boolean bold, boolean italic, boolean underlined, boolean strikethrough, boolean obfuscated) { Component component=Component.text(text).color(color);if(bold)component=component.decorate(TextDecoration.BOLD);if(italic)component=component.decorate(TextDecoration.ITALIC);if(underlined)component=component.decorate(TextDecoration.UNDERLINED);if(strikethrough)component=component.decorate(TextDecoration.STRIKETHROUGH);if(obfuscated)component=component.decorate(TextDecoration.OBFUSCATED);return component; }
+    private TextColor adventureColor(ChatColor color) { return switch(color){case BLACK->NamedTextColor.BLACK;case DARK_BLUE->NamedTextColor.DARK_BLUE;case DARK_GREEN->NamedTextColor.DARK_GREEN;case DARK_AQUA->NamedTextColor.DARK_AQUA;case DARK_RED->NamedTextColor.DARK_RED;case DARK_PURPLE->NamedTextColor.DARK_PURPLE;case GOLD->NamedTextColor.GOLD;case GRAY->NamedTextColor.GRAY;case DARK_GRAY->NamedTextColor.DARK_GRAY;case BLUE->NamedTextColor.BLUE;case GREEN->NamedTextColor.GREEN;case AQUA->NamedTextColor.AQUA;case RED->NamedTextColor.RED;case LIGHT_PURPLE->NamedTextColor.LIGHT_PURPLE;case YELLOW->NamedTextColor.YELLOW;case WHITE->NamedTextColor.WHITE;default->NamedTextColor.WHITE;}; }
 }
