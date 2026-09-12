@@ -44,8 +44,11 @@ public final class TellCustomClickListener implements Listener {
             Player player = invokePlayer(event);
             if (player == null || !player.hasPermission("essentialsplus.tell")) return;
 
-            if (TellListener.cancelPendingTell(player)) {
-                player.sendMessage(TellListener.message("messages.tell.cancelled"));
+            TellListener.CancelResult result = TellListener.cancelPendingTell(player);
+            switch (result) {
+                case CANCELLED -> player.sendMessage(TellListener.message("messages.tell.cancelled"));
+                case ALREADY_SENT -> player.sendMessage(TellListener.message("messages.tell.already-sent"));
+                case ALREADY_CANCELLED -> player.sendMessage(TellListener.message("messages.tell.already-cancelled"));
             }
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             // Não interromper o processamento normal de chat por incompatibilidade de API.
