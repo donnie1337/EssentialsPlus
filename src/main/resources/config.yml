@@ -180,7 +180,8 @@ messages:
     cancel-text: "&c&lAQUI"
     cancel-hover: "&7Clique para cancelar o envio."
     cancelled: "&d&lᴛᴇʟʟ &8• &rEnvio cancelado."
-    already-cancelled: "&d&lᴛᴇʟʟ &8• &rVocê já cancelou o envio."
+    already-cancelled: "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio."
+    already-sent: "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar."
 
 buttons:
   spacing: "  "
