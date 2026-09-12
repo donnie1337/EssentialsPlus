@@ -27,7 +27,14 @@ public final class TellListener implements Listener {
     private static final String PERMISSION = "essentialsplus.tell";
     private static final ConcurrentHashMap<UUID, UUID> LAST_TARGETS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, UUID> PENDING_TARGETS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, TellState> TELL_STATES = new ConcurrentHashMap<>();
     private static JavaPlugin plugin;
+
+    private enum TellState {
+        PENDING,
+        SENT,
+        CANCELLED
+    }
 
     public TellListener(JavaPlugin plugin) { TellListener.plugin = plugin; }
 
@@ -73,6 +80,7 @@ public final class TellListener implements Listener {
 
         if (args.length < 3) {
             PENDING_TARGETS.put(sender.getUniqueId(), target.getUniqueId());
+            TELL_STATES.put(sender.getUniqueId(), TellState.PENDING);
             sendPendingMessage(sender, target);
             return;
         }
@@ -90,6 +98,10 @@ public final class TellListener implements Listener {
 
         String privateMessage = event.getMessage();
         if (privateMessage == null || privateMessage.isBlank()) return;
+
+        // A mensagem já foi digitada/enviada; qualquer clique posterior no AQUI
+        // deve informar que o cancelamento não é mais possível.
+        TELL_STATES.put(sender.getUniqueId(), TellState.SENT);
 
         Bukkit.getScheduler().runTask(plugin, () -> {
             Player target = Bukkit.getPlayer(targetId);
@@ -116,6 +128,7 @@ public final class TellListener implements Listener {
 
     public static void sendPrivateMessage(Player sender, Player target, String privateMessage) {
         PENDING_TARGETS.remove(sender.getUniqueId());
+        TELL_STATES.put(sender.getUniqueId(), TellState.SENT);
         LAST_TARGETS.put(sender.getUniqueId(), target.getUniqueId());
         LAST_TARGETS.put(target.getUniqueId(), sender.getUniqueId());
 
@@ -125,9 +138,25 @@ public final class TellListener implements Listener {
         target.sendMessage(message("messages.tell.format-target", "player", senderName, "message", privateMessage));
     }
 
-    public static boolean cancelPendingTell(Player player) {
-        if (player == null) return false;
-        return PENDING_TARGETS.remove(player.getUniqueId()) != null;
+    public enum CancelResult {
+        CANCELLED,
+        ALREADY_CANCELLED,
+        ALREADY_SENT
+    }
+
+    public static CancelResult cancelPendingTell(Player player) {
+        if (player == null) return CancelResult.ALREADY_CANCELLED;
+
+        UUID playerId = player.getUniqueId();
+        UUID pending = PENDING_TARGETS.remove(playerId);
+        if (pending != null) {
+            TELL_STATES.put(playerId, TellState.CANCELLED);
+            return CancelResult.CANCELLED;
+        }
+
+        TellState state = TELL_STATES.get(playerId);
+        if (state == TellState.SENT) return CancelResult.ALREADY_SENT;
+        return CancelResult.ALREADY_CANCELLED;
     }
 
     public static boolean canReceiveTell(Player player) {
@@ -173,7 +202,7 @@ public final class TellListener implements Listener {
 
     private static void sendPendingMessage(Player sender, Player target) {
         String raw = plugin.getConfig().getString("messages.tell.awaiting-message", "&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.");
-        raw = raw.replace("{player}", target.getName());
+        raw = raw.replace("{player}", coloredCargoName(target));
         String cancelText = plugin.getConfig().getString("messages.tell.cancel-text", "&c&lAQUI");
         String cancelHover = plugin.getConfig().getString("messages.tell.cancel-hover", "&7Clique para cancelar o envio.");
         String[] parts = raw.split("\\{cancel}", -1);
@@ -182,9 +211,6 @@ public final class TellListener implements Listener {
             return;
         }
 
-        // O prompt é enviado como componentes, então a cor precisa ser aplicada
-        // explicitamente aos componentes. Assim o legado &d/&l/&8 não chega literal
-        // ao cliente mesmo quando outro plugin altera o pipeline de chat.
         java.util.List<BaseComponent> components = new java.util.ArrayList<>();
         components.addAll(Arrays.asList(legacyComponents(parts[0])));
         components.addAll(Arrays.asList(cancelButton(cancelText, cancelHover)));
@@ -254,6 +280,9 @@ public final class TellListener implements Listener {
             case "messages.tell.awaiting-message" -> "&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.";
             case "messages.tell.cancel-text" -> "&c&lAQUI";
             case "messages.tell.cancel-hover" -> "&7Clique para cancelar o envio.";
+            case "messages.tell.cancelled" -> "&d&lᴛᴇʟʟ &8• &rEnvio cancelado.";
+            case "messages.tell.already-cancelled" -> "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio.";
+            case "messages.tell.already-sent" -> "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
             default -> "";
         };
     }
