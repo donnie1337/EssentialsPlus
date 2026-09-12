@@ -1,7 +1,7 @@
 package com.donnie1337.essentialsplus.chat;
 
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -12,9 +12,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -25,9 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class TellListener implements Listener {
     public static final String CANCEL_BUTTON_ID = "essentialsplus:tell_cancel";
     private static final String PERMISSION = "essentialsplus.tell";
+    private static final long PENDING_TIMEOUT_TICKS = 20L * 30L;
     private static final ConcurrentHashMap<UUID, UUID> LAST_TARGETS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, UUID> PENDING_TARGETS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, TellState> TELL_STATES = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, BukkitTask> PENDING_TIMEOUTS = new ConcurrentHashMap<>();
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
     private static JavaPlugin plugin;
     private static BukkitAudiences adventure;
@@ -43,86 +46,90 @@ public final class TellListener implements Listener {
         TellListener.adventure = adventure;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onCommand(PlayerCommandPreprocessEvent event) {
-        String message = event.getMessage();
-        if (message == null || message.length() < 2 || message.charAt(0) != '/') return;
-        String[] args = message.substring(1).trim().split("\\s+");
-        if (args.length < 1 || args[0].isBlank()) return;
-
-        String command = args[0].toLowerCase(Locale.ROOT);
-        if (command.equals("w") || command.equals("whisper") || command.equals("msg")) {
-            event.setCancelled(true);
-            event.getPlayer().sendMessage(message("messages.tell.unknown-command"));
-            return;
-        }
-        if (!command.equals("tell")) return;
-
-        Player sender = event.getPlayer();
-        event.setCancelled(true);
+    public static boolean handleTellCommand(Player sender, String[] args) {
+        if (sender == null) return true;
         if (!sender.hasPermission(PERMISSION)) {
             sender.sendMessage(message("messages.tell.unknown-command"));
-            return;
+            return true;
         }
-
-        if (args.length < 2) {
+        if (args.length < 1) {
             sender.sendMessage(message("messages.tell.usage"));
-            return;
+            return true;
         }
 
-        Player target = Bukkit.getPlayerExact(args[1]);
+        Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
             sender.sendMessage(message("messages.tell.player-not-found"));
-            return;
+            return true;
         }
         if (target.getUniqueId().equals(sender.getUniqueId())) {
             sender.sendMessage(message("messages.tell.cannot-self"));
-            return;
+            return true;
         }
-        if (!receivesTell(target)) {
+        if (!receivesTellStatic(target)) {
             sender.sendMessage(message("messages.tell.target-disabled"));
-            return;
+            return true;
         }
 
-        if (args.length < 3) {
+        clearPending(sender.getUniqueId());
+        if (args.length == 1) {
             PENDING_TARGETS.put(sender.getUniqueId(), target.getUniqueId());
             TELL_STATES.put(sender.getUniqueId(), TellState.PENDING);
+            schedulePendingTimeout(sender.getUniqueId());
             sendPendingMessage(sender, target);
-            return;
+            return true;
         }
-        sendPrivateMessage(sender, target, String.join(" ", Arrays.copyOfRange(args, 2, args.length)));
+
+        sendPrivateMessage(sender, target, String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+        return true;
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         Player sender = event.getPlayer();
-        UUID targetId = PENDING_TARGETS.get(sender.getUniqueId());
+        UUID senderId = sender.getUniqueId();
+        UUID targetId = PENDING_TARGETS.remove(senderId);
         if (targetId == null) return;
 
+        cancelPendingTimeout(senderId);
         event.setCancelled(true);
-        PENDING_TARGETS.remove(sender.getUniqueId(), targetId);
 
         String privateMessage = event.getMessage();
-        if (privateMessage == null || privateMessage.isBlank()) return;
+        if (privateMessage == null || privateMessage.isBlank()) {
+            TELL_STATES.put(senderId, TellState.PENDING);
+            schedulePendingTimeout(senderId);
+            sender.sendMessage(message("messages.tell.empty-message"));
+            return;
+        }
 
-        TELL_STATES.put(sender.getUniqueId(), TellState.SENT);
-
+        TELL_STATES.put(senderId, TellState.SENT);
         Bukkit.getScheduler().runTask(plugin, () -> {
             Player target = Bukkit.getPlayer(targetId);
             if (target == null || !target.isOnline()) {
                 sender.sendMessage(message("messages.tell.player-not-found"));
+                TELL_STATES.remove(senderId, TellState.SENT);
                 return;
             }
             if (!receivesTellStatic(target)) {
                 sender.sendMessage(message("messages.tell.target-disabled"));
+                TELL_STATES.remove(senderId, TellState.SENT);
                 return;
             }
             if (target.getUniqueId().equals(sender.getUniqueId())) {
                 sender.sendMessage(message("messages.tell.cannot-self"));
+                TELL_STATES.remove(senderId, TellState.SENT);
                 return;
             }
             sendPrivateMessage(sender, target, privateMessage);
         });
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onQuit(PlayerQuitEvent event) {
+        UUID playerId = event.getPlayer().getUniqueId();
+        clearPending(playerId);
+        LAST_TARGETS.remove(playerId);
+        TELL_STATES.remove(playerId);
     }
 
     public static Player getLastTarget(Player player) {
@@ -131,7 +138,8 @@ public final class TellListener implements Listener {
     }
 
     public static void sendPrivateMessage(Player sender, Player target, String privateMessage) {
-        PENDING_TARGETS.remove(sender.getUniqueId());
+        if (sender == null || target == null || privateMessage == null || privateMessage.isBlank()) return;
+        clearPending(sender.getUniqueId());
         TELL_STATES.put(sender.getUniqueId(), TellState.SENT);
         LAST_TARGETS.put(sender.getUniqueId(), target.getUniqueId());
         LAST_TARGETS.put(target.getUniqueId(), sender.getUniqueId());
@@ -154,6 +162,7 @@ public final class TellListener implements Listener {
         UUID playerId = player.getUniqueId();
         UUID pending = PENDING_TARGETS.remove(playerId);
         if (pending != null) {
+            cancelPendingTimeout(playerId);
             TELL_STATES.put(playerId, TellState.CANCELLED);
             return CancelResult.CANCELLED;
         }
@@ -165,6 +174,33 @@ public final class TellListener implements Listener {
 
     public static boolean canReceiveTell(Player player) {
         return receivesTellStatic(player);
+    }
+
+    private static void schedulePendingTimeout(UUID playerId) {
+        cancelPendingTimeout(playerId);
+        if (plugin == null) return;
+        BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            UUID target = PENDING_TARGETS.remove(playerId);
+            if (target != null) {
+                TELL_STATES.put(playerId, TellState.CANCELLED);
+                Player player = Bukkit.getPlayer(playerId);
+                if (player != null && player.isOnline()) {
+                    player.sendMessage(message("messages.tell.expired"));
+                }
+            }
+            PENDING_TIMEOUTS.remove(playerId);
+        }, PENDING_TIMEOUT_TICKS);
+        PENDING_TIMEOUTS.put(playerId, task);
+    }
+
+    private static void cancelPendingTimeout(UUID playerId) {
+        BukkitTask task = PENDING_TIMEOUTS.remove(playerId);
+        if (task != null) task.cancel();
+    }
+
+    private static void clearPending(UUID playerId) {
+        PENDING_TARGETS.remove(playerId);
+        cancelPendingTimeout(playerId);
     }
 
     private static String coloredCargoName(Player player) {
@@ -230,8 +266,6 @@ public final class TellListener implements Listener {
         return ChatColor.translateAlternateColorCodes('&', value);
     }
 
-    private boolean receivesTell(Player player) { return receivesTellStatic(player); }
-
     private static boolean receivesTellStatic(Player player) {
         Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus");
         if (utilidades == null || !utilidades.isEnabled()) return true;
@@ -262,6 +296,8 @@ public final class TellListener implements Listener {
             case "messages.tell.cancelled" -> "&d&lᴛᴇʟʟ &8• &rEnvio cancelado.";
             case "messages.tell.already-cancelled" -> "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio.";
             case "messages.tell.already-sent" -> "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
+            case "messages.tell.empty-message" -> "&d&lᴛᴇʟʟ &8• &rA mensagem não pode estar vazia. Digite novamente ou clique {cancel} para cancelar.";
+            case "messages.tell.expired" -> "&d&lᴛᴇʟʟ &8• &rO envio expirou por falta de resposta.";
             default -> "";
         };
     }
