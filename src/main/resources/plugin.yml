@@ -35,6 +35,10 @@ commands:
     description: Abre uma bancada de trabalho virtual.
     usage: /craft
     permission: essentialsplus.craft
+  tell:
+    description: Envia uma mensagem privada para outro jogador.
+    usage: /tell <jogador> [mensagem]
+    permission: essentialsplus.tell
   r:
     description: Responde à última conversa privada.
     usage: /r <mensagem>
@@ -123,6 +127,8 @@ permissions:
     children:
       essentialsplus.tpaqui: true
       essentialsplus.tpaceitar: true
+      essentialsplus.tpaqui: true
+      essentialsplus.tpaceitar: true
       essentialsplus.tpnegar: true
       essentialsplus.tpacancelar: true
   essentialsplus.tpaqui:
@@ -135,7 +141,7 @@ permissions:
     description: Permissão interna do comando /tpnegar.
     default: false
   essentialsplus.tpacancelar:
-    description: Permissão interna do comando /tpacancelar.
+    description: Permissão interna do comando /tpcancelar.
     default: false
   essentialsplus.home:
     description: Permite usar /home.
