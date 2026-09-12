@@ -50,8 +50,10 @@ messages:
     resposta:
       aceita: "Você aceitou o pedido de teleporte de {player}&f!"
       aceita-remetente: "{player}&f aceitou seu pedido de teleporte. Levando você até lá..."
+      ja-aceita: "Você já aceitou esta solicitação de TPA."
       recusada: "Você recusou o pedido de teleporte de {player}&f."
       recusada-remetente: "{player}&f recusou seu pedido de teleporte."
+      ja-recusada: "Você já recusou esta solicitação de TPA."
     expiracao:
       expirada: "O pedido de teleporte de {player}&f expirou."
       nao-pode-responder: "Você não pode aceitar ou recusar porque o convite expirou."
@@ -193,3 +195,7 @@ buttons:
     enabled: true
     text: "&c&lAQUI"
     hover: "&7Clique para recusar a solicitação."
+  cancel:
+    enabled: true
+    text: "&fClique &c&lAQUI&f para cancelar"
+    hover: "&7Clique para cancelar sua solicitação de TPA."
