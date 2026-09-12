@@ -1,9 +1,9 @@
 package com.donnie1337.essentialsplus.chat;
 
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -24,10 +24,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class TellListener implements Listener {
     public static final String CANCEL_BUTTON_ID = "essentialsplus:tell_cancel";
     private static final String PERMISSION = "essentialsplus.tell";
-    private static final String CANCEL_COMMAND = "tell cancel";
     private static final ConcurrentHashMap<UUID, UUID> LAST_TARGETS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, UUID> PENDING_TARGETS = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<UUID, TellState> TELL_STATES = new ConcurrentHashMap<>();
+    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
     private static JavaPlugin plugin;
 
     private enum TellState {
@@ -60,16 +60,6 @@ public final class TellListener implements Listener {
             return;
         }
 
-        if (args.length >= 2 && args[1].equalsIgnoreCase("cancel") && args.length == 2) {
-            CancelResult result = cancelPendingTell(sender);
-            switch (result) {
-                case CANCELLED -> sender.sendMessage(message("messages.tell.cancelled"));
-                case ALREADY_SENT -> sender.sendMessage(message("messages.tell.already-sent"));
-                case ALREADY_CANCELLED -> sender.sendMessage(message("messages.tell.already-cancelled"));
-            }
-            return;
-        }
-
         if (args.length < 2) {
             sender.sendMessage(message("messages.tell.usage"));
             return;
@@ -98,7 +88,7 @@ public final class TellListener implements Listener {
         sendPrivateMessage(sender, target, String.join(" ", Arrays.copyOfRange(args, 2, args.length)));
     }
 
-    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = false)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onChat(AsyncPlayerChatEvent event) {
         Player sender = event.getPlayer();
         UUID targetId = PENDING_TARGETS.get(sender.getUniqueId());
@@ -216,31 +206,16 @@ public final class TellListener implements Listener {
         String cancelHover = plugin.getConfig().getString("messages.tell.cancel-hover", "&7Clique para cancelar o envio.");
         String[] parts = raw.split("\\{cancel}", -1);
         if (parts.length != 2) {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&', raw));
+            sender.sendMessage(LEGACY.deserialize(raw));
             return;
         }
 
-        java.util.List<BaseComponent> components = new java.util.ArrayList<>();
-        components.addAll(Arrays.asList(legacyComponents(parts[0])));
-        components.addAll(Arrays.asList(cancelButton(cancelText, cancelHover)));
-        components.addAll(Arrays.asList(legacyComponents(parts[1])));
-        sender.spigot().sendMessage(components.toArray(new BaseComponent[0]));
-    }
-
-    private static BaseComponent[] legacyComponents(String text) {
-        String translated = ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
-        return TextComponent.fromLegacyText(translated);
-    }
-
-    private static BaseComponent[] cancelButton(String text, String hover) {
-        BaseComponent[] components = legacyComponents(text);
-        ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tell cancel");
-        HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, legacyComponents(hover));
-        for (BaseComponent component : components) {
-            component.setClickEvent(click);
-            component.setHoverEvent(hoverEvent);
-        }
-        return components;
+        Component message = LEGACY.deserialize(parts[0])
+                .append(LEGACY.deserialize(cancelText)
+                        .clickEvent(ClickEvent.custom(Key.key(CANCEL_BUTTON_ID)))
+                        .hoverEvent(LEGACY.deserialize(cancelHover)))
+                .append(LEGACY.deserialize(parts[1]));
+        sender.sendMessage(message);
     }
 
     public static String message(String path, String... replacements) {
