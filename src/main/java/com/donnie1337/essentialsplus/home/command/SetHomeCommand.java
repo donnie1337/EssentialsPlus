@@ -20,47 +20,47 @@ public final class SetHomeCommand implements CommandExecutor {
             return true;
         }
         if (!player.hasPermission("essentialsplus.sethome")) {
-            message(player, "no-permission");
+            message(player, "geral.sem-permissao");
             return true;
         }
         if (!service.enabled()) {
-            message(player, "homes-disabled");
+            message(player, "home.sistema-desativado");
             return true;
         }
         if (args.length != 1) {
             if (args.length > 1) {
-                message(player, "invalid-home-name");
+                message(player, "home.nome-invalido");
             } else {
-                message(player, "usage-sethome");
+                message(player, "home.uso.sethome");
             }
             return true;
         }
         try {
             if (!args[0].matches("[a-zA-Z0-9_-]{1,32}")) {
-                message(player, "invalid-home-name");
+                message(player, "home.nome-invalido");
                 return true;
             }
 
             if (!service.setHome(player, args[0])) {
-                message(player, "home-limit", "limit", String.valueOf(service.getHomeLimit(player)));
+                message(player, "home.limite-atingido", "limit", String.valueOf(service.getHomeLimit(player)));
                 return true;
             }
-            message(player, "home-saved", "home", args[0].toLowerCase());
+            message(player, "home.salva", "home", args[0].toLowerCase());
         } catch (IllegalArgumentException exception) {
-            message(player, "invalid-home-name");
+            message(player, "home.nome-invalido");
         }
         return true;
     }
 
-    private void message(Player player, String key, String... replacements) {
-        String raw = service.plugin().getConfig().getString("messages." + key, "");
+    private void message(Player player, String path, String... replacements) {
+        String prefix = service.plugin().getConfig().getString("messages.home.prefix", "&a&lʜᴏᴍᴇ &8• &r");
+        String raw = service.plugin().getConfig().getString("messages." + path, "");
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
         }
-        String colored = raw.replace('&', '§');
+        String colored = (prefix + raw).replace('&', '§');
         if (!chatPlus.sendSystemMessage(player, colored)) {
-            String prefix = service.plugin().getConfig().getString("messages.prefix", "").replace('&', '§');
-            player.sendMessage(prefix + colored);
+            player.sendMessage(colored);
         }
     }
 }
