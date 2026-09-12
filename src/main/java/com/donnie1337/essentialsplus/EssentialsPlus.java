@@ -5,6 +5,7 @@ import com.donnie1337.essentialsplus.bau.BauCommand;
 import com.donnie1337.essentialsplus.bau.BauListener;
 import com.donnie1337.essentialsplus.bau.BauService;
 import com.donnie1337.essentialsplus.chat.ChatPlusBridge;
+import com.donnie1337.essentialsplus.chat.TellCommand;
 import com.donnie1337.essentialsplus.chat.TellCustomClickListener;
 import com.donnie1337.essentialsplus.chat.TellListener;
 import com.donnie1337.essentialsplus.command.CraftCommand;
@@ -58,6 +59,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("craft", new CraftCommand());
+        register("tell", new TellCommand());
         register("r", new ReplyCommand());
         bauService = new BauService(this);
         liveInspectionService = new LiveInspectionService(this, bauService);
