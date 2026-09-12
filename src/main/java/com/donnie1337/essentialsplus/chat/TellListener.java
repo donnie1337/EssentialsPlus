@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.chat;
 
+import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -215,7 +216,7 @@ public final class TellListener implements Listener {
                         .clickEvent(ClickEvent.custom(Key.key(CANCEL_BUTTON_ID)))
                         .hoverEvent(LEGACY.deserialize(cancelHover)))
                 .append(LEGACY.deserialize(parts[1]));
-        sender.sendMessage(message);
+        ((Audience) sender).sendMessage(message);
     }
 
     public static String message(String path, String... replacements) {
