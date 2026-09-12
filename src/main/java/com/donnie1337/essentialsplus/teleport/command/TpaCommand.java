@@ -4,6 +4,7 @@ import com.donnie1337.essentialsplus.EssentialsPlus;
 import com.donnie1337.essentialsplus.auth.AuthSystemBridge;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -24,7 +25,7 @@ public final class TpaCommand implements CommandExecutor, TabCompleter {
 
     @Override public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) { sender.sendMessage("Este comando só pode ser usado por jogadores."); return true; }
-        if (args.length != 1) { player.sendMessage("§cUso: /tpa <jogador>"); return true; }
+        if (args.length != 1) { player.sendMessage(tpaUsage()); return true; }
         if (!player.hasPermission("essentialsplus.tpa")) { player.sendMessage("§cVocê não tem permissão para isso."); return true; }
         if (isRestrictedByVanish(player)) { player.sendMessage(TPA_VANISHED); return true; }
 
@@ -44,6 +45,17 @@ public final class TpaCommand implements CommandExecutor, TabCompleter {
                 .map(Player::getName)
                 .filter(n -> n.toLowerCase().startsWith(args[0].toLowerCase()))
                 .sorted().toList();
+    }
+
+    private String tpaUsage() {
+        Plugin plugin = Bukkit.getPluginManager().getPlugin("EssentialsPlus");
+        String prefix = "&b&lᴛᴘᴀ &8• &r";
+        String message = "Use /tpa <jogador>.";
+        if (plugin instanceof EssentialsPlus essentials) {
+            prefix = essentials.getConfig().getString("messages.tpa.prefix", prefix);
+            message = essentials.getConfig().getString("messages.tpa.uso.tpa", message);
+        }
+        return ChatColor.translateAlternateColorCodes('&', prefix + message);
     }
 
     private boolean canTarget(Player requester, Player target) {
