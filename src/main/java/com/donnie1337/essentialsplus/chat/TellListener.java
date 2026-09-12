@@ -1,6 +1,6 @@
 package com.donnie1337.essentialsplus.chat;
 
-import io.github.toxicity188.adventure.platform.bukkit.BukkitAudiences;
+import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
