@@ -35,6 +35,10 @@ commands:
     description: Abre uma bancada de trabalho virtual.
     usage: /craft
     permission: essentialsplus.craft
+  tell:
+    description: Envia uma mensagem privada para outro jogador.
+    usage: /tell <jogador> [mensagem]
+    permission: essentialsplus.tell
   r:
     description: Responde à última conversa privada.
     usage: /r <mensagem>
