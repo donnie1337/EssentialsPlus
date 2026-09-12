@@ -22,43 +22,43 @@ public final class HomeCommand implements CommandExecutor {
             return true;
         }
         if (!player.hasPermission("essentialsplus.home")) {
-            message(player, "no-permission");
+            message(player, "geral.sem-permissao");
             return true;
         }
         if (!service.enabled()) {
-            message(player, "homes-disabled");
+            message(player, "home.sistema-desativado");
             return true;
         }
         if (args.length != 1) {
-            message(player, "usage-home");
+            message(player, "home.uso.home");
             return true;
         }
 
         try {
             Home home = service.getHome(player, args[0]);
             if (home == null) {
-                message(player, "home-not-found", "home", args[0]);
+                message(player, "geral.jogador-nao-encontrado");
                 return true;
             }
 
             Location location = home.location();
             if (location.getWorld() == null) {
-                message(player, "home-world-unavailable");
+                message(player, "home.mundo-indisponivel");
                 return true;
             }
             if (!valid(location)) {
-                message(player, "home-location-invalid");
+                message(player, "home.localizacao-invalida");
                 return true;
             }
             if (!player.isOnline()) return true;
 
             if (!player.teleport(location)) {
-                message(player, "teleport-failed");
+                message(player, "home.teleporte-falhou");
                 return true;
             }
-            message(player, "home-teleported", "home", home.name());
+            message(player, "home.teleportado", "home", home.name());
         } catch (IllegalArgumentException exception) {
-            message(player, "invalid-home-name");
+            message(player, "home.nome-invalido");
         }
         return true;
     }
@@ -71,15 +71,15 @@ public final class HomeCommand implements CommandExecutor {
                 && Float.isFinite(location.getPitch());
     }
 
-    private void message(Player player, String key, String... replacements) {
-        String raw = service.plugin().getConfig().getString("messages." + key, "");
+    private void message(Player player, String path, String... replacements) {
+        String prefix = service.plugin().getConfig().getString("messages.home.prefix", "&a&lʜᴏᴍᴇ &8• &r");
+        String raw = service.plugin().getConfig().getString("messages." + path, "");
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
         }
-        String colored = raw.replace('&', '§');
+        String colored = (prefix + raw).replace('&', '§');
         if (!chatPlus.sendSystemMessage(player, colored)) {
-            String prefix = service.plugin().getConfig().getString("messages.prefix", "").replace('&', '§');
-            player.sendMessage(prefix + colored);
+            player.sendMessage(colored);
         }
     }
 }
