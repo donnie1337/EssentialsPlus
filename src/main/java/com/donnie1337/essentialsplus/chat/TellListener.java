@@ -13,6 +13,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerCommandSendEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -41,6 +42,13 @@ public final class TellListener implements Listener {
     public TellListener(JavaPlugin plugin, BukkitAudiences adventure) {
         TellListener.plugin = plugin;
         TellListener.adventure = adventure;
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onCommandSend(PlayerCommandSendEvent event) {
+        if (event.getPlayer().hasPermission(PERMISSION)) {
+            event.getCommands().add("tell");
+        }
     }
 
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
