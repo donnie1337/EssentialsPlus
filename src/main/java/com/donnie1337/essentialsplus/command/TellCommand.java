@@ -1,37 +1,30 @@
 package com.donnie1337.essentialsplus.command;
 
-import io.papermc.paper.command.brigadier.BasicCommand;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Registers /tell directly in Paper's Brigadier command tree.
- * The actual /tell execution is handled by TellListener through command preprocessing.
+ * Registers /tell using the standard Spigot command API.
+ * TellListener handles the actual command through PlayerCommandPreprocessEvent.
  */
-public final class TellCommand implements BasicCommand {
+public final class TellCommand implements CommandExecutor, TabCompleter {
 
     @Override
-    public void execute(CommandSourceStack source, String[] args) {
-        // TellListener handles the command through PlayerCommandPreprocessEvent.
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        // TellListener handles /tell through PlayerCommandPreprocessEvent.
+        return true;
     }
 
     @Override
-    public @Nullable String permission() {
-        return "essentialsplus.tell";
-    }
-
-    @Override
-    public Collection<String> suggest(CommandSourceStack source, String[] args) {
-        final CommandSender sender = source.getSender();
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (!(sender instanceof Player player) || !player.hasPermission("essentialsplus.tell")) {
             return List.of();
         }
@@ -52,7 +45,7 @@ public final class TellCommand implements BasicCommand {
             }
         }
 
-        suggestions.sort(Comparator.naturalOrder());
+        suggestions.sort(String.CASE_INSENSITIVE_ORDER);
         return suggestions;
     }
 }
