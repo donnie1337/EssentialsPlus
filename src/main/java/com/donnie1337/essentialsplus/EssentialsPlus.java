@@ -11,7 +11,6 @@ import com.donnie1337.essentialsplus.command.CraftCommand;
 import com.donnie1337.essentialsplus.command.EcCommand;
 import com.donnie1337.essentialsplus.command.FlyCommand;
 import com.donnie1337.essentialsplus.command.ReplyCommand;
-import com.donnie1337.essentialsplus.command.TellCommand;
 import com.donnie1337.essentialsplus.home.HomeGui;
 import com.donnie1337.essentialsplus.home.HomeService;
 import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
@@ -26,14 +25,13 @@ import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.TpaCustomClickListener;
 import com.donnie1337.essentialsplus.teleport.command.TpCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
-import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCommand;
+import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaDenyCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaHereCommand;
 import com.donnie1337.essentialsplus.vanish.VanishCommand;
 import com.donnie1337.essentialsplus.vanish.VanishListener;
 import com.donnie1337.essentialsplus.vanish.VanishService;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -60,7 +58,6 @@ public final class EssentialsPlus extends JavaPlugin {
         register("v", new VanishCommand(vanishService));
         register("fly", new FlyCommand());
         register("craft", new CraftCommand());
-        registerPaperTellCommand();
         register("r", new ReplyCommand());
 
         bauService = new BauService(this);
@@ -98,11 +95,6 @@ public final class EssentialsPlus extends JavaPlugin {
         register("delhome", new DelHomeCommand(homeService));
 
         getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly, Ender Chest, Bau, Ver, Craft, Tell e Reply.");
-    }
-
-    private void registerPaperTellCommand() {
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands ->
-                commands.registrar().register("tell", "Envia uma mensagem privada para outro jogador.", new TellCommand()));
     }
 
     @Override
