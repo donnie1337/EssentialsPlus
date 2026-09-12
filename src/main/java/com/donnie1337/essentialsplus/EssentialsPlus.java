@@ -102,7 +102,7 @@ public final class EssentialsPlus extends JavaPlugin {
 
     private void registerPaperTellCommand() {
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands ->
-                commands.registrar().register("tell", new TellCommand(), "Envia uma mensagem privada para outro jogador."));
+                commands.registrar().register("tell", "Envia uma mensagem privada para outro jogador.", new TellCommand()));
     }
 
     @Override
