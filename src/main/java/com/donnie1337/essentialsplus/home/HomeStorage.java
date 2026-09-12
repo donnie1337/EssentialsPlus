@@ -8,6 +8,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,11 +18,15 @@ import java.util.UUID;
 public final class HomeStorage {
     private final JavaPlugin plugin;
     private final File file;
+    private final File tempFile;
+    private final File backupFile;
     private final YamlConfiguration data;
 
     public HomeStorage(JavaPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "homes.yml");
+        this.tempFile = new File(plugin.getDataFolder(), "homes.yml.tmp");
+        this.backupFile = new File(plugin.getDataFolder(), "homes.yml.bak");
         if (!file.exists()) {
             try {
                 if (!file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
@@ -141,7 +147,19 @@ public final class HomeStorage {
 
     private boolean save() {
         try {
-            data.save(file);
+            data.save(tempFile);
+
+            if (file.exists()) {
+                Files.copy(file.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            try {
+                Files.move(tempFile.toPath(), file.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (IOException atomicMoveException) {
+                Files.move(tempFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
             return true;
         } catch (IOException exception) {
             plugin.getLogger().severe("Não foi possível salvar homes.yml: " + exception.getMessage());
