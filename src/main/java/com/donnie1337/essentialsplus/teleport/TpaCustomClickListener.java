@@ -48,52 +48,36 @@ public final class TpaCustomClickListener implements Listener {
         try {
             Object identifier = event.getClass().getMethod("getId").invoke(event);
             if (identifier == null || !TeleportService.TPA_BUTTON_KEY.asString().equalsIgnoreCase(identifier.toString())) return;
-
             Object data = event.getClass().getMethod("getData").invoke(event);
             if (data == null) return;
             String digits = data.toString().replaceAll("[^0-9-]", "");
             if (digits.isEmpty()) return;
-
             int token;
-            try {
-                token = Integer.parseInt(digits);
-            } catch (NumberFormatException ignored) {
-                return;
-            }
-
+            try { token = Integer.parseInt(digits); } catch (NumberFormatException ignored) { return; }
             Object playerObject = event.getClass().getMethod("getPlayer").invoke(event);
             if (!(playerObject instanceof Player player) || !player.hasPermission(PERMISSION)) return;
 
             ButtonAction action = ButtonAction.find(token);
             if (action == null) return;
-
             ButtonResult previous = results.get(token);
-            if (previous != null) {
-                sendResultMessage(player, previous, action);
-                return;
-            }
+            if (previous != null) { sendResultMessage(player, previous, action); return; }
 
             long timeout = plugin.getConfig().getLong("tpa.request-timeout-seconds", 20L) * 1000L;
             if (timeout > 0 && System.currentTimeMillis() - action.createdAt() >= timeout) {
-                ButtonResult expiredResult = action.type() == ButtonActionType.CANCEL
-                        ? ButtonResult.CANCEL_BLOCKED_EXPIRED
-                        : ButtonResult.EXPIRED;
+                ButtonResult expiredResult = action.type() == ButtonActionType.CANCEL ? ButtonResult.CANCEL_BLOCKED_EXPIRED : ButtonResult.EXPIRED;
                 results.put(token, expiredResult);
                 sendResultMessage(player, expiredResult, action);
-                ButtonAction.remove(token);
                 return;
             }
 
             boolean handled = teleportService.handleButton(player, token);
             if (!handled) return;
-
             ButtonResult result = switch (action.type()) {
                 case ACCEPT -> ButtonResult.ACCEPTED;
                 case DENY -> ButtonResult.DENIED;
                 case CANCEL -> ButtonResult.CANCELLED;
             };
             results.put(token, result);
-            ButtonAction.remove(token);
         } catch (ReflectiveOperationException | RuntimeException ignored) {
             // Ignora representações incompatíveis sem interromper o processamento do servidor.
         }
@@ -105,9 +89,9 @@ public final class TpaCustomClickListener implements Listener {
             case DENIED -> "request-already-denied";
             case EXPIRED -> "request-expired-cannot-respond";
             case CANCELLED -> "request-already-cancelled";
-            case CANCEL_BLOCKED_EXPIRED -> "request-cannot-cancel-expired";
             case CANCEL_BLOCKED_ACCEPTED -> "request-cannot-cancel-accepted";
             case CANCEL_BLOCKED_DENIED -> "request-cannot-cancel-denied";
+            case CANCEL_BLOCKED_EXPIRED -> "request-cannot-cancel-expired";
         };
         String raw = plugin.getConfig().getString("messages." + key, "");
         Player target = Bukkit.getPlayer(action.targetId());
