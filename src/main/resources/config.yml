@@ -1,18 +1,18 @@
 # ============================================================
 # EssentialsPlus - Configuração principal
 # ============================================================
+# Este arquivo reúne apenas configurações de funcionamento.
+# As mensagens permanecem preservadas exatamente como já estão.
 #
-# Cores do Minecraft:
-# &0-9, &a-f, &k-o e &r
+# Cores do Minecraft: &0-9, &a-f, &k-o e &r
+# Placeholders: {player}, {target}, {home}, {seconds}, {message}, {limit}
 #
-# Placeholders disponíveis nas mensagens:
-# {player}, {target}, {home}, {seconds}, {message}, {limit}
-#
-# Alterações neste arquivo exigem /reload do plugin ou reinício
-# do servidor para serem aplicadas.
+# Após alterar este arquivo, use o reload do plugin ou reinicie o servidor.
 # ============================================================
 
-
+# ------------------------------------------------------------
+# TPA - solicitações de teleporte entre jogadores
+# ------------------------------------------------------------
 tpa:
   enabled: true
   request-timeout-seconds: 30
@@ -23,15 +23,27 @@ tpa:
   cancel-on-death: true
   cancel-on-disconnect: true
 
+# ------------------------------------------------------------
+# HOMES - sistema de casas dos jogadores
+# ------------------------------------------------------------
 homes:
   enabled: true
   limits:
     default: 1
 
+# ------------------------------------------------------------
+# TELEPORTE - recursos administrativos/equipe
+# ------------------------------------------------------------
 teleport:
   staff:
     enabled: true
 
+# ------------------------------------------------------------
+# MENSAGENS
+# ------------------------------------------------------------
+# IMPORTANTE: os textos desta seção não foram alterados.
+# As chaves abaixo fazem parte da compatibilidade atual do plugin.
+# ------------------------------------------------------------
 messages:
   tpa:
     prefix: "&b&lᴛᴘᴀ &8• &r"
@@ -185,6 +197,9 @@ messages:
     already-cancelled: "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio."
     already-sent: "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar."
 
+# ------------------------------------------------------------
+# Botões interativos
+# ------------------------------------------------------------
 buttons:
   spacing: "  "
   accept:
