@@ -38,7 +38,7 @@ messages:
     precisa-estar-autenticado: "&cVocê precisa estar autenticado para executar este comando."
     jogador-nao-autenticado: "&cO jogador ainda não está autenticado."
     recebimento-desativado:
-      jogador: "{player}&f não está recebendo solicitações de TPA no momento."
+      jogador: "&c{player}&f não está recebendo solicitações de TPA no momento."
       proprio: "&cVocê desativou o recebimento de TPA."
     solicitacao:
       enviada: "&aVocê pediu para se teleportar até {player}&f!"
@@ -71,7 +71,7 @@ messages:
       jogador-offline: "&cO jogador não está mais online."
       falhou: "&cNão foi possível realizar o teleporte."
     uso:
-      tpa: "&eUse /tpa <jogador>."
+      tpa: "&fUse: &e/tpa <jogador>"
 
   tp:
     prefix: "&c&lᴛᴘ &8• &r"
@@ -81,7 +81,7 @@ messages:
     jogador-teleportado-aqui: "&a{player}&f foi teleportado até você."
     teleportado-pela-equipe: "&bVocê foi teleportado por {player}&f."
     uso:
-      tp: "&eUso: /tp <jogador> [jogador]"
+      tp: "&fUso: &e/tp <jogador> [jogador]"
 
   home:
     prefix: "&a&lʜᴏᴍᴇ &8• &r"
@@ -98,25 +98,25 @@ messages:
     localizacao-invalida: "&cA localização desta home não é mais válida."
     teleporte-falhou: "&cNão foi possível realizar o teleporte para esta home."
     uso:
-      home: "&eUso: /home <nome>"
-      homes: "&eUso: /homes"
-      sethome: "&eUso: /sethome <nome>"
-      delhome: "&eUso: /delhome <nome>"
+      home: "&fUso: &e/home <nome>"
+      homes: "&fUso: &e/homes"
+      sethome: "&fUso: &e/sethome <nome>"
+      delhome: "&fUso: &e/delhome <nome>"
 
   chat:
     prefix: "&e&lᴄʜᴀᴛ &8• &r"
-    comando-nao-encontrado: "Comando não encontrado."
+    comando-nao-encontrado: "&cComando não encontrado."
     jogador-nao-encontrado: "&cJogador não encontrado ou offline."
     nao-pode-ser-voce: "&cVocê não pode enviar uma mensagem para si mesmo."
     mensagens-desativadas: "&cO jogador desativou as mensagens privadas."
     nenhuma-conversa: "&eVocê não possui nenhuma conversa privada recente."
     tell:
-      uso: "&eUse /tell <jogador> <mensagem>."
+      uso: "&fUso: &e/tell <jogador> <mensagem>"
     resposta:
-      uso: "&eUse /r <mensagem>."
+      uso: "&fUso: &e/r <mensagem>"
     formato:
-      remetente: "Você → &f{player}&8: &r{message}"
-      destinatario: "{player} → &fVocê&8: &r{message}"
+      remetente: "&7Você → &f{player}&8: &r{message}"
+      destinatario: "&7{player} → &fVocê&8: &r{message}"
 
   utilidades:
     prefix: "&7&lᴜᴛɪʟɪᴅᴀᴅᴇs &8• &r"
@@ -141,9 +141,9 @@ messages:
   teleported-to: "&aTeleportado até {player}&f."
   player-teleported-to: "&a{player}&f foi teleportado até {target}&f."
   player-teleported-here: "&a{player}&f foi teleportado até você."
-  usage-tp: "&eUso: /tp <jogador> [jogador]"
+  usage-tp: "&fUso: &e/tp <jogador> [jogador]"
   homes-disabled: "&cO sistema de Homes está desativado."
-  usage-homes: "&eUso: /homes"
+  usage-homes: "&fUso: &e/homes"
   cannot-self: "&cVocê não pode enviar uma solicitação para si mesmo."
   auth-required: "&cVocê precisa estar autenticado para executar este comando."
   target-not-authenticated: "&cO jogador ainda não está autenticado."
@@ -165,16 +165,16 @@ messages:
   target-offline: "&cO jogador não está mais online."
 
   tell:
-    player-only: "&cComando disponível apenas para jogadores."
-    unknown-command: "&d&lᴛᴇʟʟ &8• &rComando não encontrado."
-    usage: "&d&lᴛᴇʟʟ &8• &rUse /tell <jogador> [mensagem]."
-    reply-usage: "&d&lᴛᴇʟʟ &8• &rUse /r <mensagem>."
+    player-only: "&d&lᴛᴇʟʟ &8• &cComando disponível apenas para jogadores."
+    unknown-command: "&d&lᴛᴇʟʟ &8• &cComando não encontrado."
+    usage: "&d&lᴛᴇʟʟ &8• &fUso: &e/tell <jogador> [mensagem]"
+    reply-usage: "&d&lᴛᴇʟʟ &8• &fUso: &e/r <mensagem>"
     player-not-found: "&d&lᴛᴇʟʟ &8• &cJogador não encontrado."
     cannot-self: "&d&lᴛᴇʟʟ &8• &cVocê não pode enviar uma mensagem para si mesmo."
     target-disabled: "&d&lᴛᴇʟʟ &8• &cO jogador desativou as mensagens privadas."
     no-recent: "&d&lᴛᴇʟʟ &8• &cVocê não possui nenhuma conversa privada recente."
     format-sender: "&d&lᴛᴇʟʟ &8• &7Você → &f{player}&8: &r{message}"
-    format-target: "&d&lᴇʟʟ &8• &7{player} → &fVocê&8: &r{message}"
+    format-target: "&d&lᴛᴇʟʟ &8• &7{player} → &fVocê&8: &r{message}"
     awaiting-message: "\n&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.\n"
     cancel-text: "&c&lAQUI"
     cancel-hover: "&7Clique para cancelar o envio."
