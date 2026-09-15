@@ -59,6 +59,10 @@ public final class TpCommand implements CommandExecutor {
 
     private void send(CommandSender sender, String key, String... replacements) {
         String raw = service.plugin().getConfig().getString("messages." + key, "");
+        if ("usage-tp".equals(key)) {
+            String prefix = service.plugin().getConfig().getString("messages.tp.prefix", "");
+            raw = prefix + raw;
+        }
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
         }
