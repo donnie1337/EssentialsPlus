@@ -81,7 +81,7 @@ messages:
     jogador-teleportado-aqui: "&a{player}&f foi teleportado até você."
     teleportado-pela-equipe: "&bVocê foi teleportado por {player}&f."
     uso:
-      tp: "&fUse: &e/tp <jogador> [jogador]"
+      tp: "&fUse: &e/tp <jogador>"
 
   home:
     prefix: "&a&lʜᴏᴍᴇ &8• &r"
@@ -141,7 +141,7 @@ messages:
   teleported-to: "&aTeleportado até {player}&f."
   player-teleported-to: "&a{player}&f foi teleportado até {target}&f."
   player-teleported-here: "&a{player}&f foi teleportado até você."
-  usage-tp: "&fUse: &e/tp <jogador> [jogador]"
+  usage-tp: "&fUse: &e/tp <jogador>"
   homes-disabled: "&cO sistema de Homes está desativado."
   usage-homes: "&fUse: &e/homes"
   cannot-self: "&cVocê não pode enviar uma solicitação para si mesmo."
