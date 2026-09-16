@@ -25,7 +25,6 @@ public final class VanishCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (!player.hasPermission(VANISH_PERMISSION)) {
-            player.sendMessage(ChatColor.YELLOW + "§lᴄʜᴀᴛ §8• §rComando não encontrado.");
             return true;
         }
         if (args.length != 0) {
