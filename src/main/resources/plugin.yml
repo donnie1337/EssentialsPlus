@@ -14,7 +14,6 @@ commands:
   v:
     description: Ativa ou desativa o modo vanish.
     usage: /v
-    permission: essentialsplus.vanish
   fly:
     description: Ativa ou desativa o modo voo.
     usage: /fly
