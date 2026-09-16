@@ -105,7 +105,6 @@ messages:
 
   chat:
     prefix: "&e&lᴄʜᴀᴛ &8• &r"
-    comando-nao-encontrado: "&cComando não encontrado."
     jogador-nao-encontrado: "&cJogador não encontrado ou offline."
     nao-pode-ser-voce: "&cVocê não pode enviar uma mensagem para si mesmo."
     mensagens-desativadas: "&cO jogador desativou as mensagens privadas."
@@ -125,16 +124,12 @@ messages:
   cargo:
     prefix: "&6&lᴄᴀʀɢᴏ &8• &r"
   geral:
-    comando-nao-encontrado: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
     jogador-apenas: "&cEste comando precisa ser usado por um jogador."
     jogador-nao-encontrado: "&cJogador não encontrado."
-    sem-permissao: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
     precisa-estar-autenticado: "&cVocê precisa estar autenticado para executar este comando."
     jogador-nao-autenticado: "&cO jogador ainda não está autenticado."
 
   prefix: "&b&lᴛᴘᴀ &8• &r"
-  tpa-prefix: "&b&lᴛᴘᴀ &8• &r"
-  no-permission: "&e&lᴄʜᴀᴛ &8• &rComando não encontrado."
   player-only: "&cEste comando precisa ser usado por um jogador."
   player-not-found: "&cJogador não encontrado ou offline."
   teleport-failed: "&cNão foi possível realizar o teleporte."
