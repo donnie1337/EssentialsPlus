@@ -2,6 +2,7 @@ package com.donnie1337.essentialsplus.flight;
 
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -63,7 +64,7 @@ public final class FlightService implements Listener {
         player.setAllowFlight(false);
         player.setFallDistance(0.0F);
 
-        if (!player.isOnGround() && !player.isInWater()) {
+        if (!player.isOnGround() && !isInFluid(player)) {
             gliding.add(player.getUniqueId());
             Vector velocity = player.getVelocity();
             player.setVelocity(new Vector(velocity.getX(), -START_SPEED, velocity.getZ()));
@@ -79,7 +80,7 @@ public final class FlightService implements Listener {
 
         if (!gliding.contains(uuid)) return;
 
-        if (player.isOnGround() || player.isInWater() || player.isInLava()) {
+        if (player.isOnGround() || isInFluid(player)) {
             stopGlide(player);
             return;
         }
@@ -108,6 +109,12 @@ public final class FlightService implements Listener {
         gliding.remove(event.getPlayer().getUniqueId());
     }
 
+    private boolean isInFluid(Player player) {
+        Material feet = player.getLocation().getBlock().getType();
+        Material head = player.getEyeLocation().getBlock().getType();
+        return feet == Material.WATER || feet == Material.LAVA || head == Material.WATER || head == Material.LAVA;
+    }
+
     private double distanceToGround(Location location) {
         RayTraceResult result = location.getWorld().rayTraceBlocks(
                 location.clone().add(0.0D, 0.05D, 0.0D),
@@ -121,7 +128,7 @@ public final class FlightService implements Listener {
             return ACCELERATION_DISTANCE;
         }
 
-        return Math.max(0.0D, location.toVector().distance(result.getHitPosition().toVector()));
+        return Math.max(0.0D, location.getY() - result.getHitPosition().getY());
     }
 
     private void stopGlide(Player player) {
