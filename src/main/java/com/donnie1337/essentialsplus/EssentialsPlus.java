@@ -12,6 +12,7 @@ import com.donnie1337.essentialsplus.command.CraftCommand;
 import com.donnie1337.essentialsplus.command.EcCommand;
 import com.donnie1337.essentialsplus.command.FlyCommand;
 import com.donnie1337.essentialsplus.command.ReplyCommand;
+import com.donnie1337.essentialsplus.flight.FlightService;
 import com.donnie1337.essentialsplus.home.HomeGui;
 import com.donnie1337.essentialsplus.home.HomeService;
 import com.donnie1337.essentialsplus.home.command.DelHomeCommand;
@@ -47,6 +48,7 @@ public final class EssentialsPlus extends JavaPlugin {
     private LiveInspectionService liveInspectionService;
     private BukkitTask bauAutoSaveTask;
     private BukkitAudiences adventure;
+    private FlightService flightService;
 
     @Override
     public void onEnable() {
@@ -57,7 +59,9 @@ public final class EssentialsPlus extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new TellListener(this, adventure), this);
         new TellCustomClickListener(this).register(getServer().getPluginManager());
         register("v", new VanishCommand(vanishService));
-        register("fly", new FlyCommand());
+        flightService = new FlightService(this);
+        getServer().getPluginManager().registerEvents(flightService, this);
+        register("fly", new FlyCommand(flightService));
         register("craft", new CraftCommand());
         register("tell", new TellCommand());
         register("r", new ReplyCommand());
