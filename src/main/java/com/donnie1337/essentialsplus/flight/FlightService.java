@@ -90,9 +90,38 @@ public final class FlightService implements Listener {
         double progress = 1.0D - Math.min(1.0D, distance / ACCELERATION_DISTANCE);
         double speed = START_SPEED + (END_SPEED - START_SPEED) * progress;
 
-        Vector velocity = player.getVelocity();
+        // Player#getVelocity() is not a reliable source for the horizontal
+        // movement while the client is controlling the player. In particular,
+        // it can be zero during a movement packet, which caused the old code
+        // to overwrite X/Z and effectively freeze the player in mid-air.
+        // Preserve the horizontal movement from the current movement event and
+        // only control the vertical component used by the glide.
+        Location from = event.getFrom();
+        Location to = event.getTo();
+        if (to != null) {
+            double horizontalX = to.getX() - from.getX();
+            double horizontalZ = to.getZ() - from.getZ();
+            double maxHorizontal = 1.0D;
+            double horizontalLength = Math.sqrt(horizontalX * horizontalX + horizontalZ * horizontalZ);
+            if (horizontalLength > maxHorizontal) {
+                double scale = maxHorizontal / horizontalLength;
+                horizontalX *= scale;
+                horizontalZ *= scale;
+            }
+
+            Vector velocity = player.getVelocity();
+            double horizontalVelocityX = horizontalX * 20.0D;
+            double horizontalVelocityZ = horizontalZ * 20.0D;
+
+            // Keep normal client-controlled movement while replacing only the
+            // falling speed. This prevents the glide from locking X/Z movement.
+            player.setVelocity(new Vector(horizontalVelocityX, -speed, horizontalVelocityZ));
+        } else {
+            Vector velocity = player.getVelocity();
+            player.setVelocity(new Vector(velocity.getX(), -speed, velocity.getZ()));
+        }
+
         player.setFallDistance(0.0F);
-        player.setVelocity(new Vector(velocity.getX(), -speed, velocity.getZ()));
     }
 
     @EventHandler
