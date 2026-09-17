@@ -24,8 +24,8 @@ public final class FlyCommand implements CommandExecutor {
         player.setFlying(enabled);
 
         player.sendMessage(enabled
-                ? "§7§lᴜᴛɪʟɪᴅᴀᴅᴇs §8• §r§aModo voo ativado."
-                : "§7§lᴜᴛɪʟɪᴅᴀᴅᴇs §8• §r§cModo voo desativado.");
+                ? "§b§lғʟʏ §8• §rModo de voo ativado."
+                : "§b§lғʟʏ §8• §rModo de voo desativado.");
         return true;
     }
 }
