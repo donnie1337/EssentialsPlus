@@ -8,12 +8,16 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.Vector;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
 public final class FlightService implements Listener {
+    private static final double INITIAL_GLIDE_SPEED = 0.06D;
+    private static final double MAX_GLIDE_SPEED = 0.35D;
+
     private final JavaPlugin plugin;
     private final Set<UUID> gliding = new HashSet<>();
 
@@ -55,7 +59,15 @@ public final class FlightService implements Listener {
         player.setFlying(false);
         player.setAllowFlight(false);
         player.setFallDistance(0.0F);
-        gliding.remove(player.getUniqueId());
+
+        if (!player.isOnGround() && !isInFluid(player)) {
+            gliding.add(player.getUniqueId());
+
+            Vector velocity = player.getVelocity();
+            player.setVelocity(new Vector(velocity.getX(), -INITIAL_GLIDE_SPEED, velocity.getZ()));
+        } else {
+            gliding.remove(player.getUniqueId());
+        }
     }
 
     @EventHandler
@@ -67,7 +79,17 @@ public final class FlightService implements Listener {
 
         if (player.isOnGround() || isInFluid(player)) {
             stopGlide(player);
+            return;
         }
+
+        Vector velocity = player.getVelocity();
+        double verticalVelocity = Math.min(velocity.getY(), -INITIAL_GLIDE_SPEED);
+        verticalVelocity = Math.max(verticalVelocity, -MAX_GLIDE_SPEED);
+
+        // Preserve the player's natural horizontal movement. Only the vertical
+        // velocity is limited so the player slowly descends instead of falling.
+        player.setVelocity(new Vector(velocity.getX(), verticalVelocity, velocity.getZ()));
+        player.setFallDistance(0.0F);
     }
 
     @EventHandler
