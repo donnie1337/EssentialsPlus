@@ -40,6 +40,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class EssentialsPlus extends JavaPlugin {
+    private static final String UNKNOWN_COMMAND_PERMISSION_MESSAGE = "§c§lᴇʀʀᴏ §8• §cComando não encontrado.";
+
     private TeleportService teleportService;
     private StaffTeleportService staffTeleportService;
     private HomeService homeService;
@@ -122,6 +124,9 @@ public final class EssentialsPlus extends JavaPlugin {
         org.bukkit.command.PluginCommand command = getCommand(name);
         if (command == null) throw new IllegalStateException("Comando não encontrado no plugin.yml: " + name);
         command.setExecutor(executor);
+        if (command.getPermission() != null && !command.getPermission().isBlank()) {
+            command.setPermissionMessage(UNKNOWN_COMMAND_PERMISSION_MESSAGE);
+        }
         if (executor instanceof org.bukkit.command.TabCompleter completer) command.setTabCompleter(completer);
     }
 }
