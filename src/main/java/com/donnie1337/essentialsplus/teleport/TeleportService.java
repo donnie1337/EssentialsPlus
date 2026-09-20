@@ -105,10 +105,19 @@ public final class TeleportService {
     private boolean teleportSafely(Player player, Player destination) {
         if (player == null || destination == null || !player.isOnline() || !destination.isOnline()) return false;
         var location = destination.getLocation().clone();
+        var passengers = new ArrayList<>(player.getPassengers());
+        passengers.forEach(player::removePassenger);
         try {
             if (!location.getChunk().isLoaded()) location.getChunk().load(true);
-            return player.teleport(location);
+            boolean success = player.teleport(location);
+            for (var passenger : passengers) {
+                if (passenger.isValid() && passenger.getWorld().equals(player.getWorld())) player.addPassenger(passenger);
+            }
+            return success;
         } catch (RuntimeException exception) {
+            for (var passenger : passengers) {
+                if (passenger.isValid() && passenger.getWorld().equals(player.getWorld())) player.addPassenger(passenger);
+            }
             plugin.getLogger().warning("Falha no TPA para o mundo '" + location.getWorld().getName() + "': " + exception.getMessage());
             return false;
         }
