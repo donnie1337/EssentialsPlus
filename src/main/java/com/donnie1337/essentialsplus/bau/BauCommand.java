@@ -30,7 +30,7 @@ public final class BauCommand implements CommandExecutor {
 
         if (args.length == 0) {
             if (!player.hasPermission(PERMISSION)) {
-                player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+                player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
                 return true;
             }
 
@@ -39,7 +39,7 @@ public final class BauCommand implements CommandExecutor {
         }
 
         if (args.length != 1) {
-            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
             return true;
         }
 
@@ -51,7 +51,7 @@ public final class BauCommand implements CommandExecutor {
 
         if (target.getUniqueId().equals(player.getUniqueId())) {
             if (!player.hasPermission(PERMISSION)) {
-                player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+                player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
                 return true;
             }
 
@@ -60,7 +60,7 @@ public final class BauCommand implements CommandExecutor {
         }
 
         if (!player.hasPermission(INSPECT_PERMISSION)) {
-            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
             return true;
         }
 
