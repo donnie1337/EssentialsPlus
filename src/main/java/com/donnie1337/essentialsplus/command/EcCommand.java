@@ -29,7 +29,7 @@ public final class EcCommand implements CommandExecutor {
 
         if (args.length == 0) {
             if (!player.hasPermission(PERMISSION)) {
-                player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+                player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
                 return true;
             }
             player.openInventory(player.getEnderChest());
@@ -37,7 +37,7 @@ public final class EcCommand implements CommandExecutor {
         }
 
         if (args.length != 1) {
-            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
             return true;
         }
 
@@ -49,7 +49,7 @@ public final class EcCommand implements CommandExecutor {
 
         if (target.getUniqueId().equals(player.getUniqueId())) {
             if (!player.hasPermission(PERMISSION)) {
-                player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+                player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
                 return true;
             }
             player.openInventory(player.getEnderChest());
@@ -57,7 +57,7 @@ public final class EcCommand implements CommandExecutor {
         }
 
         if (!player.hasPermission(INSPECT_PERMISSION)) {
-            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
             return true;
         }
 
