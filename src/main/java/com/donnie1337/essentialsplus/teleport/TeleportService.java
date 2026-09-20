@@ -93,8 +93,25 @@ public final class TeleportService {
         if (!authSystemBridge.isAuthenticated(requester) || !authSystemBridge.isAuthenticated(recipient)) { restoreRequest(request); message(recipient, "auth-required"); return; }
         Player teleported = request.here() ? recipient : requester, destination = request.here() ? requester : recipient;
         if (teleported.getUniqueId().equals(destination.getUniqueId())) { restoreRequest(request); message(recipient, "cannot-self"); return; }
-        if (!teleported.teleport(destination.getLocation())) { restoreRequest(request); message(recipient, "teleport-failed"); message(requester, "teleport-failed"); return; }
+        if (!teleportSafely(teleported, destination)) { restoreRequest(request); message(recipient, "teleport-failed"); message(requester, "teleport-failed"); return; }
         message(recipient, "request-accepted", "player", requester.getName()); message(requester, "request-accepted-sender", "player", recipient.getName());
+    }
+
+    /**
+     * Prepara o chunk de destino antes do teleporte. Isso é especialmente
+     * importante para os mundos administrados pelo WorldPlus, pois o destino
+     * pode estar em outra dimensão ou em uma área ainda não carregada.
+     */
+    private boolean teleportSafely(Player player, Player destination) {
+        if (player == null || destination == null || !player.isOnline() || !destination.isOnline()) return false;
+        var location = destination.getLocation().clone();
+        try {
+            if (!location.getChunk().isLoaded()) location.getChunk().load(true);
+            return player.teleport(location);
+        } catch (RuntimeException exception) {
+            plugin.getLogger().warning("Falha no TPA para o mundo '" + location.getWorld().getName() + "': " + exception.getMessage());
+            return false;
+        }
     }
 
     private void restoreRequest(TpaRequest request) {
