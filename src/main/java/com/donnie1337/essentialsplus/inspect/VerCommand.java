@@ -25,7 +25,7 @@ public final class VerCommand implements CommandExecutor {
         }
 
         if (!player.hasPermission(PERMISSION)) {
-            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rComando não encontrado.");
+            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
             return true;
         }
 
