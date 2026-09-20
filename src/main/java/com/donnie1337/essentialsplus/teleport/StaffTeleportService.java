@@ -16,7 +16,14 @@ public final class StaffTeleportService {
      */
     public boolean teleport(Player subject, Player destination) {
         if (subject == null || destination == null || !subject.isOnline() || !destination.isOnline()) return false;
-        return subject.teleport(destination.getLocation());
+        var location = destination.getLocation().clone();
+        try {
+            if (!location.getChunk().isLoaded()) location.getChunk().load(true);
+            return subject.teleport(location);
+        } catch (RuntimeException exception) {
+            plugin.getLogger().warning("Falha no /tp para o mundo '" + location.getWorld().getName() + "': " + exception.getMessage());
+            return false;
+        }
     }
 
     public Player findPlayer(String name) {
