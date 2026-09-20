@@ -17,10 +17,19 @@ public final class StaffTeleportService {
     public boolean teleport(Player subject, Player destination) {
         if (subject == null || destination == null || !subject.isOnline() || !destination.isOnline()) return false;
         var location = destination.getLocation().clone();
+        var passengers = new java.util.ArrayList<>(subject.getPassengers());
+        passengers.forEach(subject::removePassenger);
         try {
             if (!location.getChunk().isLoaded()) location.getChunk().load(true);
-            return subject.teleport(location);
+            boolean success = subject.teleport(location);
+            for (var passenger : passengers) {
+                if (passenger.isValid() && passenger.getWorld().equals(subject.getWorld())) subject.addPassenger(passenger);
+            }
+            return success;
         } catch (RuntimeException exception) {
+            for (var passenger : passengers) {
+                if (passenger.isValid() && passenger.getWorld().equals(subject.getWorld())) subject.addPassenger(passenger);
+            }
             plugin.getLogger().warning("Falha no /tp para o mundo '" + location.getWorld().getName() + "': " + exception.getMessage());
             return false;
         }
