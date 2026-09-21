@@ -1,6 +1,5 @@
 package com.donnie1337.essentialsplus.chat;
 
-import net.kyori.adventure.key.Key;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -264,7 +263,7 @@ public final class TellListener implements Listener {
         }
         Component message = LEGACY.deserialize(parts[0])
                 .append(LEGACY.deserialize(cancelText)
-                        .clickEvent(ClickEvent.custom(Key.key(CANCEL_BUTTON_ID)))
+                        .clickEvent(ClickEvent.runCommand("/tellcancel"))
                         .hoverEvent(LEGACY.deserialize(cancelHover)))
                 .append(LEGACY.deserialize(parts[1]));
         adventure.player(sender).sendMessage(message);

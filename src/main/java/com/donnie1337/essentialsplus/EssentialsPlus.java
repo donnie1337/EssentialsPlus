@@ -24,9 +24,9 @@ import com.donnie1337.essentialsplus.inspect.LiveInspectionService;
 import com.donnie1337.essentialsplus.inspect.VerCommand;
 import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
-import com.donnie1337.essentialsplus.teleport.TpaCustomClickListener;
 import com.donnie1337.essentialsplus.teleport.command.TpCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
+import com.donnie1337.essentialsplus.teleport.command.TpaActionCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaCancelCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaDenyCommand;
@@ -59,7 +59,6 @@ public final class EssentialsPlus extends JavaPlugin {
         vanishService = new VanishService(this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishService), this);
         getServer().getPluginManager().registerEvents(new TellListener(this, adventure), this);
-        new TellCustomClickListener(this).register(getServer().getPluginManager());
         register("v", new VanishCommand(vanishService));
         flightService = new FlightService(this);
         getServer().getPluginManager().registerEvents(flightService, this);
@@ -67,6 +66,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("craft", new CraftCommand());
         register("tell", new TellCommand());
         register("r", new ReplyCommand());
+        register("tellcancel", new TellCustomClickListener());
         bauService = new BauService(this);
         liveInspectionService = new LiveInspectionService(this, bauService);
         getServer().getPluginManager().registerEvents(new InspectListener(liveInspectionService), this);
@@ -78,7 +78,6 @@ public final class EssentialsPlus extends JavaPlugin {
         liveInspectionService.start();
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
-        new TpaCustomClickListener(this, teleportService).register(getServer().getPluginManager());
         staffTeleportService = new StaffTeleportService(this);
         register("tp", new TpCommand(staffTeleportService));
         homeService = new HomeService(this);
@@ -89,6 +88,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("tpaccept", new TpaAcceptCommand(teleportService));
         register("tpdeny", new TpaDenyCommand(teleportService));
         register("tpacancel", new TpaCancelCommand(teleportService));
+        register("tpaaction", new TpaActionCommand(teleportService));
         register("home", new HomeCommand(homeService));
         register("homes", new HomesCommand(homeService, homeGui));
         register("sethome", new SetHomeCommand(homeService));

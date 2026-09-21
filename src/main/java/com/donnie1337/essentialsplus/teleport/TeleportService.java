@@ -17,7 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -134,7 +133,12 @@ public final class TeleportService {
     private void sendCancelButton(Player requester, Player recipient) { if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return; int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId()); String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar")), hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA."); requester.spigot().sendMessage(buttonComponent(text, token, hover)); }
     private int registerButton(Player player, ButtonActionType type, UUID targetId) { int token = buttonToken.incrementAndGet(); buttonActions.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>()).put(token, new ButtonAction(token, type, player.getUniqueId(), targetId)); return token; }
     private BaseComponent[] buttonComponent(String label, int token, String hover) { BaseComponent[] components = TextComponent.fromLegacyText(label); ClickEvent click = createCustomClick(token); HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover))); for (BaseComponent component : components) { if (click != null) component.setClickEvent(click); component.setHoverEvent(hoverEvent); } return components; }
-    private ClickEvent createCustomClick(int token) { try { Class<?> type = Class.forName("net.md_5.bungee.api.chat.ClickEventCustom"); Constructor<?> constructor = type.getConstructor(String.class, String.class); return (ClickEvent) constructor.newInstance(TPA_BUTTON_KEY.asString(), Integer.toString(token)); } catch (ReflectiveOperationException | LinkageError ignored) { plugin.getLogger().warning("ClickEventCustom não está disponível neste servidor; botão de TPA sem ação."); return null; } }
+    private ClickEvent createCustomClick(int token) {
+        // RUN_COMMAND é suportado por clientes e pelo Paper. O token é
+        // validado no servidor e pertence exclusivamente ao jogador clicando.
+        return new ClickEvent(ClickEvent.Action.RUN_COMMAND,
+                "/" + TPA_BUTTON_COMMAND + " " + token);
+    }
     public boolean handleButton(Player player, int token) { if (player == null || !player.hasPermission("essentialsplus.tpa")) return false; ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(player.getUniqueId()); if (actions == null) return false; ButtonAction action = actions.remove(token); if (action == null) return false; switch (action.type()) { case ACCEPT -> acceptById(player, action.targetId()); case DENY -> denyById(player, action.targetId()); case CANCEL -> cancelById(player, action.targetId()); } return true; }
     private void acceptById(Player recipient, UUID requesterId) { TpaRequest request = removeRequestById(recipient, requesterId); if (request == null) { Set<UUID> denied = deniedRequests.get(recipient.getUniqueId()); if (denied != null && denied.contains(requesterId)) message(recipient, "request-already-denied"); else message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(requesterId); completeAccepted(recipient, request); }
     private void denyById(Player recipient, UUID requesterId) { TpaRequest request = removeRequestById(recipient, requesterId); if (request == null) { message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId()); removeButton(recipient.getUniqueId(), requesterId, ButtonActionType.DENY); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName()); message(recipient, "request-denied", "player", request.requesterName()); }

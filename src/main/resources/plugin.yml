@@ -3,7 +3,7 @@ version: 1.0.0-SNAPSHOT
 main: com.donnie1337.essentialsplus.EssentialsPlus
 api-version: '26.2'
 author: donnie1337
-description: Essentials customizado para Spigot 26.2.
+description: Essentials customizado para Paper 26.2.
 website: https://github.com/donnie1337/EssentialsPlus
 softdepend:
   - LoginPlus
@@ -43,6 +43,10 @@ commands:
     description: Responde à última conversa privada.
     usage: /r <mensagem>
     permission: essentialsplus.tell
+  tellcancel:
+    description: Comando interno para cancelar o envio pendente do /tell.
+    usage: /tellcancel
+    permission: essentialsplus.tell
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
     usage: /tp <jogador> [jogador]
@@ -72,6 +76,10 @@ commands:
     usage: /tpcancelar [jogador]
     aliases:
       - tpcancelar
+    permission: essentialsplus.tpa
+  tpaaction:
+    description: Comando interno dos botões de TPA.
+    usage: /tpaaction <token>
     permission: essentialsplus.tpa
   home:
     description: Teleporta para uma home salva.

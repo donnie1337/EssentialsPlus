@@ -6,28 +6,20 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+/** Processa tokens efêmeros enviados pelos botões de TPA no chat. */
 public final class TpaActionCommand implements CommandExecutor {
-    private static final String PERMISSION = "essentialsplus.tpa";
-    private final TeleportService service;
+    private final TeleportService teleportService;
 
-    public TpaActionCommand(TeleportService service) {
-        this.service = service;
+    public TpaActionCommand(TeleportService teleportService) {
+        this.teleportService = teleportService;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("Este comando só pode ser usado por jogadores.");
-            return true;
-        }
-        if (!player.hasPermission(PERMISSION)) {
-            player.sendMessage("§cVocê não tem permissão para isso.");
-            return true;
-        }
-        if (args.length != 1) return true;
+        if (!(sender instanceof Player player) || args.length != 1) return true;
+
         try {
-            int token = Integer.parseInt(args[0]);
-            service.handleButton(player, token);
+            teleportService.handleButton(player, Integer.parseInt(args[0]));
         } catch (NumberFormatException ignored) {
             // Token inválido: não executa nenhuma ação.
         }
