@@ -263,10 +263,22 @@ public final class TellListener implements Listener {
         }
         Component message = LEGACY.deserialize(parts[0])
                 .append(LEGACY.deserialize(cancelText)
-                        .clickEvent(ClickEvent.runCommand("/tellcancel"))
+                        .clickEvent(ClickEvent.callback(audience -> {
+                            if (!(audience instanceof Player player)) return;
+                            Bukkit.getScheduler().runTask(plugin, () -> cancelFromButton(player));
+                        }))
                         .hoverEvent(LEGACY.deserialize(cancelHover)))
                 .append(LEGACY.deserialize(parts[1]));
-        adventure.player(sender).sendMessage(message);
+        sender.sendMessage(message);
+    }
+
+    private static void cancelFromButton(Player player) {
+        CancelResult result = cancelPendingTell(player);
+        switch (result) {
+            case CANCELLED -> player.sendMessage(message("messages.tell.cancelled"));
+            case ALREADY_SENT -> player.sendMessage(message("messages.tell.already-sent"));
+            case ALREADY_CANCELLED -> player.sendMessage(message("messages.tell.already-cancelled"));
+        }
     }
 
     public static String message(String path, String... replacements) {

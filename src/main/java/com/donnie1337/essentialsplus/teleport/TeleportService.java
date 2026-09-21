@@ -7,10 +7,9 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -129,16 +128,87 @@ public final class TeleportService {
         synchronized (requests) { boolean exists = requests.stream().anyMatch(existing -> existing.requesterId().equals(request.requesterId()) && existing.createdAt() == request.createdAt()); if (!exists) requests.add(request); }
     }
 
-    private void sendRequestMessage(Player recipient, Player requester, boolean here) { String key = here ? "messages.request-here-received" : "messages.request-received"; String raw = plugin.getConfig().getString(key, "{player}&f está pedindo para se teleportar até você. Clique {accept} para aceitar ou {deny} para negar!"); raw = raw.replace("{player}", coloredPlayer(requester)); String prefix = plugin.getConfig().getString("messages.tpa-prefix", plugin.getConfig().getString("messages.prefix", "")); raw = color(prefix + raw); int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId()), deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId()); boolean acceptEnabled = plugin.getConfig().getBoolean("buttons.accept.enabled", true), denyEnabled = plugin.getConfig().getBoolean("buttons.deny.enabled", true); String acceptText = color(plugin.getConfig().getString("buttons.accept.text", "&a&lAQUI")), denyText = color(plugin.getConfig().getString("buttons.deny.text", "&c&lAQUI")), acceptHover = plugin.getConfig().getString("buttons.accept.hover", "&7Clique para aceitar a solicitação."), denyHover = plugin.getConfig().getString("buttons.deny.hover", "&7Clique para negar a solicitação."); List<BaseComponent> message = new ArrayList<>(); int cursor = 0; while (cursor < raw.length()) { int acceptPos = raw.indexOf("{accept}", cursor), denyPos = raw.indexOf("{deny}", cursor), nextPos = -1; boolean isAccept = false; if (acceptPos >= 0 && (denyPos < 0 || acceptPos < denyPos)) { nextPos = acceptPos; isAccept = true; } else if (denyPos >= 0) nextPos = denyPos; if (nextPos < 0) { message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor)))); break; } if (nextPos > cursor) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw.substring(cursor, nextPos)))); if (isAccept) { if (acceptEnabled) message.addAll(Arrays.asList(buttonComponent(acceptText, accept, acceptHover))); } else if (denyEnabled) message.addAll(Arrays.asList(buttonComponent(denyText, deny, denyHover))); cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length()); } if (raw.isEmpty()) message.addAll(Arrays.asList(TextComponent.fromLegacyText(raw))); if (!message.isEmpty()) recipient.spigot().sendMessage(message.toArray(BaseComponent[]::new)); }
-    private void sendCancelButton(Player requester, Player recipient) { if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return; int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId()); String text = color(plugin.getConfig().getString("buttons.cancel.text", "&fClique &c&lAQUI&f para cancelar")), hover = plugin.getConfig().getString("buttons.cancel.hover", "&7Clique para cancelar sua solicitação de TPA."); requester.spigot().sendMessage(buttonComponent(text, token, hover)); }
-    private int registerButton(Player player, ButtonActionType type, UUID targetId) { int token = buttonToken.incrementAndGet(); buttonActions.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>()).put(token, new ButtonAction(token, type, player.getUniqueId(), targetId)); return token; }
-    private BaseComponent[] buttonComponent(String label, int token, String hover) { BaseComponent[] components = TextComponent.fromLegacyText(label); ClickEvent click = createCustomClick(token); HoverEvent hoverEvent = new HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText(color(hover))); for (BaseComponent component : components) { if (click != null) component.setClickEvent(click); component.setHoverEvent(hoverEvent); } return components; }
-    private ClickEvent createCustomClick(int token) {
-        // RUN_COMMAND é suportado por clientes e pelo Paper. O token é
-        // validado no servidor e pertence exclusivamente ao jogador clicando.
-        return new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                "/" + TPA_BUTTON_COMMAND + " " + token);
+    private void sendRequestMessage(Player recipient, Player requester, boolean here) {
+        String key = here ? "messages.request-here-received" : "messages.request-received";
+        String raw = plugin.getConfig().getString(key,
+                "{player}&f está pedindo para se teleportar até você. Clique {accept} para aceitar ou {deny} para negar!");
+        raw = raw.replace("{player}", coloredPlayer(requester));
+
+        String prefix = plugin.getConfig().getString("messages.tpa-prefix",
+                plugin.getConfig().getString("messages.prefix", ""));
+        raw = color(prefix + raw);
+
+        int accept = registerButton(recipient, ButtonActionType.ACCEPT, requester.getUniqueId());
+        int deny = registerButton(recipient, ButtonActionType.DENY, requester.getUniqueId());
+        boolean acceptEnabled = plugin.getConfig().getBoolean("buttons.accept.enabled", true);
+        boolean denyEnabled = plugin.getConfig().getBoolean("buttons.deny.enabled", true);
+        String acceptText = color(plugin.getConfig().getString("buttons.accept.text", "&a&lAQUI"));
+        String denyText = color(plugin.getConfig().getString("buttons.deny.text", "&c&lAQUI"));
+        String acceptHover = plugin.getConfig().getString("buttons.accept.hover",
+                "&7Clique para aceitar a solicitação.");
+        String denyHover = plugin.getConfig().getString("buttons.deny.hover",
+                "&7Clique para negar a solicitação.");
+
+        Component message = Component.empty();
+        int cursor = 0;
+        while (cursor < raw.length()) {
+            int acceptPos = raw.indexOf("{accept}", cursor);
+            int denyPos = raw.indexOf("{deny}", cursor);
+            int nextPos = -1;
+            boolean isAccept = false;
+
+            if (acceptPos >= 0 && (denyPos < 0 || acceptPos < denyPos)) {
+                nextPos = acceptPos;
+                isAccept = true;
+            } else if (denyPos >= 0) {
+                nextPos = denyPos;
+            }
+
+            if (nextPos < 0) {
+                message = message.append(component(raw.substring(cursor)));
+                break;
+            }
+            if (nextPos > cursor) message = message.append(component(raw.substring(cursor, nextPos)));
+            if (isAccept && acceptEnabled) {
+                message = message.append(buttonComponent(acceptText, accept, acceptHover));
+            } else if (!isAccept && denyEnabled) {
+                message = message.append(buttonComponent(denyText, deny, denyHover));
+            }
+            cursor = nextPos + (isAccept ? "{accept}".length() : "{deny}".length());
+        }
+
+        if (raw.isEmpty()) message = message.append(component(raw));
+        // Player#sendMessage(Component) usa o canal nativo do Paper, que
+        // registra ClickEvent.callback sem confirmação no cliente.
+        recipient.sendMessage(message);
     }
+
+    private void sendCancelButton(Player requester, Player recipient) {
+        if (!plugin.getConfig().getBoolean("buttons.cancel.enabled", true)) return;
+        int token = registerButton(requester, ButtonActionType.CANCEL, recipient.getUniqueId());
+        String text = color(plugin.getConfig().getString("buttons.cancel.text",
+                "&fClique &c&lAQUI&f para cancelar"));
+        String hover = plugin.getConfig().getString("buttons.cancel.hover",
+                "&7Clique para cancelar sua solicitação de TPA.");
+        requester.sendMessage(buttonComponent(text, token, hover));
+    }
+
+    private int registerButton(Player player, ButtonActionType type, UUID targetId) { int token = buttonToken.incrementAndGet(); buttonActions.computeIfAbsent(player.getUniqueId(), ignored -> new ConcurrentHashMap<>()).put(token, new ButtonAction(token, type, player.getUniqueId(), targetId)); return token; }
+    private Component buttonComponent(String label, int token, String hover) {
+        return component(label)
+                .clickEvent(ClickEvent.callback(audience -> {
+                    if (!(audience instanceof Player player)) return;
+                    Bukkit.getScheduler().runTask(plugin, () -> handleButton(player, token));
+                }))
+                .hoverEvent(HoverEvent.showText(component(color(hover))));
+    }
+
+    private Component component(String legacyText) {
+        return LegacyComponentSerializer.legacySection().deserialize(
+                legacyText == null ? "" : legacyText
+        );
+    }
+
     public boolean handleButton(Player player, int token) { if (player == null || !player.hasPermission("essentialsplus.tpa")) return false; ConcurrentMap<Integer, ButtonAction> actions = buttonActions.get(player.getUniqueId()); if (actions == null) return false; ButtonAction action = actions.remove(token); if (action == null) return false; switch (action.type()) { case ACCEPT -> acceptById(player, action.targetId()); case DENY -> denyById(player, action.targetId()); case CANCEL -> cancelById(player, action.targetId()); } return true; }
     private void acceptById(Player recipient, UUID requesterId) { TpaRequest request = removeRequestById(recipient, requesterId); if (request == null) { Set<UUID> denied = deniedRequests.get(recipient.getUniqueId()); if (denied != null && denied.contains(requesterId)) message(recipient, "request-already-denied"); else message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).remove(requesterId); completeAccepted(recipient, request); }
     private void denyById(Player recipient, UUID requesterId) { TpaRequest request = removeRequestById(recipient, requesterId); if (request == null) { message(recipient, "no-request"); return; } deniedRequests.computeIfAbsent(recipient.getUniqueId(), ignored -> ConcurrentHashMap.newKeySet()).add(request.requesterId()); removeButton(recipient.getUniqueId(), requesterId, ButtonActionType.DENY); Player requester = Bukkit.getPlayer(request.requesterId()); if (requester != null && requester.isOnline()) message(requester, "request-denied-sender", "player", recipient.getName()); message(recipient, "request-denied", "player", request.requesterName()); }
