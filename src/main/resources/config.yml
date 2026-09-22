@@ -165,6 +165,17 @@ messages:
   request-expired: "&cO pedido de teleporte de {player}&f expirou."
   no-request: "&eVocê não possui solicitações de TPA pendentes."
   request-already-denied: "&cVocê não pode aceitar este pedido porque ele já foi recusado."
+  request-already-cancelled: "&eVocê já cancelou esta solicitação de TPA."
+  cannot-accept-cancelled: "&cNão foi possível aceitar pois {player}&f cancelou a solicitação."
+  cannot-deny-cancelled: "&cNão foi possível recusar pois {player}&f cancelou a solicitação."
+  request-already-accepted: "&cNão foi possível aceitar pois você já aceitou a solicitação."
+  cannot-deny-accepted: "&cNão foi possível recusar pois a solicitação já foi aceita."
+  cannot-accept-denied: "&cNão foi possível aceitar pois você já recusou a solicitação."
+  cannot-cancel-accepted: "&cNão é possível cancelar porque {player}&f já aceitou o pedido."
+  cannot-cancel-denied: "&cNão é possível cancelar porque {player}&f recusou o pedido."
+  cannot-accept-expired: "&cNão foi possível aceitar pois a solicitação expirou."
+  cannot-deny-expired: "&cNão foi possível recusar pois a solicitação expirou."
+  cannot-cancel-expired: "&cNão é possível cancelar porque o pedido expirou."
   target-offline: "&cO jogador não está mais online."
 
   tell:

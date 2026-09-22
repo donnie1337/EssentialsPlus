@@ -5,15 +5,26 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /** Representa uma ação temporária registrada para um botão de TPA. */
-public record ButtonAction(int token, ButtonActionType type, UUID ownerId, UUID targetId, long createdAt) {
+public record ButtonAction(
+        int token,
+        ButtonActionType type,
+        UUID ownerId,
+        UUID targetId,
+        long createdAt,
+        long requestCreatedAt
+) {
     private static final ConcurrentMap<Integer, ButtonAction> HISTORY = new ConcurrentHashMap<>();
 
     public ButtonAction(int token, ButtonActionType type, UUID targetId) {
-        this(token, type, null, targetId, System.currentTimeMillis());
+        this(token, type, null, targetId, System.currentTimeMillis(), 0L);
     }
 
     public ButtonAction(int token, ButtonActionType type, UUID ownerId, UUID targetId) {
-        this(token, type, ownerId, targetId, System.currentTimeMillis());
+        this(token, type, ownerId, targetId, System.currentTimeMillis(), 0L);
+    }
+
+    public ButtonAction(int token, ButtonActionType type, UUID ownerId, UUID targetId, long requestCreatedAt) {
+        this(token, type, ownerId, targetId, System.currentTimeMillis(), requestCreatedAt);
     }
 
     public ButtonAction {
@@ -32,12 +43,8 @@ public record ButtonAction(int token, ButtonActionType type, UUID ownerId, UUID 
         java.util.List<ButtonAction> related = new java.util.ArrayList<>();
         for (ButtonAction action : HISTORY.values()) {
             if (action.token() == source.token()) continue;
-            if (action.ownerId() == null || source.ownerId() == null) continue;
-            boolean sameRequest = source.ownerId().equals(action.ownerId())
-                    && source.targetId().equals(action.targetId());
-            boolean oppositeSide = source.ownerId().equals(action.targetId())
-                    && source.targetId().equals(action.ownerId());
-            if (sameRequest || oppositeSide) related.add(action);
+            if (action.requestCreatedAt() != source.requestCreatedAt()) continue;
+            related.add(action);
         }
         return related;
     }
