@@ -23,6 +23,7 @@ import com.donnie1337.essentialsplus.inspect.InspectListener;
 import com.donnie1337.essentialsplus.inspect.LiveInspectionService;
 import com.donnie1337.essentialsplus.inspect.VerCommand;
 import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
+import com.donnie1337.essentialsplus.teleport.TpaCustomClickListener;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
 import com.donnie1337.essentialsplus.teleport.command.TpCommand;
 import com.donnie1337.essentialsplus.teleport.command.TpaAcceptCommand;
@@ -78,6 +79,9 @@ public final class EssentialsPlus extends JavaPlugin {
         liveInspectionService.start();
         teleportService = new TeleportService(this, new ChatPlusBridge(), new AuthSystemBridge());
         teleportService.start();
+        TpaCustomClickListener tpaCustomClickListener = new TpaCustomClickListener(this, teleportService);
+        getServer().getPluginManager().registerEvents(tpaCustomClickListener, this);
+        tpaCustomClickListener.register(getServer().getPluginManager());
         staffTeleportService = new StaffTeleportService(this);
         register("tp", new TpCommand(staffTeleportService));
         homeService = new HomeService(this);
