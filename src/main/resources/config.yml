@@ -48,12 +48,18 @@ messages:
       aceita: "&aVocê aceitou o pedido de teleporte de {player}&f!"
       aceita-remetente: "&a{player}&f aceitou seu pedido de teleporte. &bLevando você até lá..."
       ja-aceita: "&eVocê já aceitou esta solicitação de TPA."
+      aceitar-ja-aceita: "&cNão foi possível aceitar pois você já aceitou a solicitação."
+      recusar-ja-aceita: "&cNão foi possível recusar pois a solicitação já foi aceita."
       recusada: "&cVocê recusou o pedido de teleporte de {player}&f."
       recusada-remetente: "&c{player}&f recusou seu pedido de teleporte."
       ja-recusada: "&eVocê já recusou esta solicitação de TPA."
+      aceitar-ja-recusada: "&cNão foi possível aceitar pois você já recusou a solicitação."
+      recusar-ja-recusada: "&cNão foi possível recusar pois você já recusou a solicitação."
     expiracao:
       expirada: "&cO pedido de teleporte de {player}&f expirou."
       nao-pode-responder: "&cVocê não pode aceitar ou recusar porque o convite expirou."
+      aceitar-expirada: "&cNão foi possível aceitar pois a solicitação expirou."
+      recusar-expirada: "&cNão foi possível recusar pois a solicitação expirou."
     cancelamento:
       ja-cancelada: "&eVocê já cancelou este pedido de teleporte."
       cancelada: "&aSolicitação de TPA cancelada."
@@ -61,6 +67,8 @@ messages:
       jogador-ja-aceitou: "&cNão é possível cancelar porque {player}&f já aceitou o pedido."
       jogador-recusou: "&cNão é possível cancelar porque {player}&f recusou o pedido."
       solicitacao-expirada: "&cNão é possível cancelar porque o pedido expirou."
+      aceitar-cancelada: "&cNão foi possível aceitar pois {player}&f cancelou a solicitação."
+      recusar-cancelada: "&cNão foi possível recusar pois {player}&f cancelou a solicitação."
     pendencia:
       nenhuma: "&eVocê não possui solicitações de TPA pendentes."
       ja-existe: "&eVocê já possui uma solicitação de TPA pendente. Aguarde ela expirar ou ser respondida."
