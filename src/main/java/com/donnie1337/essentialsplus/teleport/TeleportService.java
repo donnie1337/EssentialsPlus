@@ -17,6 +17,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.scheduler.BukkitTask;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -200,7 +201,7 @@ public final class TeleportService {
                 .clickEvent(ClickEvent.callback(audience -> {
                     if (!(audience instanceof Player player)) return;
                     Bukkit.getScheduler().runTask(plugin, () -> handleButton(player, token));
-                }))
+                }, options -> options.uses(Integer.MAX_VALUE).lifetime(Duration.ofMinutes(10))))
                 .hoverEvent(HoverEvent.showText(component(color(hover))));
     }
 
