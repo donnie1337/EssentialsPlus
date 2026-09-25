@@ -49,7 +49,7 @@ commands:
     permission: essentialsplus.tell
   tp:
     description: Teleporta jogadores diretamente. Comando exclusivo para staff.
-    usage: /tp <jogador> [jogador]
+    usage: /tp <jogador> [jogador] ou /tp @s <x> <y> <z>
     permission: essentialsplus.teleport
   tpa:
     description: Solicita teleporte até outro jogador.
