@@ -1,6 +1,7 @@
 package com.donnie1337.essentialsplus.teleport.command;
 
 import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -53,8 +54,76 @@ public final class TpCommand implements CommandExecutor {
             return true;
         }
 
+        if (args.length == 3 || args.length == 4) {
+            Player subject;
+            int coordinateIndex;
+            if (args.length == 3) {
+                if (!(sender instanceof Player player)) {
+                    send(sender, "player-only");
+                    return true;
+                }
+                subject = player;
+                coordinateIndex = 0;
+            } else {
+                subject = resolveSubject(sender, args[0]);
+                coordinateIndex = 1;
+                if (subject == null) {
+                    send(sender, "player-not-found");
+                    return true;
+                }
+            }
+
+            Location origin = subject.getLocation();
+            Double x = parseCoordinate(args[coordinateIndex], origin.getX());
+            Double y = parseCoordinate(args[coordinateIndex + 1], origin.getY());
+            Double z = parseCoordinate(args[coordinateIndex + 2], origin.getZ());
+            if (x == null || y == null || z == null
+                    || !Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)
+                    || y < subject.getWorld().getMinHeight()
+                    || y >= subject.getWorld().getMaxHeight()) {
+                send(sender, "invalid-coordinates");
+                return true;
+            }
+
+            Location destination = new Location(subject.getWorld(), x, y, z,
+                    origin.getYaw(), origin.getPitch());
+            if (!service.teleport(subject, destination)) {
+                send(sender, "teleport-failed");
+                return true;
+            }
+
+            send(sender, "teleported-to-coordinates",
+                    "player", subject.getName(),
+                    "x", format(x), "y", format(y), "z", format(z));
+            return true;
+        }
+
         send(sender, "usage-tp");
         return true;
+    }
+
+    private Player resolveSubject(CommandSender sender, String selector) {
+        if ("@s".equalsIgnoreCase(selector)) {
+            return sender instanceof Player player ? player : null;
+        }
+        return service.findPlayer(selector);
+    }
+
+    private Double parseCoordinate(String value, double origin) {
+        if (value == null || value.isBlank() || value.startsWith("^")) return null;
+        try {
+            if (value.startsWith("~")) {
+                String offset = value.substring(1);
+                return origin + (offset.isBlank() ? 0.0D : Double.parseDouble(offset));
+            }
+            return Double.parseDouble(value);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private String format(double value) {
+        return value == Math.rint(value) ? Long.toString((long) value) : Double.toString(value);
     }
 
     private void send(CommandSender sender, String key, String... replacements) {
