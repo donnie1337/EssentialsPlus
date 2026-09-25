@@ -1,6 +1,7 @@
 package com.donnie1337.essentialsplus.teleport;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -15,8 +16,14 @@ public final class StaffTeleportService {
      * Teleports the subject to the destination.
      */
     public boolean teleport(Player subject, Player destination) {
-        if (subject == null || destination == null || !subject.isOnline() || !destination.isOnline()) return false;
-        var location = destination.getLocation().clone();
+        if (destination == null || !destination.isOnline()) return false;
+        return teleport(subject, destination.getLocation());
+    }
+
+    public boolean teleport(Player subject, Location destination) {
+        if (subject == null || destination == null || destination.getWorld() == null
+                || !subject.isOnline()) return false;
+        Location location = destination.clone();
         var passengers = new java.util.ArrayList<>(subject.getPassengers());
         passengers.forEach(subject::removePassenger);
         try {
