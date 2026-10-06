@@ -31,6 +31,7 @@ teleport:
 
 marriage:
   request-timeout-seconds: 60
+  tag: "&c❤"
 
 messages:
   tpa:
