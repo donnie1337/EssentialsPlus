@@ -97,7 +97,7 @@ messages:
   marry:
     prefix: "&d&lᴍᴀʀʀʏ &8• &r"
     jogador-apenas: "&cEste comando precisa ser usado por um jogador."
-    uso-casar: "&fUse: &d/marry casar <jogador>"
+    uso-casar: "&fUse: &d/marry <jogador>"
     jogador-nao-encontrado: "&cJogador não encontrado ou offline."
     nao-pode-ser-voce: "&cVocê não pode casar consigo mesmo."
     voce-ja-casado: "&cVocê já é casado."

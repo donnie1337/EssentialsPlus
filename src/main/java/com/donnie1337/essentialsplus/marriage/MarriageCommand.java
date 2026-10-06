@@ -43,7 +43,6 @@ public final class MarriageCommand implements TabExecutor {
 
         String sub = args[0].toLowerCase(Locale.ROOT);
         return switch (sub) {
-            case "casar", "marry" -> handleRequest(player, args);
             case "aceitar", "accept" -> handleAccept(player);
             case "recusar", "deny" -> handleDeny(player);
             case "partner", "parceiro" -> handlePartner(player);
@@ -54,20 +53,12 @@ public final class MarriageCommand implements TabExecutor {
                 showHelp(player);
                 yield true;
             }
-            default -> {
-                showHelp(player);
-                yield true;
-            }
+            default -> handleRequest(player, args[0]);
         };
     }
 
-    private boolean handleRequest(Player player, String[] args) {
-        if (args.length < 2) {
-            player.sendMessage(prefixed("uso-casar", "&fUse: &d/marry casar <jogador>"));
-            return true;
-        }
-
-        Player target = Bukkit.getPlayerExact(args[1]);
+    private boolean handleRequest(Player player, String targetName) {
+        Player target = Bukkit.getPlayerExact(targetName);
         if (target == null || !target.isOnline()) {
             player.sendMessage(prefixed("jogador-nao-encontrado", "&cJogador não encontrado ou offline."));
             return true;
@@ -194,7 +185,7 @@ public final class MarriageCommand implements TabExecutor {
         player.sendMessage(color("&8» &f/marry list &8- &bExibe todos os jogadores casados."));
         player.sendMessage(color("&8» &f/marry listpriests &8- &bExibe todos os padres online."));
         player.sendMessage(color("&8» &f/marry partner &8- &bLista o parceiro de um player."));
-        player.sendMessage(color("&8» &f/marry casar <player_name> &8- &bEnvia um pedido de casamento para outro jogador."));
+        player.sendMessage(color("&8» &f/marry <player_name> &8- &bEnvia um pedido de casamento para outro jogador."));
         player.sendMessage(color("&8» &f/marry aceitar &8- &bAceita o pedido de casamento pendente."));
         player.sendMessage(color("&8» &f/marry recusar &8- &bRecusa o pedido de casamento pendente."));
         player.sendMessage(color("&8» &f/marry info &8- &bMostra informações sobre o casamento."));
@@ -217,23 +208,19 @@ public final class MarriageCommand implements TabExecutor {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> options = List.of(
-                    "casar", "aceitar", "recusar", "partner", "info", "list", "listpriests", "ajuda"
-            );
             String input = args[0].toLowerCase(Locale.ROOT);
-            return options.stream().filter(option -> option.startsWith(input)).toList();
-        }
-
-        if (args.length == 2 && (args[0].equalsIgnoreCase("casar") || args[0].equalsIgnoreCase("marry"))) {
-            String input = args[1].toLowerCase(Locale.ROOT);
-            List<String> names = new ArrayList<>();
+            List<String> options = new ArrayList<>(List.of(
+                    "aceitar", "recusar", "partner", "info", "list", "listpriests", "ajuda"
+            ));
             for (Player online : Bukkit.getOnlinePlayers()) {
-                if (!online.getName().equalsIgnoreCase(sender.getName())
-                        && online.getName().toLowerCase(Locale.ROOT).startsWith(input)) {
-                    names.add(online.getName());
+                if (!online.getName().equalsIgnoreCase(sender.getName())) {
+                    options.add(online.getName());
                 }
             }
-            return names;
+            return options.stream()
+                    .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(input))
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .toList();
         }
         return List.of();
     }
