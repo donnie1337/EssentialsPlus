@@ -167,6 +167,13 @@ public final class EssentialsPlus extends JavaPlugin {
                 .orElse("");
     }
 
+    public java.util.UUID getMarriagePartnerUuid(java.util.UUID playerId) {
+        if (marriageService == null || playerId == null) return null;
+        return marriageService.getMarriage(playerId)
+                .map(MarriageService.Marriage::partnerId)
+                .orElse(null);
+    }
+
     private void register(String name, org.bukkit.command.CommandExecutor executor) {
         org.bukkit.command.PluginCommand command = getCommand(name);
         if (command == null) throw new IllegalStateException("Comando não encontrado no plugin.yml: " + name);
