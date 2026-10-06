@@ -29,6 +29,9 @@ teleport:
   staff:
     enabled: true
 
+marriage:
+  request-timeout-seconds: 60
+
 messages:
   tpa:
     prefix: "&b&lᴛᴘᴀ &8• &r"
@@ -90,6 +93,29 @@ messages:
     teleportado-pela-equipe: "&bVocê foi teleportado por {player}&f."
     uso:
       tp: "&fUse: &e/tp <jogador>"
+
+  marry:
+    prefix: "&d&lᴍᴀʀʀʏ &8• &r"
+    jogador-apenas: "&cEste comando precisa ser usado por um jogador."
+    uso-casar: "&fUse: &d/marry casar <jogador>"
+    jogador-nao-encontrado: "&cJogador não encontrado ou offline."
+    nao-pode-ser-voce: "&cVocê não pode casar consigo mesmo."
+    voce-ja-casado: "&cVocê já é casado."
+    alvo-ja-casado: "&c{player} já é casado."
+    pedido-ja-enviado: "&eVocê já enviou um pedido de casamento para {player}."
+    pedido-enviado: "&aPedido de casamento enviado para &f{player}&a."
+    pedido-recebido: "&f{player} &dquer se casar com você! &fUse &a/marry aceitar &fou &c/marry recusar&f."
+    sem-pedido: "&eVocê não possui nenhum pedido de casamento pendente."
+    remetente-offline: "&cO jogador que enviou o pedido não está mais online."
+    casamento-indisponivel: "&cO casamento não pode mais ser concluído porque um dos jogadores já está casado."
+    casamento-realizado: "&aVocê agora está casado com &f{player}&a!"
+    anuncio: "&d❤ &f{player1} &de &f{player2} &dacabaram de se casar! &d❤"
+    pedido-recusado: "&cVocê recusou o pedido de casamento de {player}."
+    pedido-recusado-remetente: "&c{player} recusou seu pedido de casamento."
+    nao-casado: "&eVocê não é casado."
+    parceiro: "&fSeu parceiro é &d{player}&f."
+    nenhum-casal: "&eNão há jogadores casados."
+    nenhum-padre: "&eNão há padres online."
 
   spawn:
     prefix: "&6&lꜱᴘᴀᴡɴ &8• &r"
