@@ -106,7 +106,7 @@ commands:
     permission: essentialsplus.setspawn
   marry:
     description: Abre o sistema de casamento.
-    usage: /marry <jogador>|aceitar|recusar|partner|info|list|listpriests|ajuda
+    usage: /marry <jogador>|aceitar|recusar|cancelar|divorcio|partner|info|list|listpriests|ajuda
     aliases: [casar]
 permissions:
   essentialsplus.admin:

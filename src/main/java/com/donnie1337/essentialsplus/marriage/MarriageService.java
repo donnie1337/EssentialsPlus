@@ -3,9 +3,9 @@ package com.donnie1337.essentialsplus.marriage;
 import com.donnie1337.essentialsplus.EssentialsPlus;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,13 +25,13 @@ import java.util.logging.Level;
 public final class MarriageService {
 
     public record Marriage(UUID playerId, String playerName, UUID partnerId, String partnerName, long marriedAt) {}
-    public record Proposal(UUID requesterId, String requesterName, long createdAt) {}
+    public record Proposal(UUID requesterId, String requesterName, UUID targetId, String targetName, long createdAt) {}
     public record Couple(String firstName, String secondName, long marriedAt) {}
 
     private final EssentialsPlus plugin;
     private final File file;
     private final Map<UUID, Marriage> marriages = new HashMap<>();
-    private final Map<UUID, Proposal> proposals = new HashMap<>();
+    private final Map<UUID, Proposal> proposalsByTarget = new HashMap<>();
 
     public MarriageService(EssentialsPlus plugin) {
         this.plugin = plugin;
@@ -46,69 +47,107 @@ public final class MarriageService {
         return Optional.ofNullable(marriages.get(playerId));
     }
 
-    public Optional<Proposal> getPendingProposal(UUID targetId) {
-        Proposal proposal = proposals.get(targetId);
-        if (proposal == null) return Optional.empty();
+    public Optional<Proposal> getIncomingProposal(UUID targetId) {
+        cleanupExpired();
+        return Optional.ofNullable(proposalsByTarget.get(targetId));
+    }
 
-        long timeoutMillis = Math.max(1L,
-                plugin.getConfig().getLong("marriage.request-timeout-seconds", 60L)) * 1000L;
-        if (System.currentTimeMillis() - proposal.createdAt() > timeoutMillis) {
-            proposals.remove(targetId);
-            return Optional.empty();
-        }
-        return Optional.of(proposal);
+    public Optional<Proposal> getOutgoingProposal(UUID requesterId) {
+        cleanupExpired();
+        return proposalsByTarget.values().stream()
+                .filter(proposal -> proposal.requesterId().equals(requesterId))
+                .findFirst();
     }
 
     public RequestResult request(Player requester, Player target) {
+        cleanupExpired();
+
         if (requester.getUniqueId().equals(target.getUniqueId())) return RequestResult.SELF;
         if (isMarried(requester.getUniqueId())) return RequestResult.REQUESTER_MARRIED;
         if (isMarried(target.getUniqueId())) return RequestResult.TARGET_MARRIED;
+        if (getOutgoingProposal(requester.getUniqueId()).isPresent()) return RequestResult.REQUESTER_HAS_PENDING;
+        if (getIncomingProposal(target.getUniqueId()).isPresent()) return RequestResult.TARGET_HAS_PENDING;
 
-        Proposal existing = getPendingProposal(target.getUniqueId()).orElse(null);
-        if (existing != null && existing.requesterId().equals(requester.getUniqueId())) {
-            return RequestResult.ALREADY_PENDING;
-        }
-
-        proposals.put(target.getUniqueId(),
-                new Proposal(requester.getUniqueId(), requester.getName(), System.currentTimeMillis()));
+        proposalsByTarget.put(target.getUniqueId(), new Proposal(
+                requester.getUniqueId(), requester.getName(),
+                target.getUniqueId(), target.getName(),
+                System.currentTimeMillis()
+        ));
         return RequestResult.OK;
     }
 
     public AcceptResult accept(Player target) {
-        Proposal proposal = getPendingProposal(target.getUniqueId()).orElse(null);
+        Proposal proposal = getIncomingProposal(target.getUniqueId()).orElse(null);
         if (proposal == null) return new AcceptResult(AcceptStatus.NO_REQUEST, null);
 
         Player requester = Bukkit.getPlayer(proposal.requesterId());
         if (requester == null || !requester.isOnline()) {
-            proposals.remove(target.getUniqueId());
+            proposalsByTarget.remove(target.getUniqueId());
             return new AcceptResult(AcceptStatus.REQUESTER_OFFLINE, proposal);
         }
 
         if (isMarried(target.getUniqueId()) || isMarried(requester.getUniqueId())) {
-            proposals.remove(target.getUniqueId());
+            proposalsByTarget.remove(target.getUniqueId());
             return new AcceptResult(AcceptStatus.ALREADY_MARRIED, proposal);
         }
 
         long now = Instant.now().toEpochMilli();
-        Marriage first = new Marriage(
+        marriages.put(requester.getUniqueId(), new Marriage(
                 requester.getUniqueId(), requester.getName(),
                 target.getUniqueId(), target.getName(), now
-        );
-        Marriage second = new Marriage(
+        ));
+        marriages.put(target.getUniqueId(), new Marriage(
                 target.getUniqueId(), target.getName(),
                 requester.getUniqueId(), requester.getName(), now
-        );
-        marriages.put(requester.getUniqueId(), first);
-        marriages.put(target.getUniqueId(), second);
-        proposals.remove(target.getUniqueId());
+        ));
+        proposalsByTarget.remove(target.getUniqueId());
         save();
         return new AcceptResult(AcceptStatus.OK, proposal);
     }
 
     public Optional<Proposal> deny(UUID targetId) {
-        Proposal proposal = getPendingProposal(targetId).orElse(null);
-        if (proposal != null) proposals.remove(targetId);
-        return Optional.ofNullable(proposal);
+        cleanupExpired();
+        return Optional.ofNullable(proposalsByTarget.remove(targetId));
+    }
+
+    public Optional<Proposal> cancelOutgoing(UUID requesterId) {
+        cleanupExpired();
+        Iterator<Map.Entry<UUID, Proposal>> iterator = proposalsByTarget.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, Proposal> entry = iterator.next();
+            if (entry.getValue().requesterId().equals(requesterId)) {
+                Proposal proposal = entry.getValue();
+                iterator.remove();
+                return Optional.of(proposal);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Marriage> divorce(UUID playerId) {
+        Marriage marriage = marriages.remove(playerId);
+        if (marriage == null) return Optional.empty();
+
+        Marriage partnerMarriage = marriages.get(marriage.partnerId());
+        if (partnerMarriage != null && partnerMarriage.partnerId().equals(playerId)) {
+            marriages.remove(marriage.partnerId());
+        }
+        save();
+        return Optional.of(marriage);
+    }
+
+    public List<Proposal> cancelRequestsFor(UUID playerId) {
+        cleanupExpired();
+        List<Proposal> cancelled = new ArrayList<>();
+        Iterator<Map.Entry<UUID, Proposal>> iterator = proposalsByTarget.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Proposal proposal = iterator.next().getValue();
+            if (proposal.requesterId().equals(playerId) || proposal.targetId().equals(playerId)) {
+                cancelled.add(proposal);
+                iterator.remove();
+            }
+        }
+        return cancelled;
     }
 
     public List<Couple> listCouples() {
@@ -120,9 +159,11 @@ public final class MarriageService {
             String key = a.compareTo(b) < 0 ? a + ":" + b : b + ":" + a;
             if (!seen.add(key)) continue;
 
-            String first = safeName(marriage.playerId(), marriage.playerName());
-            String second = safeName(marriage.partnerId(), marriage.partnerName());
-            result.add(new Couple(first, second, marriage.marriedAt()));
+            result.add(new Couple(
+                    safeName(marriage.playerId(), marriage.playerName()),
+                    safeName(marriage.partnerId(), marriage.partnerName()),
+                    marriage.marriedAt()
+            ));
         }
         result.sort(Comparator.comparing(Couple::firstName, String.CASE_INSENSITIVE_ORDER));
         return result;
@@ -134,6 +175,13 @@ public final class MarriageService {
                 .map(Player::getName)
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .toList();
+    }
+
+    private void cleanupExpired() {
+        long timeoutMillis = Math.max(1L,
+                plugin.getConfig().getLong("marriage.request-timeout-seconds", 60L)) * 1000L;
+        long now = System.currentTimeMillis();
+        proposalsByTarget.values().removeIf(proposal -> now - proposal.createdAt() > timeoutMillis);
     }
 
     private String safeName(UUID uuid, String fallback) {
@@ -154,12 +202,15 @@ public final class MarriageService {
                 UUID playerId = UUID.fromString(rawId);
                 String partnerRaw = section.getString(rawId + ".partner");
                 if (partnerRaw == null) continue;
+
                 UUID partnerId = UUID.fromString(partnerRaw);
-                String playerName = section.getString(rawId + ".name", "Jogador");
-                String partnerName = section.getString(rawId + ".partner-name", "Jogador");
-                long marriedAt = section.getLong(rawId + ".married-at", 0L);
-                marriages.put(playerId,
-                        new Marriage(playerId, playerName, partnerId, partnerName, marriedAt));
+                marriages.put(playerId, new Marriage(
+                        playerId,
+                        section.getString(rawId + ".name", "Jogador"),
+                        partnerId,
+                        section.getString(rawId + ".partner-name", "Jogador"),
+                        section.getLong(rawId + ".married-at", 0L)
+                ));
             } catch (IllegalArgumentException exception) {
                 plugin.getLogger().warning("Entrada de casamento inválida em marriages.yml: " + rawId);
             }
@@ -185,7 +236,7 @@ public final class MarriageService {
     }
 
     public enum RequestResult {
-        OK, SELF, REQUESTER_MARRIED, TARGET_MARRIED, ALREADY_PENDING
+        OK, SELF, REQUESTER_MARRIED, TARGET_MARRIED, REQUESTER_HAS_PENDING, TARGET_HAS_PENDING
     }
 
     public enum AcceptStatus {

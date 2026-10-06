@@ -23,6 +23,7 @@ import com.donnie1337.essentialsplus.inspect.InspectListener;
 import com.donnie1337.essentialsplus.inspect.LiveInspectionService;
 import com.donnie1337.essentialsplus.inspect.VerCommand;
 import com.donnie1337.essentialsplus.marriage.MarriageCommand;
+import com.donnie1337.essentialsplus.marriage.MarriageListener;
 import com.donnie1337.essentialsplus.marriage.MarriageService;
 import com.donnie1337.essentialsplus.spawn.FirstJoinService;
 import com.donnie1337.essentialsplus.spawn.FirstJoinSpawnListener;
@@ -116,6 +117,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("delhome", new DelHomeCommand(homeService));
 
         marriageService = new MarriageService(this);
+        getServer().getPluginManager().registerEvents(new MarriageListener(this, marriageService), this);
         register("marry", new MarriageCommand(this, marriageService));
 
         getLogger().info("EssentialsPlus habilitado com Spawn, Casamento, TPA, TP Staff, Homes, Vanish, Fly, Ender Chest, Bau, Ver, Craft, Tell e Reply.");

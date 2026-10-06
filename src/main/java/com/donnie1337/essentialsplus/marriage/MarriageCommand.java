@@ -45,6 +45,8 @@ public final class MarriageCommand implements TabExecutor {
         return switch (sub) {
             case "aceitar", "accept" -> handleAccept(player);
             case "recusar", "deny" -> handleDeny(player);
+            case "cancelar", "cancel" -> handleCancel(player);
+            case "divorcio", "divórcio", "divorce" -> handleDivorce(player);
             case "partner", "parceiro" -> handlePartner(player);
             case "info" -> handleInfo(player);
             case "list", "lista" -> handleList(player);
@@ -72,11 +74,15 @@ public final class MarriageCommand implements TabExecutor {
                     "&cVocê já é casado."));
             case TARGET_MARRIED -> player.sendMessage(prefixed("alvo-ja-casado",
                     "&c{player} já é casado.").replace("{player}", target.getName()));
-            case ALREADY_PENDING -> player.sendMessage(prefixed("pedido-ja-enviado",
-                    "&eVocê já enviou um pedido de casamento para {player}.").replace("{player}", target.getName()));
+            case REQUESTER_HAS_PENDING -> player.sendMessage(prefixed("pedido-aberto-remetente",
+                    "&eVocê já possui um pedido de casamento em aberto. Use &f/marry cancelar&e."));
+            case TARGET_HAS_PENDING -> player.sendMessage(prefixed("pedido-aberto-alvo",
+                    "&e{player} já possui um pedido de casamento pendente.")
+                    .replace("{player}", target.getName()));
             case OK -> {
                 player.sendMessage(prefixed("pedido-enviado",
-                        "&aPedido de casamento enviado para &f{player}&a.").replace("{player}", target.getName()));
+                        "&aPedido de casamento enviado para &f{player}&a.")
+                        .replace("{player}", target.getName()));
                 target.sendMessage(prefixed("pedido-recebido",
                         "&f{player} &dquer se casar com você! &fUse &a/marry aceitar &fou &c/marry recusar&f.")
                         .replace("{player}", player.getName()));
@@ -98,16 +104,17 @@ public final class MarriageCommand implements TabExecutor {
                 MarriageService.Proposal proposal = result.proposal();
                 Player partner = Bukkit.getPlayer(proposal.requesterId());
                 player.sendMessage(prefixed("casamento-realizado",
-                        "&aVocê agora está casado com &f{player}&a!").replace("{player}", proposal.requesterName()));
+                        "&aVocê agora está casado com &f{player}&a!")
+                        .replace("{player}", proposal.requesterName()));
                 if (partner != null) {
                     partner.sendMessage(prefixed("casamento-realizado",
-                            "&aVocê agora está casado com &f{player}&a!").replace("{player}", player.getName()));
+                            "&aVocê agora está casado com &f{player}&a!")
+                            .replace("{player}", player.getName()));
                 }
-                String broadcast = color(message("anuncio",
-                        "&d❤ &f{player1} &de &f{player2} &dacabaraм de se casar! &d❤"))
+                Bukkit.broadcastMessage(color(message("anuncio",
+                        "&d❤ &f{player1} &de &f{player2} &dacabaram de se casar! &d❤"))
                         .replace("{player1}", proposal.requesterName())
-                        .replace("{player2}", player.getName());
-                Bukkit.broadcastMessage(broadcast);
+                        .replace("{player2}", player.getName()));
             }
         }
         return true;
@@ -122,11 +129,52 @@ public final class MarriageCommand implements TabExecutor {
         }
 
         player.sendMessage(prefixed("pedido-recusado",
-                "&cVocê recusou o pedido de casamento de {player}.").replace("{player}", proposal.requesterName()));
+                "&cVocê recusou o pedido de casamento de {player}.")
+                .replace("{player}", proposal.requesterName()));
         Player requester = Bukkit.getPlayer(proposal.requesterId());
         if (requester != null) {
             requester.sendMessage(prefixed("pedido-recusado-remetente",
-                    "&c{player} recusou seu pedido de casamento.").replace("{player}", player.getName()));
+                    "&c{player} recusou seu pedido de casamento.")
+                    .replace("{player}", player.getName()));
+        }
+        return true;
+    }
+
+    private boolean handleCancel(Player player) {
+        MarriageService.Proposal proposal = service.cancelOutgoing(player.getUniqueId()).orElse(null);
+        if (proposal == null) {
+            player.sendMessage(prefixed("sem-pedido-enviado",
+                    "&eVocê não possui nenhum pedido de casamento enviado."));
+            return true;
+        }
+
+        player.sendMessage(prefixed("pedido-cancelado",
+                "&aVocê cancelou o pedido de casamento para &f{player}&a.")
+                .replace("{player}", proposal.targetName()));
+        Player target = Bukkit.getPlayer(proposal.targetId());
+        if (target != null) {
+            target.sendMessage(prefixed("pedido-cancelado-alvo",
+                    "&e{player} cancelou o pedido de casamento.")
+                    .replace("{player}", player.getName()));
+        }
+        return true;
+    }
+
+    private boolean handleDivorce(Player player) {
+        MarriageService.Marriage marriage = service.divorce(player.getUniqueId()).orElse(null);
+        if (marriage == null) {
+            player.sendMessage(prefixed("nao-casado", "&eVocê não é casado."));
+            return true;
+        }
+
+        player.sendMessage(prefixed("divorcio-realizado",
+                "&aVocê se divorciou de &f{player}&a.")
+                .replace("{player}", marriage.partnerName()));
+        Player partner = Bukkit.getPlayer(marriage.partnerId());
+        if (partner != null) {
+            partner.sendMessage(prefixed("divorcio-parceiro",
+                    "&e{player} se divorciou de você.")
+                    .replace("{player}", player.getName()));
         }
         return true;
     }
@@ -176,25 +224,27 @@ public final class MarriageCommand implements TabExecutor {
             player.sendMessage(prefixed("nenhum-padre", "&eNão há padres online."));
             return true;
         }
-        player.sendMessage(color("&d[Marry] &fPadres online: &d" + String.join("&f, &d", priests)));
+        player.sendMessage(color("&d[Marry] &fPadres online: &d" +
+                String.join("&f, &d", priests)));
         return true;
     }
 
     private void showHelp(Player player) {
         player.sendMessage(color("&d[Marry] &fComandos disponíveis para casamento:"));
+        player.sendMessage(color("&8» &f/marry <player_name> &8- &bEnvia um pedido de casamento."));
+        player.sendMessage(color("&8» &f/marry aceitar &8- &bAceita o pedido pendente."));
+        player.sendMessage(color("&8» &f/marry recusar &8- &bRecusa o pedido pendente."));
+        player.sendMessage(color("&8» &f/marry cancelar &8- &bCancela o pedido que você enviou."));
+        player.sendMessage(color("&8» &f/marry divorcio &8- &bEncerra seu casamento atual."));
+        player.sendMessage(color("&8» &f/marry partner &8- &bMostra seu parceiro."));
+        player.sendMessage(color("&8» &f/marry info &8- &bMostra informações do casamento."));
         player.sendMessage(color("&8» &f/marry list &8- &bExibe todos os jogadores casados."));
         player.sendMessage(color("&8» &f/marry listpriests &8- &bExibe todos os padres online."));
-        player.sendMessage(color("&8» &f/marry partner &8- &bLista o parceiro de um player."));
-        player.sendMessage(color("&8» &f/marry <player_name> &8- &bEnvia um pedido de casamento para outro jogador."));
-        player.sendMessage(color("&8» &f/marry aceitar &8- &bAceita o pedido de casamento pendente."));
-        player.sendMessage(color("&8» &f/marry recusar &8- &bRecusa o pedido de casamento pendente."));
-        player.sendMessage(color("&8» &f/marry info &8- &bMostra informações sobre o casamento."));
         player.sendMessage(color("&8» &f/marry ajuda &8- &bExibe todos os comandos disponíveis."));
     }
 
     private String prefixed(String key, String fallback) {
-        String prefix = message("prefix", "&d&lᴍᴀʀʀʏ &8• &r");
-        return color(prefix + message(key, fallback));
+        return color(message("prefix", "&d&lᴍᴀʀʀʏ &8• &r") + message(key, fallback));
     }
 
     private String message(String key, String fallback) {
@@ -207,21 +257,23 @@ public final class MarriageCommand implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) {
-            String input = args[0].toLowerCase(Locale.ROOT);
-            List<String> options = new ArrayList<>(List.of(
-                    "aceitar", "recusar", "partner", "info", "list", "listpriests", "ajuda"
-            ));
-            for (Player online : Bukkit.getOnlinePlayers()) {
-                if (!online.getName().equalsIgnoreCase(sender.getName())) {
-                    options.add(online.getName());
-                }
+        if (args.length != 1) return List.of();
+
+        String input = args[0].toLowerCase(Locale.ROOT);
+        List<String> options = new ArrayList<>(List.of(
+                "aceitar", "recusar", "cancelar", "divorcio",
+                "partner", "info", "list", "listpriests", "ajuda"
+        ));
+
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            if (!online.getName().equalsIgnoreCase(sender.getName())) {
+                options.add(online.getName());
             }
-            return options.stream()
-                    .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(input))
-                    .sorted(String.CASE_INSENSITIVE_ORDER)
-                    .toList();
         }
-        return List.of();
+
+        return options.stream()
+                .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(input))
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
     }
 }
