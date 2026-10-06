@@ -100,7 +100,6 @@ commands:
   spawn:
     description: Teleporta para o spawn principal do servidor.
     usage: /spawn
-    permission: essentialsplus.spawn
   setspawn:
     description: Define o spawn principal na localização atual.
     usage: /setspawn
