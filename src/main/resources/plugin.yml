@@ -1,9 +1,9 @@
 name: EssentialsPlus
 version: 1.0.0-SNAPSHOT
 main: com.donnie1337.essentialsplus.EssentialsPlus
-api-version: '26.2'
+api-version: '26.3'
 author: donnie1337
-description: Essentials customizado para Paper 26.2.
+description: Essentials customizado para Paper 26.3.
 website: https://github.com/donnie1337/EssentialsPlus
 softdepend:
   - LoginPlus
@@ -97,6 +97,14 @@ commands:
     description: Remove uma home salva.
     usage: /delhome <nome>
     permission: essentialsplus.delhome
+  spawn:
+    description: Teleporta para o spawn principal do servidor.
+    usage: /spawn
+    permission: essentialsplus.spawn
+  setspawn:
+    description: Define o spawn principal na localização atual.
+    usage: /setspawn
+    permission: essentialsplus.setspawn
 permissions:
   essentialsplus.admin:
     description: Permite usar os recursos administrativos do EssentialsPlus.
@@ -105,6 +113,7 @@ permissions:
       essentialsplus.vanish: true
       essentialsplus.teleport: true
       essentialsplus.inspect: true
+      essentialsplus.setspawn: true
   essentialsplus.vanish:
     description: Permite usar o /v.
     default: false
@@ -163,3 +172,10 @@ permissions:
   essentialsplus.delhome:
     description: Permite usar /delhome.
     default: true
+
+  essentialsplus.spawn:
+    description: Permite usar /spawn.
+    default: true
+  essentialsplus.setspawn:
+    description: Permite definir o spawn principal com /setspawn.
+    default: op

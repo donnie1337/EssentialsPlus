@@ -22,6 +22,9 @@ import com.donnie1337.essentialsplus.home.command.SetHomeCommand;
 import com.donnie1337.essentialsplus.inspect.InspectListener;
 import com.donnie1337.essentialsplus.inspect.LiveInspectionService;
 import com.donnie1337.essentialsplus.inspect.VerCommand;
+import com.donnie1337.essentialsplus.spawn.SpawnService;
+import com.donnie1337.essentialsplus.spawn.command.SetSpawnCommand;
+import com.donnie1337.essentialsplus.spawn.command.SpawnCommand;
 import com.donnie1337.essentialsplus.teleport.StaffTeleportService;
 import com.donnie1337.essentialsplus.teleport.TpaCustomClickListener;
 import com.donnie1337.essentialsplus.teleport.TeleportService;
@@ -52,6 +55,7 @@ public final class EssentialsPlus extends JavaPlugin {
     private BukkitTask bauAutoSaveTask;
     private BukkitAudiences adventure;
     private FlightService flightService;
+    private SpawnService spawnService;
 
     @Override
     public void onEnable() {
@@ -84,6 +88,10 @@ public final class EssentialsPlus extends JavaPlugin {
         tpaCustomClickListener.register(getServer().getPluginManager());
         staffTeleportService = new StaffTeleportService(this);
         register("tp", new TpCommand(staffTeleportService));
+        spawnService = new SpawnService(this);
+        register("spawn", new SpawnCommand(spawnService));
+        register("setspawn", new SetSpawnCommand(spawnService));
+
         homeService = new HomeService(this);
         HomeGui homeGui = new HomeGui(homeService);
         getServer().getPluginManager().registerEvents(homeGui, this);
@@ -97,7 +105,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("homes", new HomesCommand(homeService, homeGui));
         register("sethome", new SetHomeCommand(homeService));
         register("delhome", new DelHomeCommand(homeService));
-        getLogger().info("EssentialsPlus habilitado com TPA, TP Staff, Homes, Vanish, Fly, Ender Chest, Bau, Ver, Craft, Tell e Reply.");
+        getLogger().info("EssentialsPlus habilitado com Spawn, TPA, TP Staff, Homes, Vanish, Fly, Ender Chest, Bau, Ver, Craft, Tell e Reply.");
     }
 
     @Override
@@ -118,6 +126,10 @@ public final class EssentialsPlus extends JavaPlugin {
         bauAutoSaveTask = Bukkit.getScheduler().runTaskTimer(this, () -> {
             if (bauService != null) bauService.saveOpenBaus();
         }, 100L, 100L);
+    }
+
+    public SpawnService getSpawnService() {
+        return spawnService;
     }
 
     public boolean isVanished(org.bukkit.entity.Player player) {
