@@ -27,6 +27,14 @@ public final class FirstJoinSpawnListener implements Listener {
             return;
         }
 
-        event.getPlayer().teleport(spawn);
+        try {
+            if (!spawn.getChunk().isLoaded()) {
+                spawn.getChunk().load(true);
+            }
+            event.getPlayer().teleport(spawn);
+        } catch (RuntimeException ignored) {
+            // Se o destino não puder ser preparado neste momento,
+            // o jogador entra normalmente em vez de interromper o join.
+        }
     }
 }

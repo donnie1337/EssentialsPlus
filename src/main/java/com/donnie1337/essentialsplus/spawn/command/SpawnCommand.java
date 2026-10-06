@@ -30,7 +30,23 @@ public final class SpawnCommand implements CommandExecutor {
             return true;
         }
 
-        boolean success = player.teleport(spawn);
+        try {
+            if (!spawn.getChunk().isLoaded()) {
+                spawn.getChunk().load(true);
+            }
+        } catch (RuntimeException exception) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    "&6&lSPAWN &8• &cNão foi possível carregar o local do spawn."));
+            return true;
+        }
+
+        boolean success;
+        try {
+            success = player.teleport(spawn);
+        } catch (RuntimeException exception) {
+            success = false;
+        }
+
         if (!success) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
                     "&6&lSPAWN &8• &cNão foi possível teleportar você para o spawn."));
