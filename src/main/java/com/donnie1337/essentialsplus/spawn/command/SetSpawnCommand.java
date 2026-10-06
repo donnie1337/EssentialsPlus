@@ -25,10 +25,10 @@ public final class SetSpawnCommand implements CommandExecutor {
         try {
             spawnService.setSpawn(player.getLocation());
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lSPAWN &8• &aSpawn definido na sua localização atual."));
+                    "&6&lꜱᴘᴀᴡɴ &8• &aSpawn definido na sua localização atual."));
         } catch (IllegalStateException exception) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lSPAWN &8• &cNão foi possível salvar o spawn. Verifique o console."));
+                    "&6&lꜱᴘᴀᴡɴ &8• &cNão foi possível salvar o spawn. Verifique o console."));
         }
         return true;
     }

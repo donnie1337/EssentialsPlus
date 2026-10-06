@@ -26,7 +26,7 @@ public final class SpawnCommand implements CommandExecutor {
         Location spawn = spawnService.getSpawn().orElse(null);
         if (spawn == null) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lSPAWN &8• &cO spawn ainda não foi definido."));
+                    "&6&lꜱᴘᴀᴡɴ &8• &cO spawn ainda não foi definido."));
             return true;
         }
 
@@ -36,7 +36,7 @@ public final class SpawnCommand implements CommandExecutor {
             }
         } catch (RuntimeException exception) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lSPAWN &8• &cNão foi possível carregar o local do spawn."));
+                    "&6&lꜱᴘᴀᴡɴ &8• &cNão foi possível carregar o local do spawn."));
             return true;
         }
 
@@ -49,12 +49,12 @@ public final class SpawnCommand implements CommandExecutor {
 
         if (!success) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lSPAWN &8• &cNão foi possível teleportar você para o spawn."));
+                    "&6&lꜱᴘᴀᴡɴ &8• &cNão foi possível teleportar você para o spawn."));
             return true;
         }
 
         player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                "&6&lSPAWN &8• &aTeleportado para o spawn."));
+                "&6&lꜱᴘᴀᴡɴ &8• &aTeleportado para o spawn."));
         return true;
     }
 }
