@@ -95,8 +95,8 @@ public final class EssentialsPlus extends JavaPlugin {
         firstJoinService = new FirstJoinService(this);
         getServer().getPluginManager().registerEvents(
                 new FirstJoinSpawnListener(spawnService, firstJoinService), this);
-        register("spawn", new SpawnCommand(spawnService));
-        register("setspawn", new SetSpawnCommand(spawnService));
+        register("spawn", new SpawnCommand(this, spawnService));
+        register("setspawn", new SetSpawnCommand(this, spawnService));
 
         homeService = new HomeService(this);
         HomeGui homeGui = new HomeGui(homeService);

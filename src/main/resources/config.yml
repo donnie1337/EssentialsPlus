@@ -91,6 +91,16 @@ messages:
     uso:
       tp: "&fUse: &e/tp <jogador>"
 
+  spawn:
+    prefix: "&6&lꜱᴘᴀᴡɴ &8• &r"
+    jogador-apenas: "&cEste comando precisa ser usado por um jogador."
+    nao-definido: "&cO spawn ainda não foi definido."
+    carregamento-falhou: "&cNão foi possível carregar o local do spawn."
+    teleporte-falhou: "&cNão foi possível teleportar você para o spawn."
+    teleportado: "&aTeleportado para o spawn."
+    definido: "&aSpawn definido na sua localização atual."
+    salvar-falhou: "&cNão foi possível salvar o spawn. Verifique o console."
+
   home:
     prefix: "&a&lʜᴏᴍᴇ &8• &r"
     salva: "&aHome {home} salva com sucesso."

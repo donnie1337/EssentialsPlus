@@ -1,5 +1,6 @@
 package com.donnie1337.essentialsplus.spawn.command;
 
+import com.donnie1337.essentialsplus.EssentialsPlus;
 import com.donnie1337.essentialsplus.spawn.SpawnService;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -10,23 +11,26 @@ import org.bukkit.entity.Player;
 
 public final class SpawnCommand implements CommandExecutor {
 
+    private final EssentialsPlus plugin;
     private final SpawnService spawnService;
 
-    public SpawnCommand(SpawnService spawnService) {
+    public SpawnCommand(EssentialsPlus plugin, SpawnService spawnService) {
+        this.plugin = plugin;
         this.spawnService = spawnService;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("Este comando precisa ser usado por um jogador.");
+            sender.sendMessage(message("jogador-apenas",
+                    "Este comando precisa ser usado por um jogador."));
             return true;
         }
 
         Location spawn = spawnService.getSpawn().orElse(null);
         if (spawn == null) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lꜱᴘᴀᴡɴ &8• &cO spawn ainda não foi definido."));
+            player.sendMessage(message("nao-definido",
+                    "&cO spawn ainda não foi definido."));
             return true;
         }
 
@@ -35,8 +39,8 @@ public final class SpawnCommand implements CommandExecutor {
                 spawn.getChunk().load(true);
             }
         } catch (RuntimeException exception) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lꜱᴘᴀᴡɴ &8• &cNão foi possível carregar o local do spawn."));
+            player.sendMessage(message("carregamento-falhou",
+                    "&cNão foi possível carregar o local do spawn."));
             return true;
         }
 
@@ -48,13 +52,22 @@ public final class SpawnCommand implements CommandExecutor {
         }
 
         if (!success) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&6&lꜱᴘᴀᴡɴ &8• &cNão foi possível teleportar você para o spawn."));
+            player.sendMessage(message("teleporte-falhou",
+                    "&cNão foi possível teleportar você para o spawn."));
             return true;
         }
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                "&6&lꜱᴘᴀᴡɴ &8• &aTeleportado para o spawn."));
+        player.sendMessage(message("teleportado",
+                "&aTeleportado para o spawn."));
         return true;
+    }
+
+    private String message(String key, String fallback) {
+        String prefix = plugin.getConfig().getString(
+                "messages.spawn.prefix",
+                "&6&lꜱᴘᴀᴡɴ &8• &r"
+        );
+        String body = plugin.getConfig().getString("messages.spawn." + key, fallback);
+        return ChatColor.translateAlternateColorCodes('&', prefix + body);
     }
 }
