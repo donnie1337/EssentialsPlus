@@ -9,14 +9,16 @@ import org.bukkit.event.player.PlayerJoinEvent;
 public final class FirstJoinSpawnListener implements Listener {
 
     private final SpawnService spawnService;
+    private final FirstJoinService firstJoinService;
 
-    public FirstJoinSpawnListener(SpawnService spawnService) {
+    public FirstJoinSpawnListener(SpawnService spawnService, FirstJoinService firstJoinService) {
         this.spawnService = spawnService;
+        this.firstJoinService = firstJoinService;
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onFirstJoin(PlayerJoinEvent event) {
-        if (event.getPlayer().hasPlayedBefore()) {
+        if (!firstJoinService.markAndCheckFirstJoin(event.getPlayer().getUniqueId())) {
             return;
         }
 

@@ -22,6 +22,7 @@ import com.donnie1337.essentialsplus.home.command.SetHomeCommand;
 import com.donnie1337.essentialsplus.inspect.InspectListener;
 import com.donnie1337.essentialsplus.inspect.LiveInspectionService;
 import com.donnie1337.essentialsplus.inspect.VerCommand;
+import com.donnie1337.essentialsplus.spawn.FirstJoinService;
 import com.donnie1337.essentialsplus.spawn.FirstJoinSpawnListener;
 import com.donnie1337.essentialsplus.spawn.SpawnService;
 import com.donnie1337.essentialsplus.spawn.command.SetSpawnCommand;
@@ -57,6 +58,7 @@ public final class EssentialsPlus extends JavaPlugin {
     private BukkitAudiences adventure;
     private FlightService flightService;
     private SpawnService spawnService;
+    private FirstJoinService firstJoinService;
 
     @Override
     public void onEnable() {
@@ -90,7 +92,9 @@ public final class EssentialsPlus extends JavaPlugin {
         staffTeleportService = new StaffTeleportService(this);
         register("tp", new TpCommand(staffTeleportService));
         spawnService = new SpawnService(this);
-        getServer().getPluginManager().registerEvents(new FirstJoinSpawnListener(spawnService), this);
+        firstJoinService = new FirstJoinService(this);
+        getServer().getPluginManager().registerEvents(
+                new FirstJoinSpawnListener(spawnService, firstJoinService), this);
         register("spawn", new SpawnCommand(spawnService));
         register("setspawn", new SetSpawnCommand(spawnService));
 
