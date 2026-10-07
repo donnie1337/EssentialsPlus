@@ -19,6 +19,10 @@ commands:
     description: Ativa ou desativa o modo voo.
     usage: /fly
     permission: essentialsplus.fly
+  gamemode:
+    description: Altera seu modo de jogo.
+    usage: /gamemode <0|1|2|3>
+    permission: essentialsplus.gamemode
   ec:
     description: Abre o Ender Chest pessoal ou visualiza o Ender Chest de outro jogador.
     usage: /ec [jogador]
@@ -114,6 +118,7 @@ permissions:
     default: op
     children:
       essentialsplus.vanish: true
+      essentialsplus.gamemode: true
       essentialsplus.teleport: true
       essentialsplus.inspect: true
       essentialsplus.setspawn: true
@@ -122,6 +127,9 @@ permissions:
     default: false
   essentialsplus.fly:
     description: Permite usar o /fly.
+    default: false
+  essentialsplus.gamemode:
+    description: Permite usar /gamemode 0, 1, 2 ou 3.
     default: false
   essentialsplus.ec:
     description: Permite usar o /ec.
