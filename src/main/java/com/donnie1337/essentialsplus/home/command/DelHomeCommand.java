@@ -44,7 +44,7 @@ public final class DelHomeCommand implements CommandExecutor {
     }
 
     private void message(Player player, String path, String... replacements) {
-        String prefix = service.plugin().getConfig().getString("messages.home.prefix", "&a&lʜᴏᴍᴇ &8• &r");
+        String prefix = service.plugin().getConfig().getString("messages.home.prefix", "&a[Home] &r");
         String raw = service.plugin().getConfig().getString("messages." + path, "");
         for (int i = 0; i + 1 < replacements.length; i += 2) {
             raw = raw.replace("{" + replacements[i] + "}", replacements[i + 1]);
