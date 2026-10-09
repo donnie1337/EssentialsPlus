@@ -86,7 +86,7 @@ messages:
       tpa: "&fUse: &e/tpa <jogador>"
 
   tp:
-    prefix: "&c&lᴛᴘ &8• &r"
+    prefix: "&c[TP] &r"
     jogador-apenas: "&cEste comando precisa ser usado por um jogador."
     teleportado-ate: "&aTeleportado até {player}&f."
     jogador-teleportado-ate: "&a{player}&f foi teleportado até {target}&f."
@@ -127,7 +127,7 @@ messages:
     nenhum-padre: "&eNão há padres online."
 
   spawn:
-    prefix: "&6&lꜱᴘᴀᴡɴ &8• &r"
+    prefix: "&6[Spawn] &r"
     jogador-apenas: "&cEste comando precisa ser usado por um jogador."
     nao-definido: "&cO spawn ainda não foi definido."
     carregamento-falhou: "&cNão foi possível carregar o local do spawn."
@@ -137,7 +137,7 @@ messages:
     salvar-falhou: "&cNão foi possível salvar o spawn. Verifique o console."
 
   home:
-    prefix: "&a&lʜᴏᴍᴇ &8• &r"
+    prefix: "&a[Home] &r"
     salva: "&aHome {home} salva com sucesso."
     teleportado: "&aTeleportado para a home {home}."
     removida: "&aHome {home} removida com sucesso."
