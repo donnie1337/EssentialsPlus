@@ -65,7 +65,7 @@ public final class SpawnCommand implements CommandExecutor {
     private String message(String key, String fallback) {
         String prefix = plugin.getConfig().getString(
                 "messages.spawn.prefix",
-                "&6&lꜱᴘᴀᴡɴ &8• &r"
+                "&6[Spawn] &r"
         );
         String body = plugin.getConfig().getString("messages.spawn." + key, fallback);
         return ChatColor.translateAlternateColorCodes('&', prefix + body);
