@@ -16,8 +16,8 @@ import java.util.List;
 
 public final class TpaCommand implements CommandExecutor, TabCompleter {
     private static final String VANISH_PERMISSION = "essentialsplus.vanish";
-    private static final String TPA_NOT_FOUND = "§b§lᴛᴘᴀ §8• §cJogador não encontrado.";
-    private static final String TPA_VANISHED = "§b§lᴛᴘᴀ §8• §cVocê não pode usar TPA enquanto estiver invisível.";
+    private static final String TPA_NOT_FOUND = "§b[Tpa] §cJogador não encontrado.";
+    private static final String TPA_VANISHED = "§b[Tpa] §cVocê não pode usar TPA enquanto estiver invisível.";
 
     private final TeleportService service;
     private final AuthSystemBridge auth = new AuthSystemBridge();
@@ -49,7 +49,7 @@ public final class TpaCommand implements CommandExecutor, TabCompleter {
 
     private String tpaUsage() {
         Plugin plugin = Bukkit.getPluginManager().getPlugin("EssentialsPlus");
-        String prefix = "&b&lᴛᴘᴀ &8• &r";
+        String prefix = "&b[Tpa] &r";
         String message = "Use /tpa <jogador>.";
         if (plugin instanceof EssentialsPlus essentials) {
             prefix = essentials.getConfig().getString("messages.tpa.prefix", prefix);
