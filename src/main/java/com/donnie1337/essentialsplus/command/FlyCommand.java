@@ -27,8 +27,8 @@ public final class FlyCommand implements CommandExecutor {
 
         boolean enabled = flightService.toggle(player);
         player.sendMessage(enabled
-                ? "§a§lғʟʏ §8• §rModo de voo ativado."
-                : "§c§lғʟʏ §8• §rModo de voo desativado.");
+                ? "§a[Voo] §rModo de voo ativado."
+                : "§c[Voo] §rModo de voo desativado.");
         return true;
     }
 }
