@@ -12,16 +12,25 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 public final class FlightService implements Listener {
+    private static final double GLIDE_FAR_SPEED = 0.08D;
+    private static final double GLIDE_NEAR_SPEED = 0.55D;
+    private static final double GLIDE_DISTANCE = 32.0D;
+    private static final long GLIDE_UPDATE_INTERVAL_NANOS = 100_000_000L;
+
     private final JavaPlugin plugin;
     private final Set<UUID> gliding = new HashSet<>();
+    private final Map<UUID, Long> lastGlideVelocityUpdate = new HashMap<>();
     private final Set<UUID> terrainFlight = new HashSet<>();
     private final Set<UUID> insideOwnTerrain = new HashSet<>();
     private Object terrenosManager;
@@ -71,6 +80,7 @@ public final class FlightService implements Listener {
     public void enable(Player player) {
         if (player == null) return;
         gliding.remove(player.getUniqueId());
+        lastGlideVelocityUpdate.remove(player.getUniqueId());
         player.setFallDistance(0.0F);
         player.setAllowFlight(true);
         player.setFlying(true);
@@ -119,8 +129,22 @@ public final class FlightService implements Listener {
             return;
         }
 
-        // Não alteramos a velocidade do jogador enquanto ele cai. Assim,
-        // W/A/S/D continuam com o comportamento normal do Minecraft.
+        // Controla somente o eixo Y e deixa X/Z exatamente como o jogador
+        // estiver movimentando. A atualização é limitada a 10 vezes/segundo
+        // para não disputar com o controle horizontal do cliente.
+        long now = System.nanoTime();
+        long lastUpdate = lastGlideVelocityUpdate.getOrDefault(uuid, 0L);
+        if (now - lastUpdate >= GLIDE_UPDATE_INTERVAL_NANOS) {
+            lastGlideVelocityUpdate.put(uuid, now);
+
+            double distance = distanceToGround(player.getLocation());
+            double proximity = 1.0D - Math.min(1.0D, distance / GLIDE_DISTANCE);
+            double verticalSpeed = GLIDE_FAR_SPEED
+                    + (GLIDE_NEAR_SPEED - GLIDE_FAR_SPEED) * proximity;
+
+            Vector velocity = player.getVelocity();
+            player.setVelocity(new Vector(velocity.getX(), -verticalSpeed, velocity.getZ()));
+        }
         player.setFallDistance(0.0F);
     }
 
@@ -138,6 +162,7 @@ public final class FlightService implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         gliding.remove(uuid);
+        lastGlideVelocityUpdate.remove(uuid);
         terrainFlight.remove(uuid);
         insideOwnTerrain.remove(uuid);
     }
@@ -303,8 +328,28 @@ public final class FlightService implements Listener {
                 || head == Material.WATER || head == Material.LAVA;
     }
 
+    private double distanceToGround(Location location) {
+        if (location.getWorld() == null) return GLIDE_DISTANCE;
+
+        RayTraceResult result = location.getWorld().rayTraceBlocks(
+                location.clone().add(0.0D, 0.05D, 0.0D),
+                new org.bukkit.util.Vector(0.0D, -1.0D, 0.0D),
+                GLIDE_DISTANCE,
+                FluidCollisionMode.NEVER,
+                true
+        );
+
+        if (result == null || result.getHitPosition() == null) {
+            return GLIDE_DISTANCE;
+        }
+
+        return Math.max(0.0D, location.getY() - result.getHitPosition().getY());
+    }
+
     private void stopGlide(Player player) {
-        gliding.remove(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        gliding.remove(uuid);
+        lastGlideVelocityUpdate.remove(uuid);
         player.setFallDistance(0.0F);
     }
 }
