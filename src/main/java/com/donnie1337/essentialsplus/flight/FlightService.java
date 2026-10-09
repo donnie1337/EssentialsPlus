@@ -148,7 +148,8 @@ public final class FlightService implements Listener {
         if (player == null || !player.isOnline()) return;
 
         UUID uuid = player.getUniqueId();
-        boolean ownTerrain = canFly(player) && isInsideOwnTerrain(player);
+        boolean staff = player.hasPermission("essentialsplus.admin");
+        boolean ownTerrain = canFly(player) && (staff ? isInsideAnyTerrain(player) : isInsideOwnTerrain(player));
         boolean wasInside = insideOwnTerrain.contains(uuid);
 
         if (ownTerrain) {
@@ -186,6 +187,31 @@ public final class FlightService implements Listener {
                 player.setFallDistance(0.0F);
             }
             default -> disable(player);
+        }
+    }
+
+    private boolean isInsideAnyTerrain(Player player) {
+        if (player == null || !player.isOnline()) return false;
+
+        try {
+            var terrenosPlus = plugin.getServer().getPluginManager().getPlugin("TerrenosPlus");
+            if (terrenosPlus == null || !terrenosPlus.isEnabled()) {
+                clearTerrenosBridge();
+                return false;
+            }
+
+            if (terrenosManager == null || terrenosFindMethod == null) {
+                Method getManager = terrenosPlus.getClass().getMethod("getTerrenoManager");
+                terrenosManager = getManager.invoke(terrenosPlus);
+                if (terrenosManager == null) return false;
+                terrenosFindMethod = terrenosManager.getClass().getMethod("find", Location.class);
+            }
+
+            Object result = terrenosFindMethod.invoke(terrenosManager, player.getLocation());
+            return result instanceof Optional<?> optional && optional.isPresent();
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            clearTerrenosBridge();
+            return false;
         }
     }
 
