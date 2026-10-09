@@ -79,7 +79,9 @@ public final class EssentialsPlus extends JavaPlugin {
         register("fly", new FlyCommand(flightService));
         register("gamemode", new GameModeCommand());
         register("craft", new CraftCommand());
-        register("kit", new KitCommand());
+        KitCommand kitCommand = new KitCommand();
+        register("kit", kitCommand);
+        getServer().getPluginManager().registerEvents(kitCommand, this);
         register("tell", new TellCommand());
         register("r", new ReplyCommand());
         register("tellcancel", new TellCustomClickListener());
