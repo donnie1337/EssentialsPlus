@@ -70,7 +70,7 @@ public final class FlightService implements Listener {
         }
 
         UUID uuid = player.getUniqueId();
-        if (player.getAllowFlight()) {
+        if (terrainFlight.contains(uuid)) {
             manualFlightDisabled.add(uuid);
             disableTerrainFlight(player);
             return false;
@@ -208,15 +208,10 @@ public final class FlightService implements Listener {
             manualFlightDisabled.remove(uuid);
         }
 
-        if (terrainFlight.contains(uuid)) {
-            if (adminOrHigher) {
-                // Administrador, Gerente e DEV podem continuar voando fora de terrenos.
-                terrainFlight.remove(uuid);
-            } else {
-                disableTerrainFlight(player);
-                if (canFly(player)) {
-                    player.sendMessage("§c[Voo] §rModo de voo desativado.");
-                }
+        if (terrainFlight.contains(uuid) && !adminOrHigher) {
+            disableTerrainFlight(player);
+            if (canFly(player)) {
+                player.sendMessage("§c[Voo] §rModo de voo desativado.");
             }
         }
     }
