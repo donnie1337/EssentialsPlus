@@ -155,6 +155,7 @@ public final class FlightService implements Listener {
             insideOwnTerrain.add(uuid);
             if (!wasInside || !terrainFlight.contains(uuid)) {
                 enableTerrainFlight(player);
+                player.sendMessage("§a[Voo] §rModo de voo ativado.");
             }
             return;
         }
@@ -162,6 +163,9 @@ public final class FlightService implements Listener {
         insideOwnTerrain.remove(uuid);
         if (terrainFlight.contains(uuid)) {
             disableTerrainFlight(player);
+            if (canFly(player)) {
+                player.sendMessage("§c[Voo] §rModo de voo desativado.");
+            }
         }
     }
 
