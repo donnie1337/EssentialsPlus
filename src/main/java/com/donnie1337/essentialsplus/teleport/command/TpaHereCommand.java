@@ -17,8 +17,8 @@ import java.util.Locale;
 public final class TpaHereCommand implements CommandExecutor, TabCompleter {
     private static final String PERMISSION = "essentialsplus.tpa";
     private static final String VANISH_PERMISSION = "essentialsplus.vanish";
-    private static final String TPA_NOT_FOUND = "§b§lᴛᴘᴀ §8• §cJogador não encontrado.";
-    private static final String TPA_VANISHED = "§b§lᴛᴘᴀ §8• §cVocê não pode usar TPA enquanto estiver invisível.";
+    private static final String TPA_NOT_FOUND = "§b[Tpa] §cJogador não encontrado.";
+    private static final String TPA_VANISHED = "§b[Tpa] §cVocê não pode usar TPA enquanto estiver invisível.";
 
     private final TeleportService service;
     private final AuthSystemBridge auth = new AuthSystemBridge();
