@@ -10,6 +10,7 @@ softdepend:
   - ChatPlus
   - CargoPlus
   - UtilidadesPlus
+  - TerrenosPlus
 commands:
   v:
     description: Ativa ou desativa o modo vanish.
