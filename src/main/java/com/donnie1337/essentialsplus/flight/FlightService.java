@@ -33,6 +33,7 @@ public final class FlightService implements Listener {
     private final Map<UUID, Long> lastGlideVelocityUpdate = new HashMap<>();
     private final Set<UUID> terrainFlight = new HashSet<>();
     private final Set<UUID> insideOwnTerrain = new HashSet<>();
+    private final Set<UUID> manualFlightDisabled = new HashSet<>();
     private Object terrenosManager;
     private Method terrenosFindMethod;
     private Method terrenoOwnerIdMethod;
@@ -68,11 +69,14 @@ public final class FlightService implements Listener {
             return false;
         }
 
+        UUID uuid = player.getUniqueId();
         if (player.getAllowFlight()) {
+            manualFlightDisabled.add(uuid);
             disableTerrainFlight(player);
             return false;
         }
 
+        manualFlightDisabled.remove(uuid);
         enableTerrainFlight(player);
         return true;
     }
@@ -165,6 +169,7 @@ public final class FlightService implements Listener {
         lastGlideVelocityUpdate.remove(uuid);
         terrainFlight.remove(uuid);
         insideOwnTerrain.remove(uuid);
+        manualFlightDisabled.remove(uuid);
     }
 
     private void syncTerrainFlight(Player player) {
@@ -180,7 +185,15 @@ public final class FlightService implements Listener {
 
         if (insideAllowedTerrain) {
             insideOwnTerrain.add(uuid);
-            if (!wasInside || !terrainFlight.contains(uuid)) {
+
+            // Entrar novamente em uma área válida reativa o voo automático.
+            if (!wasInside) {
+                manualFlightDisabled.remove(uuid);
+            }
+
+            // Se o jogador desligou manualmente com /fly, não religamos a cada passo.
+            if (!manualFlightDisabled.contains(uuid)
+                    && (!wasInside || !terrainFlight.contains(uuid))) {
                 enableTerrainFlight(player);
                 player.sendMessage("§a[Voo] §rModo de voo ativado.");
             }
@@ -188,6 +201,13 @@ public final class FlightService implements Listener {
         }
 
         insideOwnTerrain.remove(uuid);
+
+        // Para Ajudante/Moderador, sair do terreno encerra a sessão manual:
+        // na próxima entrada o voo automático pode ligar de novo.
+        if (!adminOrHigher) {
+            manualFlightDisabled.remove(uuid);
+        }
+
         if (terrainFlight.contains(uuid)) {
             if (adminOrHigher) {
                 // Administrador, Gerente e DEV podem continuar voando fora de terrenos.
