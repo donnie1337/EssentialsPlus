@@ -21,7 +21,7 @@ public final class FlyCommand implements CommandExecutor {
         }
 
         if (!flightService.canFly(player)) {
-            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
+            player.sendMessage("§c[Erro] §r§cComando não encontrado.");
             return true;
         }
 
