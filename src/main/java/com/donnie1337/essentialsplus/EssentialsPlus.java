@@ -12,6 +12,7 @@ import com.donnie1337.essentialsplus.command.CraftCommand;
 import com.donnie1337.essentialsplus.command.EcCommand;
 import com.donnie1337.essentialsplus.command.FlyCommand;
 import com.donnie1337.essentialsplus.command.GameModeCommand;
+import com.donnie1337.essentialsplus.command.KitCommand;
 import com.donnie1337.essentialsplus.command.ReplyCommand;
 import com.donnie1337.essentialsplus.flight.FlightService;
 import com.donnie1337.essentialsplus.home.HomeGui;
@@ -78,6 +79,7 @@ public final class EssentialsPlus extends JavaPlugin {
         register("fly", new FlyCommand(flightService));
         register("gamemode", new GameModeCommand());
         register("craft", new CraftCommand());
+        register("kit", new KitCommand());
         register("tell", new TellCommand());
         register("r", new ReplyCommand());
         register("tellcancel", new TellCustomClickListener());
