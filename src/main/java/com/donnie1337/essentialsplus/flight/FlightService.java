@@ -12,7 +12,6 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Vector;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -21,10 +20,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class FlightService implements Listener {
-    private static final double INITIAL_GLIDE_SPEED = 0.06D;
-    private static final double MAX_GLIDE_SPEED = 0.85D;
-    private static final double GLIDE_DISTANCE = 32.0D;
-
     private final JavaPlugin plugin;
     private final Set<UUID> gliding = new HashSet<>();
     private final Set<UUID> terrainFlight = new HashSet<>();
@@ -82,9 +77,10 @@ public final class FlightService implements Listener {
         player.setFallDistance(0.0F);
 
         if (!player.isOnGround() && !isInFluid(player)) {
+            // Mantém a queda vanilla para preservar totalmente o controle
+            // horizontal do jogador. O marcador "gliding" serve apenas para
+            // zerar dano de queda até ele tocar o chão.
             gliding.add(player.getUniqueId());
-            Vector velocity = player.getVelocity();
-            player.setVelocity(new Vector(velocity.getX(), -INITIAL_GLIDE_SPEED, velocity.getZ()));
         } else {
             gliding.remove(player.getUniqueId());
         }
@@ -116,13 +112,8 @@ public final class FlightService implements Listener {
             return;
         }
 
-        double distance = distanceToGround(player.getLocation());
-        double progress = 1.0D - Math.min(1.0D, distance / GLIDE_DISTANCE);
-        double verticalSpeed = INITIAL_GLIDE_SPEED
-                + (MAX_GLIDE_SPEED - INITIAL_GLIDE_SPEED) * progress;
-
-        Vector velocity = player.getVelocity();
-        player.setVelocity(new Vector(velocity.getX(), -verticalSpeed, velocity.getZ()));
+        // Não alteramos a velocidade do jogador enquanto ele cai. Assim,
+        // W/A/S/D continuam com o comportamento normal do Minecraft.
         player.setFallDistance(0.0F);
     }
 
@@ -260,24 +251,6 @@ public final class FlightService implements Listener {
         Material head = player.getEyeLocation().getBlock().getType();
         return feet == Material.WATER || feet == Material.LAVA
                 || head == Material.WATER || head == Material.LAVA;
-    }
-
-    private double distanceToGround(Location location) {
-        if (location.getWorld() == null) return GLIDE_DISTANCE;
-
-        RayTraceResult result = location.getWorld().rayTraceBlocks(
-                location.clone().add(0.0D, 0.05D, 0.0D),
-                new Vector(0.0D, -1.0D, 0.0D),
-                GLIDE_DISTANCE,
-                FluidCollisionMode.NEVER,
-                true
-        );
-
-        if (result == null || result.getHitPosition() == null) {
-            return GLIDE_DISTANCE;
-        }
-
-        return Math.max(0.0D, location.getY() - result.getHitPosition().getY());
     }
 
     private void stopGlide(Player player) {
