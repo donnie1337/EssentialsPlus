@@ -43,9 +43,16 @@ public final class FlightService implements Listener {
     public boolean toggle(Player player) {
         if (player == null) return false;
 
-        // O /fly agora é vinculado ao próprio terreno. Fora dele, a permissão
-        // continua existindo, mas o voo não pode permanecer ativo.
-        if (!isInsideOwnTerrain(player)) {
+        // Administrador ou superior pode usar /fly em qualquer lugar.
+        // Ajudante/moderador só podem usar em terrenos; jogadores não-staff
+        // com a permissão ficam limitados ao próprio terreno.
+        String cargo = getCargoGroup(player);
+        boolean adminOrHigher = isAdminOrHigher(cargo);
+        boolean staff = isStaffCargo(cargo);
+        boolean allowedHere = adminOrHigher
+                || (staff ? isInsideAnyTerrain(player) : isInsideOwnTerrain(player));
+
+        if (!allowedHere) {
             if (terrainFlight.contains(player.getUniqueId())) {
                 disableTerrainFlight(player);
             }
@@ -139,11 +146,14 @@ public final class FlightService implements Listener {
         if (player == null || !player.isOnline()) return;
 
         UUID uuid = player.getUniqueId();
-        boolean staff = isStaffByCargo(player);
-        boolean ownTerrain = canFly(player) && (staff ? isInsideAnyTerrain(player) : isInsideOwnTerrain(player));
+        String cargo = getCargoGroup(player);
+        boolean staff = isStaffCargo(cargo);
+        boolean adminOrHigher = isAdminOrHigher(cargo);
+        boolean insideAllowedTerrain = canFly(player)
+                && (staff ? isInsideAnyTerrain(player) : isInsideOwnTerrain(player));
         boolean wasInside = insideOwnTerrain.contains(uuid);
 
-        if (ownTerrain) {
+        if (insideAllowedTerrain) {
             insideOwnTerrain.add(uuid);
             if (!wasInside || !terrainFlight.contains(uuid)) {
                 enableTerrainFlight(player);
@@ -154,9 +164,14 @@ public final class FlightService implements Listener {
 
         insideOwnTerrain.remove(uuid);
         if (terrainFlight.contains(uuid)) {
-            disableTerrainFlight(player);
-            if (canFly(player)) {
-                player.sendMessage("§c[Voo] §rModo de voo desativado.");
+            if (adminOrHigher) {
+                // Administrador, Gerente e DEV podem continuar voando fora de terrenos.
+                terrainFlight.remove(uuid);
+            } else {
+                disableTerrainFlight(player);
+                if (canFly(player)) {
+                    player.sendMessage("§c[Voo] §rModo de voo desativado.");
+                }
             }
         }
     }
@@ -181,29 +196,39 @@ public final class FlightService implements Listener {
         }
     }
 
-    private boolean isStaffByCargo(Player player) {
-        if (player == null || !player.isOnline()) return false;
+    private String getCargoGroup(Player player) {
+        if (player == null || !player.isOnline()) return "";
 
         try {
             var cargoPlus = plugin.getServer().getPluginManager().getPlugin("CargoPlus");
-            if (cargoPlus == null || !cargoPlus.isEnabled()) return false;
+            if (cargoPlus == null || !cargoPlus.isEnabled()) return "";
 
             Method apiMethod = cargoPlus.getClass().getMethod("api");
             Object api = apiMethod.invoke(cargoPlus);
-            if (api == null) return false;
+            if (api == null) return "";
 
             Method getGroup = api.getClass().getMethod("getGroup", UUID.class);
             Object value = getGroup.invoke(api, player.getUniqueId());
-            if (value == null) return false;
-
-            String group = String.valueOf(value).trim().toLowerCase(java.util.Locale.ROOT);
-            return switch (group) {
-                case "ajudante", "moderador", "administrador", "gerente", "dev" -> true;
-                default -> false;
-            };
+            return value == null
+                    ? ""
+                    : String.valueOf(value).trim().toLowerCase(java.util.Locale.ROOT);
         } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
-            return false;
+            return "";
         }
+    }
+
+    private boolean isStaffCargo(String group) {
+        return switch (group) {
+            case "ajudante", "moderador", "administrador", "gerente", "dev" -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isAdminOrHigher(String group) {
+        return switch (group) {
+            case "administrador", "gerente", "dev" -> true;
+            default -> false;
+        };
     }
 
     private boolean isInsideAnyTerrain(Player player) {
