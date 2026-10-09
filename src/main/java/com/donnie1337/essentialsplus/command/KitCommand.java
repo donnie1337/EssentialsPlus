@@ -7,6 +7,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -14,7 +18,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 
-public final class KitCommand implements CommandExecutor {
+public final class KitCommand implements CommandExecutor, Listener {
 
     private static final NamespacedKey TERRAIN_TOOL_KEY = new NamespacedKey("terrenosplus", "tool");
 
@@ -30,10 +34,30 @@ public final class KitCommand implements CommandExecutor {
             return true;
         }
 
+        giveTerrainKit(player);
+        return true;
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onTerrainKitCommand(PlayerCommandPreprocessEvent event) {
+        String raw = event.getMessage().trim();
+        if (!raw.equalsIgnoreCase("/kit terreno")) return;
+
+        Player player = event.getPlayer();
+        event.setCancelled(true);
+
+        if (!player.hasPermission("essentialsplus.kit")) {
+            player.sendMessage(color("&c&lᴇʀʀᴏ &8• &cComando não encontrado."));
+            return;
+        }
+
+        giveTerrainKit(player);
+    }
+
+    private void giveTerrainKit(Player player) {
         give(player, protectionShovel());
         give(player, trackingStick());
         player.sendMessage(color("&a&lᴋɪᴛ &8• &fVocê recebeu o kit &aTerreno&f."));
-        return true;
     }
 
     private ItemStack protectionShovel() {
