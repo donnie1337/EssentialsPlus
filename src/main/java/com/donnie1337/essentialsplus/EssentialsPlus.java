@@ -51,7 +51,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class EssentialsPlus extends JavaPlugin {
-    private static final String UNKNOWN_COMMAND_PERMISSION_MESSAGE = "§c§lᴇʀʀᴏ §8• §cComando não encontrado.";
+    private static final String UNKNOWN_COMMAND_PERMISSION_MESSAGE = "§c[Erro] §r§cComando não encontrado.";
 
     private TeleportService teleportService;
     private StaffTeleportService staffTeleportService;
