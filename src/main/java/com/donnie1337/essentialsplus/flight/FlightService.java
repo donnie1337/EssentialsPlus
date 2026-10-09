@@ -139,7 +139,7 @@ public final class FlightService implements Listener {
         if (player == null || !player.isOnline()) return;
 
         UUID uuid = player.getUniqueId();
-        boolean staff = player.hasPermission("essentialsplus.admin");
+        boolean staff = isStaffByCargo(player);
         boolean ownTerrain = canFly(player) && (staff ? isInsideAnyTerrain(player) : isInsideOwnTerrain(player));
         boolean wasInside = insideOwnTerrain.contains(uuid);
 
@@ -178,6 +178,31 @@ public final class FlightService implements Listener {
                 player.setFallDistance(0.0F);
             }
             default -> disable(player);
+        }
+    }
+
+    private boolean isStaffByCargo(Player player) {
+        if (player == null || !player.isOnline()) return false;
+
+        try {
+            var cargoPlus = plugin.getServer().getPluginManager().getPlugin("CargoPlus");
+            if (cargoPlus == null || !cargoPlus.isEnabled()) return false;
+
+            Method apiMethod = cargoPlus.getClass().getMethod("api");
+            Object api = apiMethod.invoke(cargoPlus);
+            if (api == null) return false;
+
+            Method getGroup = api.getClass().getMethod("getGroup", UUID.class);
+            Object value = getGroup.invoke(api, player.getUniqueId());
+            if (value == null) return false;
+
+            String group = String.valueOf(value).trim().toLowerCase(java.util.Locale.ROOT);
+            return switch (group) {
+                case "ajudante", "moderador", "administrador", "gerente", "dev" -> true;
+                default -> false;
+            };
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
         }
     }
 
