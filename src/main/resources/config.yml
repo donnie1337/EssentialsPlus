@@ -35,7 +35,7 @@ marriage:
 
 messages:
   tpa:
-    prefix: "&b&lᴛᴘᴀ &8• &r"
+    prefix: "&b[Tpa] &r"
     sistema-desativado: "&cO sistema de TPA está desativado."
     jogador-nao-encontrado: "&cJogador não encontrado."
     nao-pode-ser-voce: "&cVocê não pode enviar uma solicitação para si mesmo."
@@ -182,7 +182,7 @@ messages:
     precisa-estar-autenticado: "&cVocê precisa estar autenticado para executar este comando."
     jogador-nao-autenticado: "&cO jogador ainda não está autenticado."
 
-  prefix: "&b&lᴛᴘᴀ &8• &r"
+  prefix: "&b[Tpa] &r"
   player-only: "&cEste comando precisa ser usado por um jogador."
   player-not-found: "&cJogador não encontrado ou offline."
   teleport-failed: "&cNão foi possível realizar o teleporte."
