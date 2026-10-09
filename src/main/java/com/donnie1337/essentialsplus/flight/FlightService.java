@@ -11,26 +11,23 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
-import org.bukkit.util.Vector;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 public final class FlightService implements Listener {
-    private static final double GLIDE_FAR_SPEED = 0.08D;
-    private static final double GLIDE_NEAR_SPEED = 0.55D;
     private static final double GLIDE_DISTANCE = 32.0D;
-    private static final long GLIDE_UPDATE_INTERVAL_NANOS = 100_000_000L;
+    private static final double GLIDE_RELEASE_DISTANCE = 7.0D;
 
     private final JavaPlugin plugin;
     private final Set<UUID> gliding = new HashSet<>();
-    private final Map<UUID, Long> lastGlideVelocityUpdate = new HashMap<>();
+    private final Set<UUID> glideSlowFallingApplied = new HashSet<>();
     private final Set<UUID> terrainFlight = new HashSet<>();
     private final Set<UUID> insideOwnTerrain = new HashSet<>();
     private final Set<UUID> manualFlightDisabled = new HashSet<>();
@@ -83,8 +80,8 @@ public final class FlightService implements Listener {
 
     public void enable(Player player) {
         if (player == null) return;
+        stopGlideEffect(player);
         gliding.remove(player.getUniqueId());
-        lastGlideVelocityUpdate.remove(player.getUniqueId());
         player.setFallDistance(0.0F);
         player.setAllowFlight(true);
         player.setFlying(true);
@@ -98,12 +95,10 @@ public final class FlightService implements Listener {
         player.setFallDistance(0.0F);
 
         if (!player.isOnGround() && !isInFluid(player)) {
-            // Mantém a queda vanilla para preservar totalmente o controle
-            // horizontal do jogador. O marcador "gliding" serve apenas para
-            // zerar dano de queda até ele tocar o chão.
             gliding.add(player.getUniqueId());
+            applyGlideEffect(player);
         } else {
-            gliding.remove(player.getUniqueId());
+            stopGlide(player);
         }
     }
 
@@ -133,22 +128,19 @@ public final class FlightService implements Listener {
             return;
         }
 
-        // Controla somente o eixo Y e deixa X/Z exatamente como o jogador
-        // estiver movimentando. A atualização é limitada a 10 vezes/segundo
-        // para não disputar com o controle horizontal do cliente.
-        long now = System.nanoTime();
-        long lastUpdate = lastGlideVelocityUpdate.getOrDefault(uuid, 0L);
-        if (now - lastUpdate >= GLIDE_UPDATE_INTERVAL_NANOS) {
-            lastGlideVelocityUpdate.put(uuid, now);
+        double distance = distanceToGround(player.getLocation());
 
-            double distance = distanceToGround(player.getLocation());
-            double proximity = 1.0D - Math.min(1.0D, distance / GLIDE_DISTANCE);
-            double verticalSpeed = GLIDE_FAR_SPEED
-                    + (GLIDE_NEAR_SPEED - GLIDE_FAR_SPEED) * proximity;
-
-            Vector velocity = player.getVelocity();
-            player.setVelocity(new Vector(velocity.getX(), -verticalSpeed, velocity.getZ()));
+        // Usa o efeito nativo de Slow Falling enquanto está alto. Isso desacelera
+        // apenas a queda e deixa o controle horizontal (W/A/S/D) totalmente livre,
+        // sem enviar pacotes de velocidade X/Z que brigam com o movimento do cliente.
+        if (distance > GLIDE_RELEASE_DISTANCE) {
+            applyGlideEffect(player);
+        } else {
+            // Perto do chão removemos somente o efeito aplicado pelo plugin.
+            // A gravidade vanilla volta gradualmente e a descida fica mais rápida.
+            stopGlideEffect(player);
         }
+
         player.setFallDistance(0.0F);
     }
 
@@ -166,7 +158,7 @@ public final class FlightService implements Listener {
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         gliding.remove(uuid);
-        lastGlideVelocityUpdate.remove(uuid);
+        stopGlideEffect(event.getPlayer());
         terrainFlight.remove(uuid);
         insideOwnTerrain.remove(uuid);
         manualFlightDisabled.remove(uuid);
@@ -229,8 +221,7 @@ public final class FlightService implements Listener {
         // Criativo e espectador possuem voo nativo; não retiramos esse estado.
         switch (player.getGameMode()) {
             case CREATIVE, SPECTATOR -> {
-                gliding.remove(player.getUniqueId());
-                player.setFallDistance(0.0F);
+                stopGlide(player);
             }
             default -> disable(player);
         }
@@ -361,10 +352,36 @@ public final class FlightService implements Listener {
         return Math.max(0.0D, location.getY() - result.getHitPosition().getY());
     }
 
+    private void applyGlideEffect(Player player) {
+        UUID uuid = player.getUniqueId();
+
+        PotionEffect existing = player.getPotionEffect(PotionEffectType.SLOW_FALLING);
+        if (existing != null && !glideSlowFallingApplied.contains(uuid)) {
+            return;
+        }
+
+        player.addPotionEffect(new PotionEffect(
+                PotionEffectType.SLOW_FALLING,
+                40,
+                0,
+                true,
+                false,
+                false
+        ));
+        glideSlowFallingApplied.add(uuid);
+    }
+
+    private void stopGlideEffect(Player player) {
+        UUID uuid = player.getUniqueId();
+        if (glideSlowFallingApplied.remove(uuid)) {
+            player.removePotionEffect(PotionEffectType.SLOW_FALLING);
+        }
+    }
+
     private void stopGlide(Player player) {
         UUID uuid = player.getUniqueId();
         gliding.remove(uuid);
-        lastGlideVelocityUpdate.remove(uuid);
+        stopGlideEffect(player);
         player.setFallDistance(0.0F);
     }
 }
