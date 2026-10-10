@@ -74,6 +74,9 @@ public final class MarriageCommand implements TabExecutor {
                     "&cVocê já é casado."));
             case TARGET_MARRIED -> player.sendMessage(prefixed("alvo-ja-casado",
                     "&c{player} já é casado.").replace("{player}", target.getName()));
+            case TARGET_DISABLED -> player.sendMessage(prefixed("alvo-nao-recebe-pedidos",
+                    "&c{player} não está recebendo pedidos de casamento.")
+                    .replace("{player}", target.getName()));
             case REQUESTER_HAS_PENDING -> player.sendMessage(prefixed("pedido-aberto-remetente",
                     "&eVocê já possui um pedido de casamento em aberto. Use &f/marry cancelar&e."));
             case TARGET_HAS_PENDING -> player.sendMessage(prefixed("pedido-aberto-alvo",
