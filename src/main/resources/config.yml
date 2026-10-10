@@ -157,7 +157,7 @@ messages:
       delhome: "&fUse: &e/delhome <nome>"
 
   chat:
-    prefix: "&e&lᴄʜᴀᴛ &8• &r"
+    prefix: "&e[Chat] &r"
     jogador-nao-encontrado: "&cJogador não encontrado ou offline."
     nao-pode-ser-voce: "&cVocê não pode enviar uma mensagem para si mesmo."
     mensagens-desativadas: "&cO jogador desativou as mensagens privadas."
@@ -171,11 +171,11 @@ messages:
       destinatario: "&7{player} → &fVocê&8: &r{message}"
 
   utilidades:
-    prefix: "&7&lᴜᴛɪʟɪᴅᴀᴅᴇs &8• &r"
+    prefix: "&7[Utilidades] &r"
   invisibilidade:
-    prefix: "&5&lɪɴᴠɪsɪʙɪʟɪᴅᴀᴅᴇ &8• &r"
+    prefix: "&5[Invisibilidade] &r"
   cargo:
-    prefix: "&6&lᴄᴀʀɢᴏ &8• &r"
+    prefix: "&6[Cargo] &r"
   geral:
     jogador-apenas: "&cEste comando precisa ser usado por um jogador."
     jogador-nao-encontrado: "&cJogador não encontrado."
@@ -226,22 +226,22 @@ messages:
   target-offline: "&cO jogador não está mais online."
 
   tell:
-    player-only: "&d&lᴛᴇʟʟ &8• &cComando disponível apenas para jogadores."
-    unknown-command: "&d&lᴛᴇʟʟ &8• &cComando não encontrado."
-    usage: "&d&lᴛᴇʟʟ &8• &fUse: &e/tell <jogador> [mensagem]"
-    reply-usage: "&d&lᴛᴇʟʟ &8• &fUse: &e/r <mensagem>"
-    player-not-found: "&d&lᴛᴇʟʟ &8• &cJogador não encontrado."
-    cannot-self: "&d&lᴛᴇʟʟ &8• &cVocê não pode enviar uma mensagem para si mesmo."
-    target-disabled: "&d&lᴛᴇʟʟ &8• &cO jogador desativou as mensagens privadas."
-    no-recent: "&d&lᴛᴇʟʟ &8• &cVocê não possui nenhuma conversa privada recente."
-    format-sender: "&d&lᴛᴇʟʟ &8• &7Você → &f{player}&8: &r{message}"
-    format-target: "&d&lᴛᴇʟʟ &8• &7{player} → &fVocê&8: &r{message}"
-    awaiting-message: "\n&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.\n"
+    player-only: "&d[Tell] &cComando disponível apenas para jogadores."
+    unknown-command: "&d[Tell] &cComando não encontrado."
+    usage: "&d[Tell] &fUse: &e/tell <jogador> [mensagem]"
+    reply-usage: "&d[Tell] &fUse: &e/r <mensagem>"
+    player-not-found: "&d[Tell] &cJogador não encontrado."
+    cannot-self: "&d[Tell] &cVocê não pode enviar uma mensagem para si mesmo."
+    target-disabled: "&d[Tell] &cO jogador desativou as mensagens privadas."
+    no-recent: "&d[Tell] &cVocê não possui nenhuma conversa privada recente."
+    format-sender: "&d[Tell] &7Você → &f{player}&8: &r{message}"
+    format-target: "&d[Tell] &7{player} → &fVocê&8: &r{message}"
+    awaiting-message: "\n&d[Tell] &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.\n"
     cancel-text: "&c&lAQUI"
     cancel-hover: "&7Clique para cancelar o envio."
-    cancelled: "&d&lᴛᴇʟʟ &8• &rEnvio cancelado."
-    already-cancelled: "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio."
-    already-sent: "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar."
+    cancelled: "&d[Tell] &rEnvio cancelado."
+    already-cancelled: "&d[Tell] &rNão foi possível cancelar, pois você já cancelou o envio."
+    already-sent: "&d[Tell] &rVocê enviou uma mensagem, não foi possível cancelar."
 
 buttons:
   spacing: "  "
