@@ -96,7 +96,7 @@ messages:
       tp: "&fUse: &e/tp <jogador>"
 
   marry:
-    prefix: "&d&lᴍᴀʀʀʏ &8• &r"
+    prefix: "&d[Marry] &r"
     jogador-apenas: "&cEste comando precisa ser usado por um jogador."
     uso-casar: "&fUse: &d/marry <jogador>"
     jogador-nao-encontrado: "&cJogador não encontrado ou offline."
