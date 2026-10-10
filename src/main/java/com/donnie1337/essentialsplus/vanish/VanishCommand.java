@@ -25,7 +25,7 @@ public final class VanishCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         if (!player.hasPermission(VANISH_PERMISSION)) {
-            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
+            player.sendMessage("§c[Erro] §cComando não encontrado.");
             return true;
         }
         if (args.length != 0) {
@@ -37,9 +37,9 @@ public final class VanishCommand implements CommandExecutor, TabCompleter {
         boolean enabled = service.isVanished(player);
 
         if (enabled) {
-            player.sendMessage(ChatColor.RED + "§lᴠᴀɴɪsʜ §8• §rVocê ficou invisível para outros jogadores.");
+            player.sendMessage(ChatColor.RED + "[Vanish] §rVocê ficou invisível para outros jogadores.");
         } else {
-            player.sendMessage(ChatColor.GREEN + "§lᴠᴀɴɪsʜ §8• §rVocê voltou a ficar visível para outros jogadores.");
+            player.sendMessage(ChatColor.GREEN + "[Vanish] §rVocê voltou a ficar visível para outros jogadores.");
         }
         return true;
     }
