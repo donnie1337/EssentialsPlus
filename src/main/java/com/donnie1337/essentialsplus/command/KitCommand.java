@@ -30,7 +30,7 @@ public final class KitCommand implements CommandExecutor, Listener {
         }
 
         if (args.length != 1 || !args[0].equalsIgnoreCase("terreno")) {
-            player.sendMessage(color("&e&lᴋɪᴛ &8• &fUse: &e/kit terreno"));
+            player.sendMessage(color("&e[Kit] &fUse: &e/kit terreno"));
             return true;
         }
 
@@ -47,7 +47,7 @@ public final class KitCommand implements CommandExecutor, Listener {
         event.setCancelled(true);
 
         if (!player.hasPermission("essentialsplus.kit")) {
-            player.sendMessage(color("&c&lᴇʀʀᴏ &8• &cComando não encontrado."));
+            player.sendMessage(color("&c[Erro] &cComando não encontrado."));
             return;
         }
 
@@ -57,7 +57,7 @@ public final class KitCommand implements CommandExecutor, Listener {
     private void giveTerrainKit(Player player) {
         give(player, protectionShovel());
         give(player, trackingStick());
-        player.sendMessage(color("&a&lᴋɪᴛ &8• &fVocê recebeu o kit &aTerreno&f."));
+        player.sendMessage(color("&a[Kit] &fVocê recebeu o kit &aTerreno&f."));
     }
 
     private ItemStack protectionShovel() {
