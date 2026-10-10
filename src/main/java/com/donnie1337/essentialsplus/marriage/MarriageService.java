@@ -65,6 +65,7 @@ public final class MarriageService {
         if (requester.getUniqueId().equals(target.getUniqueId())) return RequestResult.SELF;
         if (isMarried(requester.getUniqueId())) return RequestResult.REQUESTER_MARRIED;
         if (isMarried(target.getUniqueId())) return RequestResult.TARGET_MARRIED;
+        if (!receivesMarriageRequests(target)) return RequestResult.TARGET_DISABLED;
         if (getOutgoingProposal(requester.getUniqueId()).isPresent()) return RequestResult.REQUESTER_HAS_PENDING;
         if (getIncomingProposal(target.getUniqueId()).isPresent()) return RequestResult.TARGET_HAS_PENDING;
 
@@ -177,6 +178,19 @@ public final class MarriageService {
                 .toList();
     }
 
+    private boolean receivesMarriageRequests(Player player) {
+        org.bukkit.plugin.Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus");
+        if (utilidades == null || !utilidades.isEnabled()) return true;
+        try {
+            Object result = utilidades.getClass()
+                    .getMethod("receivesMarriageRequests", Player.class)
+                    .invoke(utilidades, player);
+            return !(result instanceof Boolean value) || value;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return true;
+        }
+    }
+
     private void cleanupExpired() {
         long timeoutMillis = Math.max(1L,
                 plugin.getConfig().getLong("marriage.request-timeout-seconds", 60L)) * 1000L;
@@ -236,7 +250,7 @@ public final class MarriageService {
     }
 
     public enum RequestResult {
-        OK, SELF, REQUESTER_MARRIED, TARGET_MARRIED, REQUESTER_HAS_PENDING, TARGET_HAS_PENDING
+        OK, SELF, REQUESTER_MARRIED, TARGET_MARRIED, TARGET_DISABLED, REQUESTER_HAS_PENDING, TARGET_HAS_PENDING
     }
 
     public enum AcceptStatus {
