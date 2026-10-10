@@ -252,7 +252,7 @@ public final class TellListener implements Listener {
     }
 
     private static void sendPendingMessage(Player sender, Player target) {
-        String raw = plugin.getConfig().getString("messages.tell.awaiting-message", "&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.");
+        String raw = plugin.getConfig().getString("messages.tell.awaiting-message", "&d[Tell] &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.");
         raw = raw.replace("{player}", coloredCargoName(target));
         String cancelText = plugin.getConfig().getString("messages.tell.cancel-text", "&c&lAQUI");
         String cancelHover = plugin.getConfig().getString("messages.tell.cancel-hover", "&7Clique para cancelar o envio.");
@@ -300,24 +300,24 @@ public final class TellListener implements Listener {
 
     private static String defaultMessage(String path) {
         return switch (path) {
-            case "messages.tell.unknown-command" -> "&d&lᴛᴇʟʟ &8• &rComando não encontrado.";
-            case "messages.tell.usage" -> "&d&lᴛᴇʟʟ &8• &rUse /tell <jogador> [mensagem].";
-            case "messages.tell.reply-usage" -> "&d&lᴛᴇʟʟ &8• &rUse /r <mensagem>.";
-            case "messages.tell.player-not-found" -> "&d&lᴛᴇʟʟ &8• &cJogador não encontrado.";
-            case "messages.tell.cannot-self" -> "&d&lᴛᴇʟʟ &8• &cVocê não pode enviar uma mensagem para si mesmo.";
-            case "messages.tell.target-disabled" -> "&d&lᴛᴇʟʟ &8• &cO jogador desativou as mensagens privadas.";
-            case "messages.tell.no-recent" -> "&d&lᴛᴇʟʟ &8• &cVocê não possui nenhuma conversa privada recente.";
+            case "messages.tell.unknown-command" -> "&d[Tell] &rComando não encontrado.";
+            case "messages.tell.usage" -> "&d[Tell] &rUse /tell <jogador> [mensagem].";
+            case "messages.tell.reply-usage" -> "&d[Tell] &rUse /r <mensagem>.";
+            case "messages.tell.player-not-found" -> "&d[Tell] &cJogador não encontrado.";
+            case "messages.tell.cannot-self" -> "&d[Tell] &cVocê não pode enviar uma mensagem para si mesmo.";
+            case "messages.tell.target-disabled" -> "&d[Tell] &cO jogador desativou as mensagens privadas.";
+            case "messages.tell.no-recent" -> "&d[Tell] &cVocê não possui nenhuma conversa privada recente.";
             case "messages.tell.player-only" -> "Comando disponível apenas para jogadores.";
-            case "messages.tell.format-sender" -> "&d&lᴛᴇʟʟ &8• &7Você → &f{player}&8: &r{message}";
-            case "messages.tell.format-target" -> "&d&lᴛᴇʟʟ &8• &7{player} → &fVocê&8: &r{message}";
-            case "messages.tell.awaiting-message" -> "&d&lᴛᴇʟʟ &8• &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.";
+            case "messages.tell.format-sender" -> "&d[Tell] &7Você → &f{player}&8: &r{message}";
+            case "messages.tell.format-target" -> "&d[Tell] &7{player} → &fVocê&8: &r{message}";
+            case "messages.tell.awaiting-message" -> "&d[Tell] &rJogador {player} encontrado, digite alguma mensagem no chat para enviar, ou clique {cancel} para cancelar o envio.";
             case "messages.tell.cancel-text" -> "&c&lAQUI";
             case "messages.tell.cancel-hover" -> "&7Clique para cancelar o envio.";
-            case "messages.tell.cancelled" -> "&d&lᴛᴇʟʟ &8• &rEnvio cancelado.";
-            case "messages.tell.already-cancelled" -> "&d&lᴛᴇʟʟ &8• &rNão foi possível cancelar, pois você já cancelou o envio.";
-            case "messages.tell.already-sent" -> "&d&lᴛᴇʟʟ &8• &rVocê enviou uma mensagem, não foi possível cancelar.";
-            case "messages.tell.empty-message" -> "&d&lᴛᴇʟʟ &8• &rA mensagem não pode estar vazia. Digite novamente para enviar ou aguarde o cancelamento automático.";
-            case "messages.tell.expired" -> "&d&lᴛᴇʟʟ &8• &rO envio expirou por falta de resposta.";
+            case "messages.tell.cancelled" -> "&d[Tell] &rEnvio cancelado.";
+            case "messages.tell.already-cancelled" -> "&d[Tell] &rNão foi possível cancelar, pois você já cancelou o envio.";
+            case "messages.tell.already-sent" -> "&d[Tell] &rVocê enviou uma mensagem, não foi possível cancelar.";
+            case "messages.tell.empty-message" -> "&d[Tell] &rA mensagem não pode estar vazia. Digite novamente para enviar ou aguarde o cancelamento automático.";
+            case "messages.tell.expired" -> "&d[Tell] &rO envio expirou por falta de resposta.";
             default -> "";
         };
     }
