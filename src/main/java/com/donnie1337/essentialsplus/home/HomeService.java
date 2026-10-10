@@ -47,7 +47,12 @@ public final class HomeService {
         Map<String, Home> current = homes(player);
         if (!current.containsKey(normalized) && getHomeLimit(player) >= 0 && current.size() >= getHomeLimit(player)) return false;
 
-        Home home = new Home(normalized, player.getLocation());
+        Home previous = current.get(normalized);
+        Home home = new Home(
+                normalized,
+                player.getLocation(),
+                previous == null ? System.currentTimeMillis() : previous.createdAt()
+        );
         if (!storage.saveHome(playerId, home)) return false;
 
         Map<String, Home> updated = new LinkedHashMap<>(current);
@@ -78,7 +83,7 @@ public final class HomeService {
         Home home = current.get(oldNormalized);
         if (home == null || current.containsKey(newNormalized)) return false;
 
-        Home renamed = new Home(newNormalized, home.location());
+        Home renamed = new Home(newNormalized, home.location(), home.createdAt());
         if (!storage.renameHome(playerId, oldNormalized, renamed)) return false;
 
         Map<String, Home> updated = new LinkedHashMap<>(current);
