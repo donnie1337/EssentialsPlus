@@ -281,7 +281,7 @@ public final class MarriageCommand implements TabExecutor {
     }
 
     private String prefixed(String key, String fallback) {
-        return color(message("prefix", "&d&lᴍᴀʀʀʏ &8• &r") + message(key, fallback));
+        return color(message("prefix", "&d[Marry] &r") + message(key, fallback));
     }
 
     private String message(String key, String fallback) {
