@@ -184,7 +184,7 @@ public final class TpaCustomClickListener implements Listener {
         String raw = plugin.getConfig().getString(key, fallback);
         Player target = Bukkit.getPlayer(action.targetId());
         if (target != null) raw = raw.replace("{player}", target.getName());
-        String prefix = plugin.getConfig().getString("messages.tpa.prefix", plugin.getConfig().getString("messages.tpa-prefix", "&b&lᴛᴘᴀ &8• &r"));
+        String prefix = plugin.getConfig().getString("messages.tpa.prefix", plugin.getConfig().getString("messages.tpa-prefix", "&b[Tpa] &r"));
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', prefix + raw));
     }
 
