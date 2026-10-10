@@ -191,6 +191,19 @@ public final class MarriageService {
         }
     }
 
+    private boolean receivesMarriageRequests(Player player) {
+        org.bukkit.plugin.Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus");
+        if (utilidades == null || !utilidades.isEnabled()) return true;
+        try {
+            Object result = utilidades.getClass()
+                    .getMethod("receivesMarriageRequests", Player.class)
+                    .invoke(utilidades, player);
+            return !(result instanceof Boolean value) || value;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return true;
+        }
+    }
+
     private void cleanupExpired() {
         long timeoutMillis = Math.max(1L,
                 plugin.getConfig().getLong("marriage.request-timeout-seconds", 60L)) * 1000L;
