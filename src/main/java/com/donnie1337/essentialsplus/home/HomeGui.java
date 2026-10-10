@@ -17,6 +17,8 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,8 +58,15 @@ public final class HomeGui implements Listener {
         Inventory inventory = Bukkit.createInventory(new HomesHolder(HomesHolder.Type.HOMES, null), HOMES_SIZE, "§8Homes §7→ §fSuas Homes");
 
         Map<String, Home> homes = service.homes(player);
+        List<Home> orderedHomes = new ArrayList<>(homes.values());
+        if ("data".equalsIgnoreCase(homeSort(player))) {
+            orderedHomes.sort(Comparator.comparingLong(Home::createdAt).reversed());
+        } else {
+            orderedHomes.sort(Comparator.comparing(Home::name, String.CASE_INSENSITIVE_ORDER));
+        }
+
         int index = 0;
-        for (Home home : homes.values()) {
+        for (Home home : orderedHomes) {
             if (index >= HOME_SLOTS.length) break;
             inventory.setItem(HOME_SLOTS[index++], item(worldMaterial(home), "§a" + home.name(), List.of(
                     "",
