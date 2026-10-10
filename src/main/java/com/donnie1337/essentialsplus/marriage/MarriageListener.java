@@ -41,7 +41,7 @@ public final class MarriageListener implements Listener {
 
     private String message(String key, String fallback) {
         String prefix = plugin.getConfig().getString(
-                "messages.marry.prefix", "&d&lᴍᴀʀʀʏ &8• &r");
+                "messages.marry.prefix", "&d[Marry] &r");
         String body = plugin.getConfig().getString("messages.marry." + key, fallback);
         return ChatColor.translateAlternateColorCodes('&', prefix + body);
     }
