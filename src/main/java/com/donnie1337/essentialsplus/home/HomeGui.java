@@ -33,11 +33,13 @@ public final class HomeGui implements Listener {
     private static final int TELEPORT_SLOT = 22;
     private static final int DELETE_SLOT = 24;
     private static final int MANAGE_BACK_SLOT = 40;
+    private static final int SORT_SLOT = 47;
     private static final int BACK_SLOT = 49;
     private static final int[] HOME_SLOTS = {11, 12, 13, 14, 15, 20, 21, 22, 23, 24, 29, 30, 31, 32, 33, 38, 39, 40, 41, 42};
 
     private final HomeService service;
     private final Map<UUID, String> pendingRenames = new HashMap<>();
+    private final Map<UUID, HomeSort> sortModes = new HashMap<>();
 
     public HomeGui(HomeService service) {
         this.service = service;
@@ -59,8 +61,10 @@ public final class HomeGui implements Listener {
 
         Map<String, Home> homes = service.homes(player);
         List<Home> orderedHomes = new ArrayList<>(homes.values());
-        if ("data".equalsIgnoreCase(homeSort(player))) {
-            orderedHomes.sort(Comparator.comparingLong(Home::createdAt).reversed());
+        HomeSort sort = sortModes.getOrDefault(player.getUniqueId(), HomeSort.NAME);
+        if (sort == HomeSort.CREATED_AT) {
+            orderedHomes.sort(Comparator.comparingLong(Home::createdAt).reversed()
+                    .thenComparing(Home::name, String.CASE_INSENSITIVE_ORDER));
         } else {
             orderedHomes.sort(Comparator.comparing(Home::name, String.CASE_INSENSITIVE_ORDER));
         }
@@ -85,6 +89,15 @@ public final class HomeGui implements Listener {
             )));
         }
 
+        inventory.setItem(SORT_SLOT, item(Material.HOPPER, "§eOrdenar homes", List.of(
+                "",
+                "§7Ordenação atual: " + (sort == HomeSort.CREATED_AT ? "§fData de criação" : "§fNome"),
+                "",
+                "§7Nome §8→ §fordem alfabética",
+                "§7Data §8→ §fmais recentes primeiro",
+                "",
+                "§eClique para alterar"
+        )));
         inventory.setItem(BACK_SLOT, item(Material.ARROW, "§eVoltar", List.of("§7Voltar para o menu de homes.")));
         player.openInventory(inventory);
     }
@@ -158,6 +171,14 @@ public final class HomeGui implements Listener {
         }
 
         if (holder.type() == HomesHolder.Type.HOMES) {
+            if (event.getRawSlot() == SORT_SLOT) {
+                HomeSort current = sortModes.getOrDefault(player.getUniqueId(), HomeSort.NAME);
+                sortModes.put(player.getUniqueId(),
+                        current == HomeSort.NAME ? HomeSort.CREATED_AT : HomeSort.NAME);
+                openHomes(player);
+                return;
+            }
+
             if (event.getRawSlot() == BACK_SLOT) {
                 openIntro(player);
                 return;
@@ -293,6 +314,7 @@ public final class HomeGui implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         pendingRenames.remove(event.getPlayer().getUniqueId());
+        sortModes.remove(event.getPlayer().getUniqueId());
         service.unload(event.getPlayer());
     }
 
@@ -326,6 +348,11 @@ public final class HomeGui implements Listener {
         meta.setLore(lore);
         item.setItemMeta(meta);
         return item;
+    }
+
+    private enum HomeSort {
+        NAME,
+        CREATED_AT
     }
 
     private record HomesHolder(Type type, String homeName) implements InventoryHolder {
