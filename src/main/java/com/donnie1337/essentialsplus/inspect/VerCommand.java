@@ -25,18 +25,18 @@ public final class VerCommand implements CommandExecutor {
         }
 
         if (!player.hasPermission(PERMISSION)) {
-            player.sendMessage("§c§lᴇʀʀᴏ §8• §cComando não encontrado.");
+            player.sendMessage("§c[Erro] §cComando não encontrado.");
             return true;
         }
 
         if (args.length != 1) {
-            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rUse /ver <jogador>.");
+            player.sendMessage("§e[Chat] §rUse /ver <jogador>.");
             return true;
         }
 
         Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            player.sendMessage("§e§lᴄʜᴀᴛ §8• §rJogador não encontrado ou offline.");
+            player.sendMessage("§e[Chat] §rJogador não encontrado ou offline.");
             return true;
         }
 
