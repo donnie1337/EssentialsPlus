@@ -14,6 +14,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 
 public final class MarriageCommand implements TabExecutor {
 
@@ -22,6 +25,7 @@ public final class MarriageCommand implements TabExecutor {
 
     private final EssentialsPlus plugin;
     private final MarriageService service;
+    private final Map<UUID, Long> pendingDivorces = new HashMap<>();
 
     public MarriageCommand(EssentialsPlus plugin, MarriageService service) {
         this.plugin = plugin;
@@ -164,6 +168,23 @@ public final class MarriageCommand implements TabExecutor {
     }
 
     private boolean handleDivorce(Player player) {
+        if (service.getMarriage(player.getUniqueId()).isEmpty()) {
+            player.sendMessage(prefixed("nao-casado", "&eVocê não é casado."));
+            return true;
+        }
+
+        if (confirmDivorce(player)) {
+            long now = System.currentTimeMillis();
+            Long expires = pendingDivorces.get(player.getUniqueId());
+            if (expires == null || expires < now) {
+                pendingDivorces.put(player.getUniqueId(), now + 10_000L);
+                player.sendMessage(prefixed("confirmar-divorcio",
+                        "&fDigite &c/marry divorcio &fnovamente em até &e10 segundos &fpara confirmar."));
+                return true;
+            }
+            pendingDivorces.remove(player.getUniqueId());
+        }
+
         MarriageService.Marriage marriage = service.divorce(player.getUniqueId()).orElse(null);
         if (marriage == null) {
             player.sendMessage(prefixed("nao-casado", "&eVocê não é casado."));
@@ -244,6 +265,19 @@ public final class MarriageCommand implements TabExecutor {
         player.sendMessage(color("&8» &f/marry list &8- &bExibe todos os jogadores casados."));
         player.sendMessage(color("&8» &f/marry listpriests &8- &bExibe todos os padres online."));
         player.sendMessage(color("&8» &f/marry ajuda &8- &bExibe todos os comandos disponíveis."));
+    }
+
+    private boolean confirmDivorce(Player player) {
+        org.bukkit.plugin.Plugin utilidades = Bukkit.getPluginManager().getPlugin("UtilidadesPlus");
+        if (utilidades == null || !utilidades.isEnabled()) return true;
+        try {
+            Object result = utilidades.getClass()
+                    .getMethod("confirmDivorce", Player.class)
+                    .invoke(utilidades, player);
+            return !(result instanceof Boolean value) || value;
+        } catch (ReflectiveOperationException | LinkageError ignored) {
+            return true;
+        }
     }
 
     private String prefixed(String key, String fallback) {
