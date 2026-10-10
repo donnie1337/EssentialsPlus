@@ -69,7 +69,8 @@ public final class HomeStorage {
                 continue;
             }
 
-            homes.put(name, new Home(name, new Location(world, x, y, z, yaw, pitch)));
+            long createdAt = data.getLong(path + ".created-at", 0L);
+            homes.put(name, new Home(name, new Location(world, x, y, z, yaw, pitch), createdAt));
         }
         return Collections.unmodifiableMap(homes);
     }
@@ -84,6 +85,7 @@ public final class HomeStorage {
 
         Object previous = data.get(path);
         writeLocation(path, location);
+        data.set(path + ".created-at", home.createdAt());
 
         if (save()) return true;
 
@@ -115,6 +117,7 @@ public final class HomeStorage {
         Object previousNew = data.get(newPath);
 
         writeLocation(newPath, location);
+        data.set(newPath + ".created-at", renamed.createdAt());
         data.set(oldPath, null);
 
         if (save()) return true;
